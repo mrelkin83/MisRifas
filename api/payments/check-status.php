@@ -21,6 +21,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 require_once __DIR__ . '/../../config/app.php';
 require_once __DIR__ . '/../../api/utils/Response.php';
 require_once __DIR__ . '/../../api/utils/Logger.php';
+require_once __DIR__ . '/../../api/utils/RateLimiter.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
     Response::error('Método no permitido', null, 405);
@@ -32,6 +33,14 @@ try {
 
     if (!$paymentIntentId && !$reservationId) {
         Response::error('payment_intent_id o reservation_id es requerido', null, 400);
+    }
+
+    // payment_intent_id es un entero autoincremental, no un secreto -
+    // consultado sin cuenta a proposito (polling del checkout de invitado),
+    // pero sin limite es enumerable en secuencia (1,2,3,...) para cosechar
+    // monto/estado/numeros de cada intento de pago en toda la plataforma.
+    if (!RateLimiter::check('check_status_' . ($_SERVER['REMOTE_ADDR'] ?? 'unknown'), 30, 1)) {
+        Response::rateLimitExceeded('Demasiadas consultas. Intenta de nuevo en un momento.');
     }
 
     $db = Database::getInstance()->getConnection();

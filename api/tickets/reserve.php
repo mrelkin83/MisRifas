@@ -32,9 +32,17 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 // Limitar reservas por IP - sin esto un solo cliente puede bloquear todos
-// los numeros disponibles de una rifa (denegacion de inventario)
+// los numeros disponibles de una rifa (denegacion de inventario). El
+// limite por minuto solo no alcanza: un IP puede sostenerlo indefinidamente
+// (20/min sin tope acumulado) y cada reserva bloquea un numero hasta por 6
+// horas - un script puede vaciar una rifa chica en minutos y mantenerla
+// vacia reservando de nuevo apenas expira cada tanda. El tope diario acota
+// cuanto inventario puede secuestrar un solo IP en total.
 if (!RateLimiter::check('reserve_' . ($_SERVER['REMOTE_ADDR'] ?? 'unknown'), 20, 1)) {
     Response::rateLimitExceeded('Demasiadas reservas seguidas. Espera un momento.');
+}
+if (!RateLimiter::check('reserve_daily_' . ($_SERVER['REMOTE_ADDR'] ?? 'unknown'), 60, 1440)) {
+    Response::rateLimitExceeded('Alcanzaste el límite de reservas por hoy. Intenta de nuevo mañana.');
 }
 
 try {

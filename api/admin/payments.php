@@ -92,11 +92,28 @@ try {
         }
 
         if ($action === 'approve') {
-            $stmt = $db->prepare("UPDATE payments SET transaction_status = 'completed', verified_at = NOW() WHERE id = ?");
-            $stmt->execute([$ticket['payment_id']]);
+            // Si un cron libero la reserva entre el chequeo de arriba y este
+            // UPDATE (por ejemplo, expiro justo antes de que el admin le
+            // diera aprobar), el WHERE status='reserved' no afecta ninguna
+            // fila y antes se respondia "aprobado" igual - el pago quedaba
+            // marcado completed pero el ticket nunca paid (silencioso).
+            $db->beginTransaction();
+            try {
+                $stmt = $db->prepare("UPDATE tickets SET status = 'paid', paid_at = NOW() WHERE id = ? AND status = 'reserved'");
+                $stmt->execute([$ticketId]);
+                if ($stmt->rowCount() === 0) {
+                    $db->rollBack();
+                    Response::error('El boleto ya no está reservado (pudo expirar); no se aprobó el pago', null, 409);
+                }
 
-            $stmt = $db->prepare("UPDATE tickets SET status = 'paid', paid_at = NOW() WHERE id = ? AND status = 'reserved'");
-            $stmt->execute([$ticketId]);
+                $stmt = $db->prepare("UPDATE payments SET transaction_status = 'completed', verified_at = NOW() WHERE id = ?");
+                $stmt->execute([$ticket['payment_id']]);
+
+                $db->commit();
+            } catch (Exception $e) {
+                $db->rollBack();
+                throw $e;
+            }
 
             Logger::activity('payment_manual_approved', $adminUser['id'], ['ticket_id' => $ticketId, 'payment_id' => $ticket['payment_id']]);
             Response::success(['message' => 'Pago aprobado. El boleto ahora está vendido.']);

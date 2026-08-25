@@ -33,6 +33,8 @@ use ElkinLinan\WhatsappAiEngine\Core\AiOrchestrator;
 use ElkinLinan\WhatsappAiEngine\Core\AuditLogger;
 use ElkinLinan\WhatsappAiEngine\Core\ConversationManager;
 use ElkinLinan\WhatsappAiEngine\Core\HumanHandoff;
+use ElkinLinan\WhatsappAiEngine\Core\RateLimiter;
+use ElkinLinan\WhatsappAiEngine\Core\WaConfig;
 use ElkinLinan\WhatsappAiEngine\Defecto\PesosColombianos;
 use ElkinLinan\WhatsappAiEngine\Defecto\SinUrl;
 use ElkinLinan\WhatsappAiEngine\Defecto\TodoPermitido;
@@ -126,6 +128,20 @@ if (!HumanHandoff::iaPuedeResponder($conv)) {
     // Un humano ya esta atendiendo o la IA esta pausada para este cliente:
     // el mensaje queda guardado (arriba) pero la IA no contesta.
     responder(200, ['ok' => true, 'nota' => 'ia inactiva en esta conversacion']);
+}
+
+// El motor ya trae RateLimiter::comprobar() (techo de mensajes por
+// conversacion en una ventana corta) pero nunca se llamaba desde aqui -
+// sin esto, cualquiera que le escriba al numero de un vendor puede hacer
+// que el webhook dispare llamadas a la IA sin limite, corriendo la
+// factura del proveedor de IA de ese vendor (denial-of-wallet).
+$cfgVendor = WaConfig::cargar(Engine::db());
+$limite = (new RateLimiter(Engine::db(), $log))->comprobar($conv, $cfgVendor);
+if (!$limite['permitido']) {
+    if ($limite['avisar']) {
+        $canal->enviarTexto($mensaje['telefono'], $limite['mensaje']);
+    }
+    responder(200, ['ok' => true, 'nota' => 'limite de mensajes alcanzado']);
 }
 
 // Audio/imagen necesitan transcripcion/vision (Media/*) antes de poder

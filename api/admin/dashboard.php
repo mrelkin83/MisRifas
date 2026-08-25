@@ -31,10 +31,21 @@ try {
     $stmt->execute([$adminUser['id']]);
     $stats['draft_raffles'] = (int)$stmt->fetch()['total'];
 
-    $stmt = $db->query("SELECT COUNT(*) as total FROM tickets WHERE status = 'paid'");
+    // Estas 4 no filtraban por vendor (a diferencia de active_raffles/
+    // draft_raffles/total_sales arriba) - cualquier vendor, incluido uno
+    // recien auto-registrado, veia ventas/compradores/reservas/comisiones
+    // vencidas de TODA la plataforma (volumen de la competencia). super_admin
+    // si ve el total de la plataforma, a proposito.
+    $esSuperAdmin = ($adminUser['role'] ?? '') === 'super_admin';
+
+    $stmt = $db->prepare("SELECT COUNT(*) as total FROM tickets t INNER JOIN raffles r ON t.raffle_id = r.id
+                       WHERE t.status = 'paid'" . ($esSuperAdmin ? '' : ' AND r.created_by = ?'));
+    $esSuperAdmin ? $stmt->execute() : $stmt->execute([$adminUser['id']]);
     $stats['tickets_sold'] = (int)$stmt->fetch()['total'];
 
-    $stmt = $db->query("SELECT COUNT(DISTINCT user_id) as total FROM tickets WHERE status = 'paid'");
+    $stmt = $db->prepare("SELECT COUNT(DISTINCT t.user_id) as total FROM tickets t INNER JOIN raffles r ON t.raffle_id = r.id
+                       WHERE t.status = 'paid'" . ($esSuperAdmin ? '' : ' AND r.created_by = ?'));
+    $esSuperAdmin ? $stmt->execute() : $stmt->execute([$adminUser['id']]);
     $stats['total_buyers'] = (int)$stmt->fetch()['total'];
 
     $stmt = $db->prepare("SELECT COALESCE(SUM(r.ticket_price), 0) as total
@@ -44,10 +55,14 @@ try {
     $stmt->execute([$adminUser['id']]);
     $stats['total_sales'] = (float)$stmt->fetch()['total'];
 
-    $stmt = $db->query("SELECT COUNT(*) as total FROM tickets WHERE status = 'reserved' AND reserved_until > NOW()");
+    $stmt = $db->prepare("SELECT COUNT(*) as total FROM tickets t INNER JOIN raffles r ON t.raffle_id = r.id
+                       WHERE t.status = 'reserved' AND t.reserved_until > NOW()" . ($esSuperAdmin ? '' : ' AND r.created_by = ?'));
+    $esSuperAdmin ? $stmt->execute() : $stmt->execute([$adminUser['id']]);
     $stats['active_reservations'] = (int)$stmt->fetch()['total'];
 
-    $stmt = $db->query("SELECT COUNT(*) as total FROM raffles WHERE commission_paid = 0 AND commission_due_date <= NOW() AND status = 'active'");
+    $stmt = $db->prepare("SELECT COUNT(*) as total FROM raffles r
+                       WHERE r.commission_paid = 0 AND r.commission_due_date <= NOW() AND r.status = 'active'" . ($esSuperAdmin ? '' : ' AND r.created_by = ?'));
+    $esSuperAdmin ? $stmt->execute() : $stmt->execute([$adminUser['id']]);
     $stats['overdue_commissions'] = (int)$stmt->fetch()['total'];
 
     Response::success($stats);

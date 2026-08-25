@@ -141,6 +141,11 @@ class ColombiaComScraper
 
     private static function httpGet($url)
     {
+        // Sin verificacion de TLS, un atacante en la red (o que envenene DNS)
+        // podia servir HTML falso y este scraper lo tomaba como el numero
+        // ganador real de la loteria (verified=1, sin revision humana) - un
+        // problema de integridad en una app que mueve dinero real. No hay
+        // razon para desactivarla contra un sitio publico como colombia.com.
         $context = stream_context_create([
             'http' => [
                 'timeout' => 15,
@@ -148,10 +153,6 @@ class ColombiaComScraper
                 'header' => "Accept: text/html,application/xhtml+xml\r\nAccept-Language: es-CO,es;q=0.9\r\n",
                 'follow_location' => true,
                 'max_redirects' => 3,
-            ],
-            'ssl' => [
-                'verify_peer' => false,
-                'verify_peer_name' => false,
             ],
         ]);
 
@@ -175,8 +176,6 @@ class ColombiaComScraper
             CURLOPT_HTTPHEADER => ['Accept: text/html', 'Accept-Language: es-CO,es;q=0.9'],
             CURLOPT_FOLLOWLOCATION => true,
             CURLOPT_MAXREDIRS => 3,
-            CURLOPT_SSL_VERIFYPEER => false,
-            CURLOPT_SSL_VERIFYHOST => 0,
         ]);
 
         $response = curl_exec($ch);

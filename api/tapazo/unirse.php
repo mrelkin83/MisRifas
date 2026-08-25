@@ -14,13 +14,18 @@ require_once __DIR__ . '/../../config/app.php';
 require_once __DIR__ . '/../../config/constants.php';
 require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../api/utils/Response.php';
+require_once __DIR__ . '/../../api/utils/Validator.php';
 
 try {
     $input = json_decode(file_get_contents('php://input'), true);
     $db = Database::getInstance()->getConnection();
 
     $codigo = trim($input['codigo'] ?? '');
-    $nombre = trim($input['nombre'] ?? '');
+    // Sin autenticacion (cualquiera con el codigo se une) y sin esto se
+    // guardaba crudo - XSS almacenado que se renderiza via innerHTML en
+    // tapazo/index.php (pagina publica, pensada para compartirse) para
+    // cualquier otro participante que la abra.
+    $nombre = Validator::sanitize(trim($input['nombre'] ?? ''));
     $cerveza_numero = intval($input['cerveza_numero'] ?? 0);
 
     if (empty($codigo) || empty($nombre)) {
