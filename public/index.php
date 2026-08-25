@@ -26,15 +26,26 @@ $page_description = "La plataforma más confiable para crear y participar en rif
             theme: {
                 extend: {
                     colors: {
-                        primary: { DEFAULT: '#2563eb', dark: '#1e40af', light: '#3b82f6' }
+                        primary: { DEFAULT: '#f59e0b', dark: '#b45309', light: '#fbbf24' }
                     }
                 }
             }
         }
     </script>
     <style>
+        /* Fuente display para titulares - autohospedada (nunca <link> a
+           Google Fonts en produccion), un solo peso (800) que cubre el uso
+           real en esta pagina (hero, "Como funciona", tarjetas de rifa). */
+        @font-face {
+            font-family: 'Outfit';
+            font-style: normal;
+            font-weight: 800;
+            font-display: swap;
+            src: url('<?= BASE_PATH ?>/public/assets/fonts/outfit-800.woff2') format('woff2');
+        }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
         body { background: #0f172a; color: #f8fafc; }
+        h1, h2, .hero-slide__title, .raffle-card__title { font-family: 'Outfit', 'Inter', sans-serif; }
         .glass-nav {
             background: rgba(15, 23, 42, 0.7);
             backdrop-filter: blur(12px);
@@ -52,25 +63,32 @@ $page_description = "La plataforma más confiable para crear y participar en rif
         }
         .raffle-card:hover {
             transform: translateY(-8px) scale(1.02);
-            box-shadow: 0 20px 40px -10px rgba(59,130,246,0.3);
-            border: 1px solid rgba(59,130,246,0.3);
+            box-shadow: 0 20px 40px -10px rgba(245,158,11,0.25);
+            border: 1px solid rgba(245,158,11,0.35);
+        }
+        /* Scroll-reveal: solo opacity (nunca junto a "transform" del hover
+           de arriba, para que no compitan por la misma propiedad).
+           prefers-reduced-motion deja todo visible de inmediato. */
+        @media (prefers-reduced-motion: no-preference) {
+            .raffle-card { opacity: 0; transition: opacity 0.6s ease; }
+            .raffle-card.is-visible { opacity: 1; }
         }
         .raffle-card__image { position: relative; width: 100%; height: 220px; overflow: hidden; }
         .raffle-card__image img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s; }
         .raffle-card:hover .raffle-card__image img { transform: scale(1.1); }
-        .raffle-card__badge { position: absolute; top: 12px; right: 12px; padding: 6px 14px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border-radius: 9999px; font-size: 12px; font-weight: 700; box-shadow: 0 4px 10px rgba(16,185,129,0.3); }
+        .raffle-card__badge { position: absolute; top: 12px; right: 12px; padding: 6px 14px; background: rgba(15,23,42,0.75); backdrop-filter: blur(6px); border: 1px solid rgba(245,158,11,0.4); color: #fbbf24; border-radius: 9999px; font-size: 12px; font-weight: 700; }
         .raffle-card__content { padding: 24px; }
-        .raffle-card__title { font-size: 22px; font-weight: 700; margin-bottom: 8px; color: #f8fafc; }
+        .raffle-card__title { font-size: 22px; font-weight: 700; margin-bottom: 8px; color: #f8fafc; font-family: 'Outfit', 'Inter', sans-serif; }
         .raffle-card__city { font-size: 14px; color: #94a3b8; margin-bottom: 16px; }
         .raffle-card__info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .raffle-card__price { font-size: 26px; font-weight: 800; background: linear-gradient(to right, #60a5fa, #3b82f6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .raffle-card__price { font-size: 26px; font-weight: 800; background: linear-gradient(to right, #fbbf24, #f59e0b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
         .raffle-card__price span { display: block; font-size: 12px; font-weight: 500; color: #94a3b8; -webkit-text-fill-color: initial; }
         .raffle-card__date { font-size: 14px; color: #cbd5e1; text-align: right; }
         .progress-bar { width: 100%; height: 6px; background: rgba(255,255,255,0.1); border-radius: 9999px; overflow: hidden; margin-bottom: 8px; }
-        .progress-bar__fill { height: 100%; background: linear-gradient(90deg, #3b82f6, #10b981); border-radius: 9999px; transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
+        .progress-bar__fill { height: 100%; background: linear-gradient(90deg, #f59e0b, #fbbf24); border-radius: 9999px; transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
         .btn { display: inline-flex; align-items: center; justify-content: center; padding: 12px 24px; font-size: 16px; font-weight: 600; border-radius: 12px; cursor: pointer; border: none; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-        .btn--primary { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white; box-shadow: 0 4px 15px rgba(37,99,235,0.4); }
-        .btn--primary:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(37,99,235,0.6); }
+        .btn--primary { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #1c1305; box-shadow: 0 4px 15px rgba(217,119,6,0.35); }
+        .btn--primary:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(217,119,6,0.5); }
     .notification { 
         position: fixed; 
         top: 50%; 
@@ -95,10 +113,10 @@ $page_description = "La plataforma más confiable para crear y participar en rif
         .notification--warning { border: 2px solid #f59e0b; background: rgba(245, 158, 11, 0.95); color: #111827; }
         .no-results { text-align: center; padding: 60px; color: #94a3b8; font-size: 18px; }
         input[type="text"] { background: rgba(30,41,59,0.8); border: 1px solid rgba(255,255,255,0.1); color: white; transition: all 0.3s; }
-        input[type="text"]:focus { border-color: #3b82f6; box-shadow: 0 0 0 4px rgba(59,130,246,0.2); }
+        input[type="text"]:focus { border-color: #f59e0b; box-shadow: 0 0 0 4px rgba(245,158,11,0.2); }
         .tab { background: rgba(30,41,59,0.6); color: #cbd5e1; border: 1px solid rgba(255,255,255,0.05); transition: all 0.3s; }
         .tab:hover { background: rgba(51,65,85,0.8); color: white; }
-        .tab.active { background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; border-color: transparent; box-shadow: 0 4px 15px rgba(37,99,235,0.4); }
+        .tab.active { background: linear-gradient(135deg, #f59e0b, #d97706); color: #1c1305; border-color: transparent; box-shadow: 0 4px 15px rgba(217,119,6,0.4); }
 
         /* ===== HERO SLIDER ===== */
         .hero-slider { position: relative; width: 100%; height: 600px; overflow: hidden; }
@@ -150,7 +168,7 @@ $page_description = "La plataforma más confiable para crear y participar en rif
         }
         .hero-slide__title em {
             font-style: normal;
-            background: linear-gradient(90deg, #60a5fa, #34d399);
+            background: linear-gradient(90deg, #fbbf24, #f59e0b);
             -webkit-background-clip: text; -webkit-text-fill-color: transparent;
         }
         .hero-slide__desc {
@@ -165,12 +183,12 @@ $page_description = "La plataforma más confiable para crear y participar en rif
             transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
         }
         .hero-slide__btn--primary {
-            background: linear-gradient(135deg, #2563eb, #3b82f6);
-            color: white; box-shadow: 0 8px 30px rgba(37,99,235,0.5);
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: #1c1305; box-shadow: 0 8px 30px rgba(217,119,6,0.45);
         }
         .hero-slide__btn--primary:hover {
             transform: translateY(-3px) scale(1.02);
-            box-shadow: 0 14px 40px rgba(37,99,235,0.65);
+            box-shadow: 0 14px 40px rgba(217,119,6,0.6);
         }
         .hero-slide__btn--ghost {
             background: rgba(255,255,255,0.1); color: white;
@@ -214,9 +232,9 @@ $page_description = "La plataforma más confiable para crear y participar en rif
         /* Progress bar */
         .hero-slider__progress {
             position: absolute; bottom: 0; left: 0; height: 3px; z-index: 20;
-            background: linear-gradient(90deg, #3b82f6, #10b981);
+            background: linear-gradient(90deg, #f59e0b, #fbbf24);
             transition: width 0.1s linear;
-            box-shadow: 0 0 8px rgba(59,130,246,0.7);
+            box-shadow: 0 0 8px rgba(245,158,11,0.7);
         }
 
         /* Thumbnails strip */
@@ -235,12 +253,12 @@ $page_description = "La plataforma más confiable para crear y participar en rif
         .premium-filter {
             background: rgba(15, 23, 42, 0.9);
             backdrop-filter: blur(24px);
-            border: 1px solid rgba(59, 130, 246, 0.2);
+            border: 1px solid rgba(245, 158, 11, 0.2);
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
         }
-        .premium-filter label { color: #60a5fa !important; font-weight: 800; }
-        .premium-filter select, .premium-filter input { background: rgba(30, 41, 59, 0.5) !important; border-color: rgba(59, 130, 246, 0.1) !important; color: #fff !important; }
-        .premium-filter select:focus, .premium-filter input:focus { border-color: #3b82f6 !important; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important; }
+        .premium-filter label { color: #fbbf24 !important; font-weight: 800; }
+        .premium-filter select, .premium-filter input { background: rgba(30, 41, 59, 0.5) !important; border-color: rgba(245, 158, 11, 0.15) !important; color: #fff !important; }
+        .premium-filter select:focus, .premium-filter input:focus { border-color: #f59e0b !important; box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15) !important; }
         @media (max-width: 767px) {
             #nav-menu {
                 position: fixed;
@@ -271,11 +289,14 @@ $page_description = "La plataforma más confiable para crear y participar en rif
 <body class="bg-[#0f172a] text-slate-200">
     <header class="glass-nav sticky top-0 z-50 transition-all duration-300">
         <nav class="container mx-auto px-4 h-20 flex items-center justify-between">
-            <a href="<?= BASE_PATH ?>/public/index.php" class="flex items-center gap-3 text-2xl font-black bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-emerald-400">
-                <span class="text-3xl drop-shadow-lg">🎟️</span>
+            <a href="<?= BASE_PATH ?>/public/index.php" class="flex items-center gap-2.5 text-2xl font-black bg-clip-text text-transparent bg-gradient-to-r from-amber-300 to-amber-500">
+                <svg class="w-7 h-7 text-amber-400 drop-shadow-lg" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 8.5V6a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v2.5a1.5 1.5 0 0 0 0 3V14a1.5 1.5 0 0 0 0 3v2.5a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V17a1.5 1.5 0 0 0 0-3v-2.5a1.5 1.5 0 0 0 0-3Z"/>
+                    <path stroke-linecap="round" d="M15 5v14" stroke-dasharray="2 3"/>
+                </svg>
                 MisRifas
             </a>
-            
+
             <button id="mobile-menu-btn" class="md:hidden text-white p-2 focus:outline-none" aria-label="Menu">
                 <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path>
@@ -284,24 +305,30 @@ $page_description = "La plataforma más confiable para crear y participar en rif
 
             <div class="hidden md:flex items-center gap-6" id="nav-menu">
                 <a href="<?= BASE_PATH ?>/public/index.php" class="text-slate-300 hover:text-white font-medium transition-colors">Inicio</a>
-                <a href="<?= BASE_PATH ?>/tapazo/index.php" class="text-slate-300 hover:text-white font-medium transition-colors">🍺 El Tapazo</a>
+                <a href="<?= BASE_PATH ?>/tapazo/index.php" class="flex items-center gap-1.5 text-slate-300 hover:text-white font-medium transition-colors">
+                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 3h11l-1 15a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 3Zm11 4h2.5a2 2 0 0 1 2 2.2l-.4 4A2 2 0 0 1 18.1 15H16"/></svg>
+                    El Tapazo
+                </a>
                 <a href="<?= BASE_PATH ?>/public/mis-boletos.php" class="text-slate-300 hover:text-white font-medium transition-colors">Consultar Boletas</a>
-                <a href="<?= BASE_PATH ?>/public/ganadores.php" class="text-slate-300 hover:text-white font-medium transition-colors">🏆 Ganadores</a>
-                <a href="<?= BASE_PATH ?>/public/que-es.php" class="text-slate-300 hover:text-white font-medium transition-colors">✨ ¿Qué es MisRifas?</a>
+                <a href="<?= BASE_PATH ?>/public/ganadores.php" class="flex items-center gap-1.5 text-slate-300 hover:text-white font-medium transition-colors">
+                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 21h8M12 17v4M7 4h10v4a5 5 0 0 1-10 0V4Zm0 1H4.5a1.5 1.5 0 0 0 0 3H7M17 5h2.5a1.5 1.5 0 0 1 0 3H17"/></svg>
+                    Ganadores
+                </a>
+                <a href="<?= BASE_PATH ?>/public/que-es.php" class="text-slate-300 hover:text-white font-medium transition-colors">¿Qué es MisRifas?</a>
 
 
                 <div id="auth-buttons" class="flex items-center gap-4">
                     <a href="<?= BASE_PATH ?>/public/admin/index.php?auth=login" class="px-5 py-2.5 bg-white/5 border border-white/10 text-white rounded-xl hover:bg-white/10 transition-all font-medium backdrop-blur-sm shadow-lg shadow-black/20">Iniciar Sesión</a>
-                    <a href="<?= BASE_PATH ?>/public/register.php" class="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-emerald-600 text-white rounded-xl hover:from-blue-500 hover:to-emerald-500 transition-all font-bold shadow-lg shadow-blue-500/30">Crear Cuenta</a>
+                    <a href="<?= BASE_PATH ?>/public/register.php" class="px-5 py-2.5 bg-gradient-to-r from-amber-400 to-amber-600 text-slate-950 rounded-xl hover:from-amber-300 hover:to-amber-500 transition-all font-bold shadow-lg shadow-amber-500/30">Crear Cuenta</a>
                 </div>
 
                 <div id="user-menu" class="hidden flex items-center gap-4">
                     <a href="<?= BASE_PATH ?>/public/perfil.php" class="flex items-center gap-2 group">
-                        <div class="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-lg font-bold group-hover:scale-110 transition-transform" id="user-avatar">U</div>
+                        <div class="w-10 h-10 rounded-full bg-amber-500 text-slate-950 flex items-center justify-center text-lg font-bold group-hover:scale-110 transition-transform" id="user-avatar">U</div>
                         <span class="text-slate-200 font-bold group-hover:text-white" id="user-name">Usuario</span>
                     </a>
                     <button onclick="logout()" class="p-2.5 bg-white/5 border border-white/10 text-slate-400 rounded-xl hover:text-red-400 hover:bg-red-500/10 transition-all" title="Cerrar Sesión">
-                        🚪
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 21H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3M16 17l5-5-5-5M21 12H9"/></svg>
                     </button>
                 </div>
             </div>
@@ -314,61 +341,65 @@ $page_description = "La plataforma más confiable para crear y participar en rif
         <div class="hero-slider__track" id="sliderTrack">
 
             <!-- Slide 1 -->
+            <!-- TODO: reemplazar por foto real de un premio entregado -->
             <div class="hero-slide is-active">
-                <div class="hero-slide__bg" style="background-image:url('https://images.unsplash.com/photo-1592921870789-04563d55041c?w=1600&q=80');"></div>
+                <div class="hero-slide__bg" style="background-image:url('https://picsum.photos/seed/misrifas-premio-mayor/1600/900');"></div>
                 <div class="hero-slide__overlay"></div>
                 <div class="hero-slide__content">
-                    <span class="hero-slide__tag">&#127903;&#65039; Rifa Destacada del Mes</span>
-                    <h1 class="hero-slide__title">Gana tu <em>Gran Premio</em><br>esta semana</h1>
-                    <p class="hero-slide__desc">Participa en las rifas m&aacute;s grandes de Colombia. Boletos desde $5.000 COP. Sorteos verificados con loter&iacute;a oficial.</p>
+                    <span class="hero-slide__tag">Rifa destacada del mes</span>
+                    <h1 class="hero-slide__title">Gana tu <em>gran premio</em> esta semana</h1>
+                    <p class="hero-slide__desc">Boletos desde $5.000 COP. Sorteos verificados con lotería oficial.</p>
                     <div class="hero-slide__actions">
-                        <a href="#rifas" class="hero-slide__btn hero-slide__btn--primary">&#127919; Ver Rifas Activas</a>
-                        <a href="<?= BASE_PATH ?>/public/register.php" class="hero-slide__btn hero-slide__btn--ghost">&#128640; Crear mi Rifa</a>
+                        <a href="#rifas" class="hero-slide__btn hero-slide__btn--primary">Ver rifas activas</a>
+                        <a href="<?= BASE_PATH ?>/public/register.php" class="hero-slide__btn hero-slide__btn--ghost">Crear mi rifa</a>
                     </div>
                 </div>
             </div>
 
             <!-- Slide 2 -->
+            <!-- TODO: reemplazar por foto real del flujo de pago/entrega -->
             <div class="hero-slide">
-                <div class="hero-slide__bg" style="background-image:url('https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=1600&q=80');"></div>
-                <div class="hero-slide__overlay" style="background:linear-gradient(135deg,rgba(5,46,22,0.8) 0%,rgba(0,0,0,0.2) 60%,rgba(0,0,0,0.5) 100%);"></div>
+                <div class="hero-slide__bg" style="background-image:url('https://picsum.photos/seed/misrifas-pago-nequi/1600/900');"></div>
+                <div class="hero-slide__overlay"></div>
                 <div class="hero-slide__content">
-                    <span class="hero-slide__tag">&#128176; Pagos Instant&aacute;neos</span>
-                    <h1 class="hero-slide__title">Paga con <em>Nequi</em><br>y gana al instante</h1>
-                    <p class="hero-slide__desc">Integraci&oacute;n directa con Wompi. Tu pago se confirma en segundos y tu boleto queda asegurado sin llamadas ni esperas.</p>
+                    <span class="hero-slide__tag">Pagos instantáneos</span>
+                    <h1 class="hero-slide__title">Paga con <em>Nequi</em> y gana al instante</h1>
+                    <p class="hero-slide__desc">Con Wompi tu pago se confirma en segundos y tu boleto queda asegurado.</p>
                     <div class="hero-slide__actions">
-                        <a href="#rifas" class="hero-slide__btn hero-slide__btn--primary" style="background:linear-gradient(135deg,#059669,#10b981);box-shadow:0 8px 30px rgba(16,185,129,0.5);">Ver Rifas &rarr;</a>
-                        <a href="<?= BASE_PATH ?>/public/mis-boletos.php" class="hero-slide__btn hero-slide__btn--ghost">Consultar Boletas</a>
+                        <a href="#rifas" class="hero-slide__btn hero-slide__btn--primary">Ver rifas</a>
+                        <a href="<?= BASE_PATH ?>/public/mis-boletos.php" class="hero-slide__btn hero-slide__btn--ghost">Consultar boletas</a>
                     </div>
                 </div>
             </div>
 
             <!-- Slide 3 -->
+            <!-- TODO: reemplazar por foto real de un carro/premio grande rifado -->
             <div class="hero-slide">
-                <div class="hero-slide__bg" style="background-image:url('https://images.unsplash.com/photo-1547036967-23d11aacaee0?w=1600&q=80');"></div>
-                <div class="hero-slide__overlay" style="background:linear-gradient(135deg,rgba(67,20,120,0.85) 0%,rgba(0,0,0,0.15) 60%,rgba(0,0,0,0.4) 100%);"></div>
+                <div class="hero-slide__bg" style="background-image:url('https://picsum.photos/seed/misrifas-carro-0km/1600/900');"></div>
+                <div class="hero-slide__overlay"></div>
                 <div class="hero-slide__content">
-                    <span class="hero-slide__tag">&#128663; Rifa de Carros</span>
-                    <h1 class="hero-slide__title">&iquest;Y si hoy<br>ganas un <em>Carro 0km</em>?</h1>
-                    <p class="hero-slide__desc">Rifas de carros, motos, electrodom&eacute;sticos y m&aacute;s. Transparencia total: sorteos vinculados a la Loter&iacute;a Nacional.</p>
+                    <span class="hero-slide__tag">Rifa de carros</span>
+                    <h1 class="hero-slide__title">¿Y si hoy ganas un <em>carro 0km</em>?</h1>
+                    <p class="hero-slide__desc">Carros, motos y electrodomésticos con sorteo vinculado a la Lotería Nacional.</p>
                     <div class="hero-slide__actions">
-                        <a href="#rifas" class="hero-slide__btn hero-slide__btn--primary" style="background:linear-gradient(135deg,#7c3aed,#a855f7);box-shadow:0 8px 30px rgba(124,58,237,0.5);">Explorar Rifas</a>
-                        <a href="<?= BASE_PATH ?>/public/register.php" class="hero-slide__btn hero-slide__btn--ghost">Vendo mis Rifas</a>
+                        <a href="#rifas" class="hero-slide__btn hero-slide__btn--primary">Explorar rifas</a>
+                        <a href="<?= BASE_PATH ?>/public/register.php" class="hero-slide__btn hero-slide__btn--ghost">Vendo mis rifas</a>
                     </div>
                 </div>
             </div>
 
             <!-- Slide 4 -->
+            <!-- TODO: reemplazar por foto real de un equipo de tecnologia rifado -->
             <div class="hero-slide">
-                <div class="hero-slide__bg" style="background-image:url('https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=1600&q=80');"></div>
-                <div class="hero-slide__overlay" style="background:linear-gradient(135deg,rgba(7,89,133,0.85) 0%,rgba(0,0,0,0.15) 60%,rgba(0,0,0,0.4) 100%);"></div>
+                <div class="hero-slide__bg" style="background-image:url('https://picsum.photos/seed/misrifas-tecnologia/1600/900');"></div>
+                <div class="hero-slide__overlay"></div>
                 <div class="hero-slide__content">
-                    <span class="hero-slide__tag">&#128241; Tecnolog&iacute;a</span>
-                    <h1 class="hero-slide__title">iPhone, MacBook<br>y m&aacute;s <em>gadgets</em></h1>
-                    <p class="hero-slide__desc">Los mejores premios tecnol&oacute;gicos. Comp&aacute;rtelo en WhatsApp y tus amigos pueden ganar contigo.</p>
+                    <span class="hero-slide__tag">Tecnología</span>
+                    <h1 class="hero-slide__title">iPhone, MacBook y más <em>gadgets</em></h1>
+                    <p class="hero-slide__desc">Comparte tu rifa en WhatsApp y tus amigos pueden ganar contigo.</p>
                     <div class="hero-slide__actions">
-                        <a href="#rifas" class="hero-slide__btn hero-slide__btn--primary" style="background:linear-gradient(135deg,#0369a1,#0ea5e9);box-shadow:0 8px 30px rgba(14,165,233,0.5);">Ver Electr&oacute;nicos</a>
-                        <a href="<?= BASE_PATH ?>/public/admin/index.php?auth=login" class="hero-slide__btn hero-slide__btn--ghost">Iniciar Sesi&oacute;n</a>
+                        <a href="#rifas" class="hero-slide__btn hero-slide__btn--primary">Ver electrónicos</a>
+                        <a href="<?= BASE_PATH ?>/public/admin/index.php?auth=login" class="hero-slide__btn hero-slide__btn--ghost">Iniciar sesión</a>
                     </div>
                 </div>
             </div>
@@ -387,10 +418,10 @@ $page_description = "La plataforma más confiable para crear y participar en rif
 
         <!-- Miniaturas (desktop) -->
         <div class="hero-slider__thumbs" id="sliderThumbs">
-            <div class="hero-slider__thumb is-active" data-slide="0"><img src="https://images.unsplash.com/photo-1592921870789-04563d55041c?w=200&q=60" alt="Slide 1"></div>
-            <div class="hero-slider__thumb" data-slide="1"><img src="https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=200&q=60" alt="Slide 2"></div>
-            <div class="hero-slider__thumb" data-slide="2"><img src="https://images.unsplash.com/photo-1547036967-23d11aacaee0?w=200&q=60" alt="Slide 3"></div>
-            <div class="hero-slider__thumb" data-slide="3"><img src="https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=200&q=60" alt="Slide 4"></div>
+            <div class="hero-slider__thumb is-active" data-slide="0"><img src="https://picsum.photos/seed/misrifas-premio-mayor/200/200" alt="Slide 1"></div>
+            <div class="hero-slider__thumb" data-slide="1"><img src="https://picsum.photos/seed/misrifas-pago-nequi/200/200" alt="Slide 2"></div>
+            <div class="hero-slider__thumb" data-slide="2"><img src="https://picsum.photos/seed/misrifas-carro-0km/200/200" alt="Slide 3"></div>
+            <div class="hero-slider__thumb" data-slide="3"><img src="https://picsum.photos/seed/misrifas-tecnologia/200/200" alt="Slide 4"></div>
         </div>
 
     </section><!-- /hero-slider -->
@@ -487,41 +518,41 @@ $page_description = "La plataforma más confiable para crear y participar en rif
             <div class="premium-filter rounded-[40px] p-8 md:p-12">
                 <div class="flex flex-col lg:flex-row gap-6 mb-8">
                     <div class="flex-1 relative group">
-                        <input type="text" id="search-input" class="w-full pl-16 pr-8 py-5 bg-slate-950/40 border border-white/10 rounded-3xl text-xl outline-none focus:border-fuchsia-500/50 transition-all placeholder-slate-500 text-white shadow-inner" placeholder="¿Qué quieres ganar hoy? (ej: Carro, Moto, iPhone...)">
-                        <span class="absolute left-6 top-1/2 -translate-y-1/2 text-3xl group-focus-within:scale-110 transition-transform">🔍</span>
+                        <input type="text" id="search-input" class="w-full pl-16 pr-8 py-5 bg-slate-950/40 border border-white/10 rounded-3xl text-xl outline-none focus:border-amber-500/50 transition-all placeholder-slate-500 text-white shadow-inner" placeholder="¿Qué quieres ganar hoy? (ej: Carro, Moto, iPhone...)">
+                        <svg class="absolute left-6 top-1/2 -translate-y-1/2 w-6 h-6 text-slate-400 group-focus-within:text-amber-400 group-focus-within:scale-110 transition-all" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path stroke-linecap="round" d="m20 20-3.5-3.5"/></svg>
                     </div>
                 </div>
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     <div class="space-y-2">
-                        <label class="text-[11px] font-black text-blue-400 uppercase tracking-[0.2em] ml-2">Departamento</label>
+                        <label class="text-[11px] font-black text-amber-400 uppercase tracking-[0.2em] ml-2">Departamento</label>
                         <div class="relative">
-                            <select id="filter-dept" class="w-full bg-slate-950/60 border border-white/10 rounded-2xl px-5 py-4 text-slate-200 outline-none focus:border-blue-500/50 transition-all appearance-none cursor-pointer pr-10">
+                            <select id="filter-dept" class="w-full bg-slate-950/60 border border-white/10 rounded-2xl px-5 py-4 text-slate-200 outline-none focus:border-amber-500/50 transition-all appearance-none cursor-pointer pr-10">
                                 <option value="">Selecciona Depto</option>
                             </select>
-                            <span class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-blue-400 text-xs">▼</span>
+                            <span class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-amber-400 text-xs">▼</span>
                         </div>
                     </div>
                     <div class="space-y-2">
-                        <label class="text-[11px] font-black text-blue-400 uppercase tracking-[0.2em] ml-2">Municipio / Ciudad</label>
+                        <label class="text-[11px] font-black text-amber-400 uppercase tracking-[0.2em] ml-2">Municipio / Ciudad</label>
                         <div class="relative">
-                            <select id="filter-city" class="w-full bg-slate-950/60 border border-white/10 rounded-2xl px-5 py-4 text-slate-200 outline-none focus:border-blue-500/50 transition-all appearance-none cursor-pointer pr-10">
+                            <select id="filter-city" class="w-full bg-slate-950/60 border border-white/10 rounded-2xl px-5 py-4 text-slate-200 outline-none focus:border-amber-500/50 transition-all appearance-none cursor-pointer pr-10">
                                 <option value="">Selecciona Ciudad</option>
                             </select>
-                            <span class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-blue-400 text-xs">▼</span>
+                            <span class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-amber-400 text-xs">▼</span>
                         </div>
                     </div>
                     <div class="space-y-2">
-                        <label class="text-[11px] font-black text-fuchsia-400 uppercase tracking-[0.2em] ml-2">Precio Mín y Máx</label>
+                        <label class="text-[11px] font-black text-amber-400 uppercase tracking-[0.2em] ml-2">Precio Mín y Máx</label>
                         <div class="grid grid-cols-2 gap-2">
-                            <select id="filter-min-price" class="w-full bg-slate-950/60 border border-white/10 rounded-2xl px-3 py-4 text-slate-200 text-xs outline-none focus:border-fuchsia-500/50 transition-all appearance-none cursor-pointer">
+                            <select id="filter-min-price" class="w-full bg-slate-950/60 border border-white/10 rounded-2xl px-3 py-4 text-slate-200 text-xs outline-none focus:border-amber-500/50 transition-all appearance-none cursor-pointer">
                                 <option value="">Min</option>
                                 <option value="1000">$1.000</option>
                                 <option value="5000">$5.000</option>
                                 <option value="10000">$10.000</option>
                                 <option value="50000">$50.000</option>
                             </select>
-                            <select id="filter-max-price" class="w-full bg-slate-950/60 border border-white/10 rounded-2xl px-3 py-4 text-slate-200 text-xs outline-none focus:border-fuchsia-500/50 transition-all appearance-none cursor-pointer">
+                            <select id="filter-max-price" class="w-full bg-slate-950/60 border border-white/10 rounded-2xl px-3 py-4 text-slate-200 text-xs outline-none focus:border-amber-500/50 transition-all appearance-none cursor-pointer">
                                 <option value="">Max</option>
                                 <option value="5000">$5.000</option>
                                 <option value="10000">$10.000</option>
@@ -533,21 +564,21 @@ $page_description = "La plataforma más confiable para crear y participar en rif
                         </div>
                     </div>
                     <div class="space-y-2">
-                        <label class="text-[11px] font-black text-blue-400 uppercase tracking-[0.2em] ml-2">Lotería</label>
+                        <label class="text-[11px] font-black text-amber-400 uppercase tracking-[0.2em] ml-2">Lotería</label>
                         <div class="relative">
-                            <select id="filter-lottery" class="w-full bg-slate-950/60 border border-white/10 rounded-2xl px-5 py-4 text-slate-200 outline-none focus:border-blue-500/50 transition-all appearance-none cursor-pointer pr-10">
+                            <select id="filter-lottery" class="w-full bg-slate-950/60 border border-white/10 rounded-2xl px-5 py-4 text-slate-200 outline-none focus:border-amber-500/50 transition-all appearance-none cursor-pointer pr-10">
                                 <option value="">Selecciona Lotería</option>
                             </select>
-                            <span class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-blue-400 text-xs">▼</span>
+                            <span class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-amber-400 text-xs">▼</span>
                         </div>
                     </div>
                     <div class="space-y-2 flex flex-col justify-end">
                         <div class="flex gap-2">
-                            <button onclick="handleFilter()" class="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white font-black uppercase tracking-widest text-[11px] h-[55px] rounded-2xl shadow-xl shadow-blue-500/20 transition-all hover:-translate-y-0.5 active:scale-95 flex items-center justify-center gap-2">
-                                <span>🔍</span> Buscar
+                            <button onclick="handleFilter()" class="flex-1 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black uppercase tracking-widest text-[11px] h-[55px] rounded-2xl shadow-xl shadow-amber-500/20 transition-all hover:-translate-y-0.5 active:scale-95 flex items-center justify-center gap-2">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path stroke-linecap="round" d="m20 20-3.5-3.5"/></svg> Buscar
                             </button>
                             <button onclick="clearFilters()" class="px-6 py-3 bg-gradient-to-r from-slate-600 to-slate-700 hover:from-slate-500 hover:to-slate-600 text-white font-bold uppercase tracking-widest text-[10px] rounded-2xl transition-all flex items-center justify-center gap-2 h-[55px]">
-                                <span>🔄</span> Limpiar
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h5M20 20v-5h-5M4.5 9a8 8 0 0 1 14.3-3.5M19.5 15a8 8 0 0 1-14.3 3.5"/></svg> Limpiar
                             </button>
                         </div>
                     </div>
@@ -559,10 +590,10 @@ $page_description = "La plataforma más confiable para crear y participar en rif
     <section class="py-8">
         <div class="container mx-auto px-4 max-w-7xl">
             <div class="flex flex-wrap gap-3 justify-center">
-                <button class="tab active px-6 py-2.5 rounded-xl font-semibold shadow-lg" data-tab="destacadas">🔥 Destacadas</button>
-                <button class="tab px-6 py-2.5 rounded-xl font-semibold shadow-lg" data-tab="populares">⭐ Top Ventas</button>
-                <button class="tab px-6 py-2.5 rounded-xl font-semibold shadow-lg" data-tab="proximas">⏰ Cierran Pronto</button>
-                <button class="tab px-6 py-2.5 rounded-xl font-semibold shadow-lg" data-tab="nuevas">✨ Recientes</button>
+                <button class="tab active px-6 py-2.5 rounded-xl font-semibold shadow-lg" data-tab="destacadas">Destacadas</button>
+                <button class="tab px-6 py-2.5 rounded-xl font-semibold shadow-lg" data-tab="populares">Top ventas</button>
+                <button class="tab px-6 py-2.5 rounded-xl font-semibold shadow-lg" data-tab="proximas">Cierran pronto</button>
+                <button class="tab px-6 py-2.5 rounded-xl font-semibold shadow-lg" data-tab="nuevas">Recientes</button>
             </div>
         </div>
     </section>
@@ -578,31 +609,31 @@ $page_description = "La plataforma más confiable para crear y participar en rif
     <section class="py-24 bg-slate-900 border-t border-slate-800">
         <div class="container mx-auto px-4">
             <div class="text-center mb-16">
-                <h2 class="text-4xl font-black mb-4"><span class="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-emerald-400">¿Cómo funciona?</span></h2>
+                <h2 class="text-4xl font-black mb-4"><span class="bg-clip-text text-transparent bg-gradient-to-r from-amber-300 to-amber-500">¿Cómo funciona?</span></h2>
                 <p class="text-slate-400 text-lg">Un proceso transparente, conectado a tu WhatsApp.</p>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 max-w-6xl mx-auto">
                 <div class="relative group">
-                    <div class="absolute -inset-0.5 bg-gradient-to-r from-blue-500 to-blue-600 rounded-3xl blur opacity-25 group-hover:opacity-100 transition duration-1000 group-hover:duration-200"></div>
+                    <div class="absolute -inset-0.5 bg-gradient-to-r from-amber-500 to-amber-600 rounded-3xl blur opacity-25 group-hover:opacity-100 transition duration-1000 group-hover:duration-200"></div>
                     <div class="relative bg-slate-800/80 backdrop-blur p-8 rounded-3xl border border-slate-700/50 text-center h-full">
-                        <div class="w-16 h-16 bg-blue-500/20 text-blue-400 rounded-2xl flex items-center justify-center text-3xl mb-6 mx-auto shadow-inner border border-blue-500/30">1</div>
-                        <h3 class="text-xl font-bold mb-3 text-f8fafc">Elige Rifa</h3>
+                        <div class="w-16 h-16 bg-amber-500/20 text-amber-400 rounded-2xl flex items-center justify-center text-3xl mb-6 mx-auto shadow-inner border border-amber-500/30">1</div>
+                        <h3 class="text-xl font-bold mb-3 text-white">Elige Rifa</h3>
                         <p class="text-slate-400 font-medium">Encuentra una rifa verificada de nuestra red nacional.</p>
                     </div>
                 </div>
                 <div class="relative group">
-                    <div class="absolute -inset-0.5 bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-3xl blur opacity-25 group-hover:opacity-100 transition duration-1000 group-hover:duration-200"></div>
+                    <div class="absolute -inset-0.5 bg-gradient-to-r from-amber-500 to-amber-600 rounded-3xl blur opacity-25 group-hover:opacity-100 transition duration-1000 group-hover:duration-200"></div>
                     <div class="relative bg-slate-800/80 backdrop-blur p-8 rounded-3xl border border-slate-700/50 text-center h-full">
-                        <div class="w-16 h-16 bg-emerald-500/20 text-emerald-400 rounded-2xl flex items-center justify-center text-3xl mb-6 mx-auto shadow-inner border border-emerald-500/30">2</div>
-                        <h3 class="text-xl font-bold mb-3 text-f8fafc">Toma un Cupo</h3>
+                        <div class="w-16 h-16 bg-amber-500/20 text-amber-400 rounded-2xl flex items-center justify-center text-3xl mb-6 mx-auto shadow-inner border border-amber-500/30">2</div>
+                        <h3 class="text-xl font-bold mb-3 text-white">Toma un Cupo</h3>
                         <p class="text-slate-400 font-medium">Los tickets bloquean dobles compras gracias a nuestra concurrencia estricta.</p>
                     </div>
                 </div>
                 <div class="relative group">
-                    <div class="absolute -inset-0.5 bg-gradient-to-r from-purple-500 to-purple-600 rounded-3xl blur opacity-25 group-hover:opacity-100 transition duration-1000 group-hover:duration-200"></div>
+                    <div class="absolute -inset-0.5 bg-gradient-to-r from-amber-500 to-amber-600 rounded-3xl blur opacity-25 group-hover:opacity-100 transition duration-1000 group-hover:duration-200"></div>
                     <div class="relative bg-slate-800/80 backdrop-blur p-8 rounded-3xl border border-slate-700/50 text-center h-full">
-                        <div class="w-16 h-16 bg-purple-500/20 text-purple-400 rounded-2xl flex items-center justify-center text-3xl mb-6 mx-auto shadow-inner border border-purple-500/30">3</div>
-                        <h3 class="text-xl font-bold mb-3 text-f8fafc">Pago Seguro</h3>
+                        <div class="w-16 h-16 bg-amber-500/20 text-amber-400 rounded-2xl flex items-center justify-center text-3xl mb-6 mx-auto shadow-inner border border-amber-500/30">3</div>
+                        <h3 class="text-xl font-bold mb-3 text-white">Pago Seguro</h3>
                         <p class="text-slate-400 font-medium">Botonería de Wompi detecta pagos en segundos.</p>
                     </div>
                 </div>
@@ -610,7 +641,7 @@ $page_description = "La plataforma más confiable para crear y participar en rif
                     <div class="absolute -inset-0.5 bg-gradient-to-r from-amber-500 to-amber-600 rounded-3xl blur opacity-25 group-hover:opacity-100 transition duration-1000 group-hover:duration-200"></div>
                     <div class="relative bg-slate-800/80 backdrop-blur p-8 rounded-3xl border border-slate-700/50 text-center h-full">
                         <div class="w-16 h-16 bg-amber-500/20 text-amber-400 rounded-2xl flex items-center justify-center text-3xl mb-6 mx-auto shadow-inner border border-amber-500/30">4</div>
-                        <h3 class="text-xl font-bold mb-3 text-f8fafc">Lotería en Vivo</h3>
+                        <h3 class="text-xl font-bold mb-3 text-white">Lotería en Vivo</h3>
                         <p class="text-slate-400 font-medium">Te notificamos vía API directa si tu cartón ganò con la lotería.</p>
                     </div>
                 </div>
@@ -618,9 +649,47 @@ $page_description = "La plataforma más confiable para crear y participar en rif
         </div>
     </section>
 
-    <footer class="bg-gray-900 text-white py-12">
-        <div class="container mx-auto px-4 text-center">
-            <p>&copy; 2026 MisRifas Colombia. Todos los derechos reservados.</p>
+    <footer class="bg-slate-950 border-t border-white/5 text-white pt-16 pb-8">
+        <div class="container mx-auto px-4">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-10 pb-12">
+                <div>
+                    <div class="flex items-center gap-2.5 text-xl font-black bg-clip-text text-transparent bg-gradient-to-r from-amber-300 to-amber-500 mb-3">
+                        <svg class="w-6 h-6 text-amber-400" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 8.5V6a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v2.5a1.5 1.5 0 0 0 0 3V14a1.5 1.5 0 0 0 0 3v2.5a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V17a1.5 1.5 0 0 0 0-3v-2.5a1.5 1.5 0 0 0 0-3Z"/>
+                        </svg>
+                        MisRifas
+                    </div>
+                    <p class="text-sm text-slate-400 leading-relaxed">Rifas digitales verificadas con lotería oficial colombiana.</p>
+                </div>
+                <div>
+                    <h4 class="text-xs font-black uppercase tracking-widest text-slate-500 mb-4">Explorar</h4>
+                    <ul class="space-y-2.5 text-sm">
+                        <li><a href="<?= BASE_PATH ?>/public/index.php" class="text-slate-400 hover:text-amber-400 transition-colors">Inicio</a></li>
+                        <li><a href="<?= BASE_PATH ?>/public/mis-boletos.php" class="text-slate-400 hover:text-amber-400 transition-colors">Consultar boletas</a></li>
+                        <li><a href="<?= BASE_PATH ?>/public/ganadores.php" class="text-slate-400 hover:text-amber-400 transition-colors">Ganadores</a></li>
+                        <li><a href="<?= BASE_PATH ?>/public/que-es.php" class="text-slate-400 hover:text-amber-400 transition-colors">¿Qué es MisRifas?</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="text-xs font-black uppercase tracking-widest text-slate-500 mb-4">Cuenta</h4>
+                    <ul class="space-y-2.5 text-sm">
+                        <li><a href="<?= BASE_PATH ?>/public/register.php" class="text-slate-400 hover:text-amber-400 transition-colors">Crear cuenta</a></li>
+                        <li><a href="<?= BASE_PATH ?>/public/admin/index.php?auth=login" class="text-slate-400 hover:text-amber-400 transition-colors">Iniciar sesión</a></li>
+                        <li><a href="<?= BASE_PATH ?>/public/register.php" class="text-slate-400 hover:text-amber-400 transition-colors">Vender mis rifas</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="text-xs font-black uppercase tracking-widest text-slate-500 mb-4">Pagos aceptados</h4>
+                    <div class="flex flex-wrap gap-2">
+                        <span class="px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-xs font-bold text-slate-300">Nequi</span>
+                        <span class="px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-xs font-bold text-slate-300">Wompi</span>
+                        <span class="px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-xs font-bold text-slate-300">Bancolombia</span>
+                    </div>
+                </div>
+            </div>
+            <div class="pt-8 border-t border-white/5 text-center">
+                <p class="text-sm text-slate-500">&copy; 2026 MisRifas Colombia. Todos los derechos reservados.</p>
+            </div>
         </div>
     </footer>
 
@@ -707,7 +776,7 @@ $page_description = "La plataforma más confiable para crear y participar en rif
                     if (raffles.length === 0) {
                         container.innerHTML = `
                             <div class="col-span-full py-20 text-center">
-                                <div class="text-6xl mb-6">🏜️</div>
+                                <svg class="w-16 h-16 mx-auto mb-6 text-slate-600" fill="none" stroke="currentColor" stroke-width="1.25" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path stroke-linecap="round" d="m20 20-4.35-4.35"/></svg>
                                 <h3 class="text-2xl font-black text-white mb-2">No encontramos resultados</h3>
                                 <p class="text-slate-400">Intenta ajustar los filtros de búsqueda.</p>
                             </div>
@@ -723,8 +792,11 @@ $page_description = "La plataforma más confiable para crear y participar en rif
                                 <div class="absolute bottom-0 left-0 right-0 h-1/2 bg-gradient-to-t from-slate-900 to-transparent"></div>
                             </div>
                             <div class="raffle-card__content">
-                                <h3 class="raffle-card__title group-hover:text-blue-400 transition-colors">${r.name}</h3>
-                                <p class="raffle-card__city">📍 ${r.city}${r.department ? ', ' + r.department : ''}</p>
+                                <h3 class="raffle-card__title group-hover:text-amber-400 transition-colors">${r.name}</h3>
+                                <p class="raffle-card__city flex items-center gap-1.5">
+                                    <svg class="w-3.5 h-3.5 shrink-0 text-slate-500" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21s7-6.5 7-11.5a7 7 0 1 0-14 0C5 14.5 12 21 12 21Z"/><circle cx="12" cy="9.5" r="2.25"/></svg>
+                                    ${r.city}${r.department ? ', ' + r.department : ''}
+                                </p>
                                 <div class="raffle-card__info">
                                     <div class="raffle-card__price">${Utils.formatPrice(r.ticket_price)}<span>por boleto</span></div>
                                     <div class="raffle-card__date">${Utils.formatDate(r.draw_date)}</div>
@@ -732,12 +804,13 @@ $page_description = "La plataforma más confiable para crear y participar en rif
                                 <div class="progress-bar group-hover:h-2 transition-all"><div class="progress-bar__fill" style="width: ${r.sold_percentage}%"></div></div>
                                 <div class="flex justify-between items-center mt-2">
                                     <span class="text-[10px] font-black text-slate-500 uppercase tracking-widest">${r.sold_tickets} / ${r.total_tickets} Vendidos</span>
-                                    <span class="text-[10px] font-black text-blue-500 uppercase tracking-widest">${Math.max(0, Math.floor((new Date(r.draw_date) - new Date()) / (1000 * 60 * 60 * 24)))} Días restantes</span>
+                                    <span class="text-[10px] font-black text-amber-500 uppercase tracking-widest">${Math.max(0, Math.floor((new Date(r.draw_date) - new Date()) / (1000 * 60 * 60 * 24)))} Días restantes</span>
                                 </div>
-                                <button class="btn btn--primary w-full mt-6 shadow-blue-500/20 group-hover:shadow-blue-500/40 group-hover:-translate-y-0.5 transition-all" onclick="window.location.href='${BASE_PATH}/public/raffle.php?id=${r.id}'">Participar Ahora &rarr;</button>
+                                <button class="btn btn--primary w-full mt-6 shadow-amber-500/20 group-hover:shadow-amber-500/40 group-hover:-translate-y-0.5 transition-all" onclick="window.location.href='${BASE_PATH}/public/raffle.php?id=${r.id}'">Participar Ahora &rarr;</button>
                             </div>
                         </div>
                     `).join('');
+                    revealRaffleCards();
                 }
             } catch (e) {
                 console.error('Error:', e);
@@ -745,6 +818,27 @@ $page_description = "La plataforma más confiable para crear y participar en rif
             }
         }
     };
+
+    // Revela cada tarjeta de rifa (opacity) cuando entra al viewport - la
+    // motivacion es dar jerarquia al scroll del catalogo, no decoracion:
+    // sin esto todo el grid aparece de golpe. No usa scroll listeners
+    // (banned - ver skill de diseno), IntersectionObserver nativo en su lugar.
+    function revealRaffleCards() {
+        const cards = document.querySelectorAll('#raffles-container .raffle-card:not(.animate-pulse)');
+        if (!('IntersectionObserver' in window)) {
+            cards.forEach(c => c.classList.add('is-visible'));
+            return;
+        }
+        const io = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('is-visible');
+                    io.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.15 });
+        cards.forEach(c => io.observe(c));
+    }
 
     function getActiveFilters() {
         return {
