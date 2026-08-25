@@ -23,10 +23,17 @@ require_once __DIR__ . '/../../api/utils/Logger.php';
 require_once __DIR__ . '/../../api/repositories/TicketRepository.php';
 require_once __DIR__ . '/../../api/repositories/RaffleRepository.php';
 require_once __DIR__ . '/../../api/repositories/UserRepository.php';
+require_once __DIR__ . '/../../api/utils/RateLimiter.php';
 
 // Solo POST
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     Response::error('Método no permitido', null, 405);
+}
+
+// Limitar reservas por IP - sin esto un solo cliente puede bloquear todos
+// los numeros disponibles de una rifa (denegacion de inventario)
+if (!RateLimiter::check('reserve_' . ($_SERVER['REMOTE_ADDR'] ?? 'unknown'), 20, 1)) {
+    Response::rateLimitExceeded('Demasiadas reservas seguidas. Espera un momento.');
 }
 
 try {

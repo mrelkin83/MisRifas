@@ -16,9 +16,15 @@ require_once __DIR__ . '/../../config/constants.php';
 require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../api/utils/Response.php';
 require_once __DIR__ . '/../../api/utils/Logger.php';
+require_once __DIR__ . '/../../api/utils/RateLimiter.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     Response::error('Metodo no permitido', null, 405);
+}
+
+// Limitar intentos de login por IP para frenar fuerza bruta/credential stuffing
+if (!RateLimiter::check('login_' . ($_SERVER['REMOTE_ADDR'] ?? 'unknown'), 10, 5)) {
+    Response::rateLimitExceeded('Demasiados intentos de inicio de sesion. Intenta de nuevo en unos minutos.');
 }
 
 try {

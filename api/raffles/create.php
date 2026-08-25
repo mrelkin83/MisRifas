@@ -96,10 +96,19 @@ try {
         Response::error('Para rifas de 2 cifras solo se permite 1 oportunidad');
     }
 
+    // image_url solo puede ser una ruta local relativa (subida via
+    // /api/upload/image.php). Una URL externa aqui permite SSRF: el
+    // generador de OG (api/og/generate.php) hace file_get_contents()
+    // sobre este valor sin mas validacion.
+    $imageUrl = trim($input['image_url'] ?? '/assets/images/placeholder.jpg');
+    if ($imageUrl !== '' && (strpos($imageUrl, '//') !== false || strpos($imageUrl, '..') !== false || strpos($imageUrl, ':') !== false || $imageUrl[0] !== '/')) {
+        Response::error('image_url invalida: solo se permiten rutas locales', null, 400);
+    }
+
     $raffleData = [
         'name'               => Validator::sanitize($input['name']),
         'description'        => Validator::sanitize($input['description']),
-        'image_url'          => $input['image_url'] ?? '/assets/images/placeholder.jpg',
+        'image_url'          => $imageUrl,
         'department'         => Validator::sanitize($input['department']),
         'city'               => Validator::sanitize($input['city']),
         'scope'              => $input['scope'],
@@ -125,9 +134,15 @@ try {
 
     $raffleId = $raffleRepo->createRaffle($raffleData);
 
-    // Guardar imágenes adicionales si existen
+    // Guardar imágenes adicionales si existen (misma validacion anti-SSRF)
     if (!empty($input['image_urls']) && is_array($input['image_urls'])) {
-        $raffleRepo->addRaffleImages($raffleId, $input['image_urls']);
+        $safeUrls = array_values(array_filter($input['image_urls'], function ($u) {
+            $u = trim((string)$u);
+            return $u !== '' && strpos($u, '//') === false && strpos($u, '..') === false && strpos($u, ':') === false && $u[0] === '/';
+        }));
+        if ($safeUrls) {
+            $raffleRepo->addRaffleImages($raffleId, $safeUrls);
+        }
     }
 
     $generated = $ticketRepo->generateTickets(

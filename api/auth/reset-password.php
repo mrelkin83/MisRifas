@@ -11,9 +11,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../api/utils/Response.php';
 require_once __DIR__ . '/../../api/utils/Logger.php';
+require_once __DIR__ . '/../../api/utils/RateLimiter.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     Response::error('Metodo no permitido', null, 405);
+}
+
+if (!RateLimiter::check('reset_pw_' . ($_SERVER['REMOTE_ADDR'] ?? 'unknown'), 10, 10)) {
+    Response::rateLimitExceeded('Demasiados intentos. Intenta de nuevo mas tarde.');
 }
 
 try {
@@ -45,11 +50,17 @@ try {
 
     $db->beginTransaction();
 
-    $stmt = $db->prepare("UPDATE admin_users SET password_hash = ?, auth_token = NULL WHERE email = ?");
+    $stmt = $db->prepare("UPDATE vendors SET password_hash = ?, auth_token = NULL WHERE email = ?");
     $stmt->execute([$hash, $email]);
-    $adminUpdated = $stmt->rowCount();
+    $updated = $stmt->rowCount();
 
-    if ($adminUpdated === 0) {
+    if ($updated === 0) {
+        $stmt = $db->prepare("UPDATE admin_users SET password_hash = ?, auth_token = NULL WHERE email = ?");
+        $stmt->execute([$hash, $email]);
+        $updated = $stmt->rowCount();
+    }
+
+    if ($updated === 0) {
         $stmt = $db->prepare("UPDATE users SET password_hash = ?, auth_token = NULL WHERE email = ?");
         $stmt->execute([$hash, $email]);
     }

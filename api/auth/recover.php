@@ -19,14 +19,20 @@ require_once __DIR__ . '/../../config/constants.php';
 require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../api/utils/Response.php';
 require_once __DIR__ . '/../../api/utils/Logger.php';
+require_once __DIR__ . '/../../api/utils/RateLimiter.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     Response::error('Método no permitido', null, 405);
 }
 
+// Limitar solicitudes de recuperacion por IP (evita enumeracion/spam de emails)
+if (!RateLimiter::check('recover_' . ($_SERVER['REMOTE_ADDR'] ?? 'unknown'), 5, 10)) {
+    Response::rateLimitExceeded('Demasiadas solicitudes. Intenta de nuevo mas tarde.');
+}
+
 try {
     $input = json_decode(file_get_contents('php://input'), true);
-    
+
     if (!$input || !is_array($input)) {
         Response::error('Datos inválidos. Envía JSON válido.');
     }
@@ -39,12 +45,19 @@ try {
 
     $db = Database::getInstance()->getConnection();
 
-    // Buscar usuario en admin_users
-    $stmt = $db->prepare("SELECT id, full_name FROM admin_users WHERE email = ? AND active = 1");
+    // Buscar usuario en vendors (los que se registran hoy via el flujo SaaS)
+    $stmt = $db->prepare("SELECT id, business_name FROM vendors WHERE email = ? AND status = 'active'");
     $stmt->execute([$email]);
     $user = $stmt->fetch();
 
-    // Si no existe, buscar en users
+    // Si no existe, buscar en admin_users (legacy)
+    if (!$user) {
+        $stmt = $db->prepare("SELECT id, full_name FROM admin_users WHERE email = ? AND active = 1");
+        $stmt->execute([$email]);
+        $user = $stmt->fetch();
+    }
+
+    // Si no existe, buscar en users (compradores)
     if (!$user) {
         $stmt = $db->prepare("SELECT id, name FROM users WHERE email = ?");
         $stmt->execute([$email]);

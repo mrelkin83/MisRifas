@@ -15,9 +15,15 @@ require_once __DIR__ . '/../../config/constants.php';
 require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../api/utils/Response.php';
 require_once __DIR__ . '/../../api/utils/Logger.php';
+require_once __DIR__ . '/../../api/utils/RateLimiter.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     Response::error('Metodo no permitido', null, 405);
+}
+
+// Limitar registros por IP para frenar creacion masiva de cuentas
+if (!RateLimiter::check('register_' . ($_SERVER['REMOTE_ADDR'] ?? 'unknown'), 5, 10)) {
+    Response::rateLimitExceeded('Demasiados registros desde esta conexion. Intenta de nuevo mas tarde.');
 }
 
 try {
