@@ -725,7 +725,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                         <div id="user-tickets-container" class="space-y-4"></div>
                         <div id="no-user-tickets" class="hidden text-center py-8">
                             <p class="text-gray-500 text-lg">No has comprado boletos aún</p>
-                            <a href="/index.php" class="btn btn--primary mt-4 inline-block">Ver rifas disponibles</a>
+                            <a href="<?= BASE_PATH ?>/public/index.php" class="btn btn--primary mt-4 inline-block">Ver rifas disponibles</a>
                         </div>
                     </div>
                 </div>

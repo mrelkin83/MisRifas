@@ -111,7 +111,7 @@ if ($user) {
 
     <div class="max-w-md mx-auto mt-16 text-center">
         <div class="bg-slate-800/50 backdrop-blur border border-white/10 rounded-2xl p-8">
-            <div class="text-5xl mb-4">🎟️</div>
+            <div class="mb-4"><svg class="w-12 h-12 mx-auto text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v1a2 2 0 0 0 0 4v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1a2 2 0 0 0 0-4Z"/><path d="M13 5v14" stroke-dasharray="2 3"/></svg></div>
             <h1 class="text-2xl font-bold mb-2">Mi Panel</h1>
             <p class="text-slate-400 mb-6">Inicia sesion para ver tus boletos, rifas y premios.</p>
 
@@ -119,15 +119,15 @@ if ($user) {
                 <div>
                     <label class="block text-sm font-medium text-slate-300 mb-1">Email o Telefono</label>
                     <input type="text" id="login-identifier" required
-                           class="w-full px-4 py-3 bg-slate-700/50 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                           class="w-full px-4 py-3 bg-slate-700/50 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-slate-300 mb-1">Contrasena</label>
                     <input type="password" id="login-password" required
-                           class="w-full px-4 py-3 bg-slate-700/50 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                           class="w-full px-4 py-3 bg-slate-700/50 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500">
                 </div>
                 <button type="submit" id="login-btn"
-                        class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition-colors">
+                        class="w-full py-3 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-xl transition-colors">
                     Iniciar Sesion
                 </button>
             </form>
@@ -136,7 +136,7 @@ if ($user) {
 
             <p class="mt-4 text-slate-500 text-sm">
                 ¿No tienes cuenta?
-                <a href="<?= $basePath ?>/public/index.php" class="text-blue-400 hover:text-blue-300">Participa en una rifa</a> y se crea automaticamente.
+                <a href="<?= $basePath ?>/public/index.php" class="text-amber-400 hover:text-amber-300">Participa en una rifa</a> y se crea automaticamente.
             </p>
         </div>
     </div>
@@ -150,7 +150,7 @@ if ($user) {
 
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         <div class="bg-slate-800/50 border border-white/10 rounded-xl p-4 text-center">
-            <div class="text-3xl font-bold text-blue-400"><?= $stats['total_tickets'] ?></div>
+            <div class="text-3xl font-bold text-amber-400"><?= $stats['total_tickets'] ?></div>
             <div class="text-sm text-slate-400 mt-1">Boletos</div>
         </div>
         <div class="bg-slate-800/50 border border-white/10 rounded-xl p-4 text-center">
@@ -169,7 +169,7 @@ if ($user) {
 
     <?php if (!empty($wins)): ?>
     <section class="mb-8">
-        <h2 class="text-xl font-bold mb-4 flex items-center gap-2">🏆 Mis Premios</h2>
+        <h2 class="text-xl font-bold mb-4 flex items-center gap-2"><svg class="w-5 h-5 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4Z"/><path d="M7 5H4a1 1 0 0 0-1 1 4 4 0 0 0 4 4M17 5h3a1 1 0 0 1 1 1 4 4 0 0 1-4 4"/></svg>Mis Premios</h2>
         <div class="space-y-3">
             <?php foreach ($wins as $w): ?>
             <div class="bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border border-yellow-500/30 rounded-xl p-4 flex items-center justify-between">
@@ -197,13 +197,13 @@ if ($user) {
     <?php endif; ?>
 
     <section>
-        <h2 class="text-xl font-bold mb-4 flex items-center gap-2">🎫 Mis Boletos</h2>
+        <h2 class="text-xl font-bold mb-4 flex items-center gap-2"><svg class="w-5 h-5 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v1a2 2 0 0 0 0 4v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1a2 2 0 0 0 0-4Z"/></svg>Mis Boletos</h2>
 
         <?php if (empty($tickets)): ?>
         <div class="bg-slate-800/50 border border-white/10 rounded-xl p-8 text-center">
-            <div class="text-4xl mb-3">🎪</div>
+            <div class="mb-3"><svg class="w-10 h-10 mx-auto text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v1a2 2 0 0 0 0 4v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1a2 2 0 0 0 0-4Z"/><path d="M9 8l6 8M15 8l-6 8" stroke-dasharray="1 2.5"/></svg></div>
             <p class="text-slate-400">Aun no tienes boletos.</p>
-            <a href="<?= $basePath ?>/public/index.php" class="inline-block mt-4 px-6 py-3 bg-blue-600 hover:bg-blue-700 rounded-xl font-bold transition-colors">
+            <a href="<?= $basePath ?>/public/index.php" class="inline-block mt-4 px-6 py-3 bg-amber-500 hover:bg-amber-600 text-slate-950 rounded-xl font-bold transition-colors">
                 Ver Rifas Disponibles
             </a>
         </div>

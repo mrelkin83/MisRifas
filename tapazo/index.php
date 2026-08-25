@@ -20,10 +20,9 @@ if ($codigo) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= $tapazo ? htmlspecialchars($tapazo['titulo']) : 'El Tapazo' ?> | MisRifas</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="<?= BASE_PATH ?>/public/css/tailwind.min.css">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap');
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
         body { background: #0f172a; color: #f8fafc; min-height: 100vh; }
 
         .beer-bottle {
@@ -267,7 +266,7 @@ if ($codigo) {
     <!-- ===== PANTALLA: CREAR TAPAZO ===== -->
     <div class="container mx-auto px-4 max-w-2xl py-6 md:py-10">
         <div class="text-center mb-6 md:mb-10">
-            <a href="/public/index.php" class="inline-flex items-center gap-2 text-2xl md:text-3xl font-black mb-2">
+            <a href="<?= BASE_PATH ?>/public/index.php" class="inline-flex items-center gap-2 text-2xl md:text-3xl font-black mb-2">
                 <span>🍺</span>
                 <span class="bg-clip-text text-transparent bg-gradient-to-r from-amber-400 to-orange-500">El Tapazo</span>
             </a>
@@ -401,7 +400,7 @@ if ($codigo) {
     <!-- ===== PANTALLA PÚBLICA DEL TAPAZO ===== -->
     <div class="container mx-auto px-4 max-w-4xl py-6">
         <div class="text-center mb-6">
-            <a href="/tapazo/index.php" class="inline-flex items-center gap-2 text-2xl font-black mb-2">
+            <a href="<?= BASE_PATH ?>/tapazo/index.php" class="inline-flex items-center gap-2 text-2xl font-black mb-2">
                 <span>🍺</span>
                 <span class="bg-clip-text text-transparent bg-gradient-to-r from-amber-400 to-orange-500">El Tapazo</span>
             </a>
@@ -522,7 +521,7 @@ if ($codigo) {
                 <!-- Todos los resultados -->
             </div>
             <div class="text-center mt-8">
-                <a href="/tapazo/index.php" class="inline-block w-full sm:w-auto px-8 py-4 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 text-white font-black text-lg hover:shadow-lg transition-all">
+                <a href="<?= BASE_PATH ?>/tapazo/index.php" class="inline-block w-full sm:w-auto px-8 py-4 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 text-white font-black text-lg hover:shadow-lg transition-all">
                     🍺 Crear Nuevo Tapazo
                 </a>
             </div>

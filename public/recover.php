@@ -92,7 +92,7 @@ $page_title = "Recuperar Contrasena - MisRifas";
             messageArea.classList.add('hidden');
 
             try {
-                const response = await fetch('/api/auth/recover.php', {
+                const response = await fetch(BASE_PATH + '/api/auth/recover.php', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email })
