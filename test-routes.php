@@ -2,6 +2,10 @@
 /**
  * Script de prueba de rutas
  */
+if (php_sapi_name() !== 'cli') {
+    http_response_code(403);
+    exit('Script de debug: solo linea de comandos.');
+}
 
 echo "<h1>Test de Rutas - MisRifas</h1>";
 

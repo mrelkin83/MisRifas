@@ -92,6 +92,12 @@ return [
             'webhook_secret' => getenv('NEQUI_WEBHOOK_SECRET') ?: '',
             'merchant_id' => getenv('NEQUI_MERCHANT_ID') ?: '',
         ],
+        'mercadopago' => [
+            'enabled' => filter_var(getenv('MERCADOPAGO_ENABLED') ?: false, FILTER_VALIDATE_BOOLEAN),
+            'public_key' => getenv('MERCADOPAGO_PUBLIC_KEY') ?: '',
+            'access_token' => getenv('MERCADOPAGO_ACCESS_TOKEN') ?: '',
+            'webhook_secret' => getenv('MERCADOPAGO_WEBHOOK_SECRET') ?: '',
+        ],
     ],
 
     'notifications' => [

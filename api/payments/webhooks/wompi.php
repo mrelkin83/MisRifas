@@ -27,7 +27,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 $config = require __DIR__ . '/../../../config/app.php';
-$wompiSecret = $config['wompi']['events_secret'] ?? '';
+$wompiSecret = $config['payments']['wompi']['events_secret'] ?? '';
 
 try {
     $raw = file_get_contents('php://input');
@@ -39,19 +39,25 @@ try {
         exit;
     }
 
-    // Validar firma de Wompi (CRÍTICO para seguridad)
+    // Validar firma de Wompi (CRÍTICO para seguridad). Falla cerrado: si el
+    // secreto no esta configurado, se rechaza el webhook en vez de aceptarlo
+    // sin verificar (evita fraude de pago con payloads forjados).
     $signature = $_SERVER['HTTP_X_WOMPI_SIGNATURE'] ?? '';
-    if (!empty($wompiSecret)) {
-        $expectedSignature = hash_hmac('sha256', $raw, $wompiSecret);
-        if (!hash_equals($expectedSignature, $signature)) {
-            Logger::error('Wompi webhook: firma inválida', [
-                'signature' => $signature,
-                'expected' => $expectedSignature
-            ]);
-            http_response_code(401);
-            echo json_encode(['error' => 'Invalid signature']);
-            exit;
-        }
+    if (empty($wompiSecret)) {
+        Logger::error('Wompi webhook: WOMPI_EVENTS_SECRET no configurado, rechazando');
+        http_response_code(401);
+        echo json_encode(['error' => 'Webhook not configured']);
+        exit;
+    }
+    $expectedSignature = hash_hmac('sha256', $raw, $wompiSecret);
+    if (!hash_equals($expectedSignature, $signature)) {
+        Logger::error('Wompi webhook: firma inválida', [
+            'signature' => $signature,
+            'expected' => $expectedSignature
+        ]);
+        http_response_code(401);
+        echo json_encode(['error' => 'Invalid signature']);
+        exit;
     }
 
     // ========================================

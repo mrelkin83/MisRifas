@@ -21,7 +21,7 @@ try {
     $db = Database::getInstance()->getConnection();
 
     if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-        $stmt = $db->prepare("SELECT payment_config, wa_config FROM admin_users WHERE id = ?");
+        $stmt = $db->prepare("SELECT payment_config, wa_config FROM vendors WHERE id = ?");
         $stmt->execute([$adminUser['id']]);
         $row = $stmt->fetch();
 
@@ -36,7 +36,7 @@ try {
         $type  = $input['type'] ?? '';
 
         if ($type === 'nequi') {
-            $stmt = $db->prepare("SELECT payment_config FROM admin_users WHERE id = ?");
+            $stmt = $db->prepare("SELECT payment_config FROM vendors WHERE id = ?");
             $stmt->execute([$adminUser['id']]);
             $current = json_decode($stmt->fetchColumn() ?: '{}', true);
 
@@ -45,7 +45,7 @@ try {
             if (!empty($input['nequi_secret'])) $current['nequi_secret'] = trim($input['nequi_secret']);
             if (isset($input['nequi_phone']))   $current['nequi_phone']  = preg_replace('/[^0-9]/', '', $input['nequi_phone']);
 
-            $stmt = $db->prepare("UPDATE admin_users SET payment_config = ? WHERE id = ?");
+            $stmt = $db->prepare("UPDATE vendors SET payment_config = ? WHERE id = ?");
             $stmt->execute([json_encode($current), $adminUser['id']]);
 
             Logger::activity('profile_nequi_updated', $adminUser['id']);
@@ -53,7 +53,7 @@ try {
         }
 
         if ($type === 'whatsapp') {
-            $stmt = $db->prepare("SELECT wa_config FROM admin_users WHERE id = ?");
+            $stmt = $db->prepare("SELECT wa_config FROM vendors WHERE id = ?");
             $stmt->execute([$adminUser['id']]);
             $current = json_decode($stmt->fetchColumn() ?: '{}', true);
 
@@ -61,7 +61,7 @@ try {
             if (!empty($input['evo_api_key']))   $current['evo_api_key']   = trim($input['evo_api_key']);
             if (isset($input['evo_instance']))   $current['evo_instance']  = trim($input['evo_instance']);
 
-            $stmt = $db->prepare("UPDATE admin_users SET wa_config = ? WHERE id = ?");
+            $stmt = $db->prepare("UPDATE vendors SET wa_config = ? WHERE id = ?");
             $stmt->execute([json_encode($current), $adminUser['id']]);
 
             Logger::activity('profile_whatsapp_updated', $adminUser['id']);

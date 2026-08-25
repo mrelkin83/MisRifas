@@ -3,6 +3,10 @@
  * Script: Inicializar Tablas para el Sistema de Correo
  * run: php init_email_system.php
  */
+if (php_sapi_name() !== 'cli') {
+    http_response_code(403);
+    exit('Este script solo puede ejecutarse por linea de comandos.');
+}
 
 require_once __DIR__ . '/config/database.php';
 

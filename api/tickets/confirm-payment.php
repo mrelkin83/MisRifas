@@ -13,10 +13,16 @@ require_once __DIR__ . '/../../config/constants.php';
 require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../api/utils/Response.php';
 require_once __DIR__ . '/../../api/utils/Logger.php';
+require_once __DIR__ . '/../../api/utils/Auth.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     Response::error('Metodo no permitido', null, 405);
 }
+
+// Este endpoint SOLO registra un comprobante para revision manual.
+// NUNCA marca el ticket como pagado directamente - eso requiere
+// aprobacion humana via POST /api/admin/payments.php (action=approve).
+$buyer = Auth::requireBuyer();
 
 $db = null;
 
@@ -55,19 +61,15 @@ try {
         Response::error('Ticket no encontrado', null, 404);
     }
 
+    if ((int)$ticket['user_id'] !== (int)$buyer['id']) {
+        Response::error('Este ticket no pertenece a tu cuenta', null, 403);
+    }
+
     if ($ticket['status'] !== 'reserved') {
         Response::error('El ticket no esta reservado o ya fue pagado (estado: ' . $ticket['status'] . ')');
     }
 
     $db->beginTransaction();
-
-    $stmt = $db->prepare("UPDATE tickets SET status = 'paid', paid_at = NOW() WHERE id = ? AND status = 'reserved'");
-    $stmt->execute([$ticketId]);
-
-    if ($stmt->rowCount() === 0) {
-        $db->rollBack();
-        Response::error('El ticket ya no esta disponible');
-    }
 
     $proofUrl = null;
     if ($proof && strpos($proof, 'data:image') === 0) {
@@ -104,7 +106,7 @@ try {
 
     $db->commit();
 
-    Logger::activity('payment_confirmed_manual', (int)$userId, [
+    Logger::activity('payment_proof_reported', (int)$userId, [
         'ticket_id' => $ticketId,
         'amount' => $amount,
         'method' => $paymentMethod,
@@ -114,10 +116,11 @@ try {
 
     Response::success([
         'ticket_id' => $ticketId,
-        'status' => 'paid',
+        'status' => 'reserved',
+        'payment_status' => 'pending_review',
         'reference' => $reference,
         'amount' => (float)$amount
-    ], 'Pago confirmado exitosamente');
+    ], 'Comprobante recibido. Tu boleto quedara pagado cuando el vendedor verifique el pago.');
 
 } catch (Exception $e) {
     if ($db && $db->inTransaction()) {

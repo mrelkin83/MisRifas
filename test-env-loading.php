@@ -1,4 +1,8 @@
 <?php
+if (php_sapi_name() !== 'cli') {
+    http_response_code(403);
+    exit('Script de debug: solo linea de comandos.');
+}
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 

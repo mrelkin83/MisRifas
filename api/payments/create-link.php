@@ -36,7 +36,7 @@ try {
     $db = Database::getInstance()->getConnection();
 
     $stmt = $db->prepare("
-        SELECT t.*, r.name as raffle_name, r.ticket_price, r.created_by as admin_id
+        SELECT t.*, r.name as raffle_name, r.ticket_price, COALESCE(r.vendor_id, r.created_by) as vendor_id
         FROM tickets t
         INNER JOIN raffles r ON t.raffle_id = r.id
         WHERE t.id = ? AND t.status = 'reserved'
@@ -48,11 +48,11 @@ try {
         Response::notFound('Boleto no encontrado o no está reservado');
     }
 
-    $stmt = $db->prepare("SELECT * FROM admin_users WHERE id = ?");
-    $stmt->execute([$ticket['admin_id']]);
-    $admin = $stmt->fetch();
+    $stmt = $db->prepare("SELECT * FROM vendors WHERE id = ?");
+    $stmt->execute([$ticket['vendor_id']]);
+    $vendor = $stmt->fetch();
 
-    $wompiConfig = json_decode($admin['wompi_config'] ?? '{}', true);
+    $wompiConfig = json_decode($vendor['payment_config'] ?? '{}', true);
 
     if (empty($wompiConfig['public_key'])) {
         Response::error('El creador de la rifa no ha configurado Wompi');

@@ -21,30 +21,42 @@ try {
     $db = Database::getInstance()->getConnection();
 
     if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-        // Listar tickets con pago pendiente de validación manual de las rifas del vendedor
+        // Listar tickets con comprobante de pago pendiente de validación manual
+        // de las rifas del vendedor. Los datos del pago viven en `payments`
+        // (payment_method/proof), no en `tickets` (esa tabla solo tiene status).
         $stmt = $db->prepare("
             SELECT
                 t.id as ticket_id,
                 t.ticket_number,
                 t.status,
-                t.payment_method,
-                t.payment_status,
-                t.payment_proof_url,
+                p.id as payment_id,
+                p.payment_method,
+                p.transaction_status as payment_status,
+                p.payment_gateway_response,
+                p.created_at as reported_at,
                 t.reserved_at,
                 r.name as raffle_name,
                 r.id as raffle_id,
                 u.full_name as buyer_name,
                 u.phone as buyer_phone
-            FROM tickets t
+            FROM payments p
+            JOIN tickets t ON t.id = p.ticket_id
             JOIN raffles r ON t.raffle_id = r.id
             LEFT JOIN users u ON t.user_id = u.id
-            WHERE r.created_by = ?
-              AND t.payment_method IN ('transferencia', 'efectivo', 'contraentrega')
-              AND t.payment_status IN ('pending', 'verifying')
-            ORDER BY t.reserved_at DESC
+            WHERE COALESCE(r.vendor_id, r.created_by) = ?
+              AND p.transaction_status = 'pending'
+              AND t.status = 'reserved'
+            ORDER BY p.created_at DESC
         ");
         $stmt->execute([$adminUser['id']]);
         $tickets = $stmt->fetchAll();
+
+        foreach ($tickets as &$row) {
+            $gw = json_decode($row['payment_gateway_response'] ?? '{}', true);
+            $row['proof_url'] = $gw['proof_url'] ?? null;
+            unset($row['payment_gateway_response']);
+        }
+        unset($row);
 
         Response::success($tickets);
     }
@@ -58,11 +70,15 @@ try {
             Response::error('Datos inválidos', null, 400);
         }
 
-        // Verificar que el ticket pertenece a una rifa del vendedor
+        // Verificar que el ticket pertenece a una rifa del vendedor y que
+        // tiene un pago manual pendiente real (evita aprobar tickets ajenos
+        // o sin comprobante reportado).
         $stmt = $db->prepare("
-            SELECT t.id, t.status FROM tickets t
+            SELECT t.id, t.status, p.id as payment_id
+            FROM tickets t
             JOIN raffles r ON t.raffle_id = r.id
-            WHERE t.id = ? AND r.created_by = ?
+            LEFT JOIN payments p ON p.ticket_id = t.id AND p.transaction_status = 'pending'
+            WHERE t.id = ? AND COALESCE(r.vendor_id, r.created_by) = ?
         ");
         $stmt->execute([$ticketId, $adminUser['id']]);
         $ticket = $stmt->fetch();
@@ -71,25 +87,32 @@ try {
             Response::error('No tienes permiso sobre este boleto', null, 403);
         }
 
+        if (!$ticket['payment_id']) {
+            Response::error('Este boleto no tiene un pago pendiente de revision', null, 400);
+        }
+
         if ($action === 'approve') {
-            $stmt = $db->prepare("
-                UPDATE tickets
-                SET status = 'paid', payment_status = 'approved', paid_at = NOW()
-                WHERE id = ?
-            ");
+            $stmt = $db->prepare("UPDATE payments SET transaction_status = 'completed', verified_at = NOW() WHERE id = ?");
+            $stmt->execute([$ticket['payment_id']]);
+
+            $stmt = $db->prepare("UPDATE tickets SET status = 'paid', paid_at = NOW() WHERE id = ? AND status = 'reserved'");
             $stmt->execute([$ticketId]);
-            Logger::activity('payment_manual_approved', $adminUser['id'], ['ticket_id' => $ticketId]);
+
+            Logger::activity('payment_manual_approved', $adminUser['id'], ['ticket_id' => $ticketId, 'payment_id' => $ticket['payment_id']]);
             Response::success(['message' => 'Pago aprobado. El boleto ahora está vendido.']);
         }
 
         if ($action === 'reject') {
+            $stmt = $db->prepare("UPDATE payments SET transaction_status = 'failed' WHERE id = ?");
+            $stmt->execute([$ticket['payment_id']]);
+
             $stmt = $db->prepare("
                 UPDATE tickets
-                SET status = 'available', payment_status = 'rejected', user_id = NULL, reserved_at = NULL, reserved_until = NULL
+                SET status = 'available', user_id = NULL, reserved_at = NULL, reserved_until = NULL
                 WHERE id = ?
             ");
             $stmt->execute([$ticketId]);
-            Logger::activity('payment_manual_rejected', $adminUser['id'], ['ticket_id' => $ticketId]);
+            Logger::activity('payment_manual_rejected', $adminUser['id'], ['ticket_id' => $ticketId, 'payment_id' => $ticket['payment_id']]);
             Response::success(['message' => 'Pago rechazado. El boleto volvió a estar disponible.']);
         }
     }

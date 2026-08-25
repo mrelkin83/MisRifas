@@ -2,6 +2,10 @@
 /**
  * Migration: Create raffle_images table for multi-photo support
  */
+if (php_sapi_name() !== 'cli') {
+    http_response_code(403);
+    exit('Este script solo puede ejecutarse por linea de comandos.');
+}
 require_once __DIR__ . '/config/database.php';
 
 try {

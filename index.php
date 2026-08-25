@@ -49,46 +49,67 @@ $requestUri = trim($requestUri, '/');
 $staticPatterns = ['css/', 'js/', 'assets/', 'uploads/', 'images/'];
 foreach ($staticPatterns as $pattern) {
     if (strpos($requestUri, $pattern) === 0) {
-        $file = PUBLIC_PATH . '/' . $requestUri;
-        if (file_exists($file)) {
-            $ext = pathinfo($file, PATHINFO_EXTENSION);
-            $mimeTypes = [
-                'css' => 'text/css',
-                'js' => 'application/javascript',
-                'jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg',
-                'png' => 'image/png', 'gif' => 'image/gif',
-                'webp' => 'image/webp', 'svg' => 'image/svg+xml',
-            ];
-            header('Content-Type: ' . ($mimeTypes[$ext] ?? 'application/octet-stream'));
-            readfile($file);
+        // Resolver la ruta real y exigir que quede DENTRO de PUBLIC_PATH.
+        // Sin esto, "../" en la URI permite leer cualquier archivo legible
+        // por el proceso web (.env, config, etc. - path traversal/LFI).
+        $publicRealPath = realpath(PUBLIC_PATH);
+        $requestedPath = PUBLIC_PATH . '/' . $requestUri;
+        $realFile = realpath($requestedPath);
+
+        if (
+            $realFile === false ||
+            $publicRealPath === false ||
+            strpos($realFile, $publicRealPath . DIRECTORY_SEPARATOR) !== 0
+        ) {
+            http_response_code(404);
             exit;
         }
-        http_response_code(404);
+
+        $ext = pathinfo($realFile, PATHINFO_EXTENSION);
+        $mimeTypes = [
+            'css' => 'text/css',
+            'js' => 'application/javascript',
+            'jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg',
+            'png' => 'image/png', 'gif' => 'image/gif',
+            'webp' => 'image/webp', 'svg' => 'image/svg+xml',
+        ];
+        header('Content-Type: ' . ($mimeTypes[$ext] ?? 'application/octet-stream'));
+        readfile($realFile);
         exit;
     }
 }
 
 // Rutas de API
 if (strpos($requestUri, 'api/') === 0) {
+    // Solo permitir segmentos de ruta seguros (letras, numeros, guiones,
+    // barras) antes de resolver a un archivo - bloquea "../" y similares
+    // por si este bloque llega a ejecutarse sin la exclusion de .htaccess.
     $apiPath = str_replace('api/', '', $requestUri);
-    $apiParts = explode('/', $apiPath);
-    
-    $apiFile = ROOT_PATH . '/api/' . $apiPath . '.php';
-    
-    if (file_exists($apiFile)) {
-        require $apiFile;
+    if (!preg_match('#^[a-zA-Z0-9_\-/]+$#', $apiPath) || strpos($apiPath, '..') !== false) {
+        http_response_code(404);
+        echo json_encode(['success' => false, 'message' => 'API endpoint not found']);
         exit;
     }
-    
+    $apiParts = explode('/', $apiPath);
+    $apiRoot = realpath(ROOT_PATH . '/api');
+
+    $apiFile = ROOT_PATH . '/api/' . $apiPath . '.php';
+    $realApiFile = realpath($apiFile);
+    if ($realApiFile !== false && $apiRoot !== false && strpos($realApiFile, $apiRoot . DIRECTORY_SEPARATOR) === 0) {
+        require $realApiFile;
+        exit;
+    }
+
     $dir = ROOT_PATH . '/api/' . $apiParts[0];
     if (is_dir($dir)) {
         $file = $dir . '/' . ($apiParts[1] ?? 'index') . '.php';
-        if (file_exists($file)) {
-            require $file;
+        $realFile = realpath($file);
+        if ($realFile !== false && $apiRoot !== false && strpos($realFile, $apiRoot . DIRECTORY_SEPARATOR) === 0) {
+            require $realFile;
             exit;
         }
     }
-    
+
     http_response_code(404);
     echo json_encode(['success' => false, 'message' => 'API endpoint not found']);
     exit;

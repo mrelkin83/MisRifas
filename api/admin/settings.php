@@ -36,10 +36,10 @@ try {
             $formatted[$s['setting_key']] = $s['setting_value'];
         }
 
-        // Add the user's wompi config
-        $wompiConfig = json_decode($adminUser['wompi_config'] ?? '{}', true);
-        if ($wompiConfig) {
-            $formatted = array_merge($formatted, $wompiConfig);
+        // Add the user's wompi config (vive dentro de vendors.payment_config)
+        $paymentConfig = json_decode($adminUser['payment_config'] ?? '{}', true);
+        if ($paymentConfig) {
+            $formatted = array_merge($formatted, $paymentConfig);
         }
         
         Response::success($formatted);
@@ -61,9 +61,11 @@ try {
                 }
             }
         }
-        // Handle wompi keys for current user
+        // Handle wompi keys for current user (guardadas dentro de
+        // vendors.payment_config, no en una columna dedicada wompi_config
+        // que solo existia en el admin_users legacy)
         if (isset($input['wompi_public_key']) || isset($input['wompi_private_key']) || isset($input['wompi_merchant_id'])) {
-            $stmt = $db->prepare("SELECT wompi_config FROM admin_users WHERE id = ?");
+            $stmt = $db->prepare("SELECT payment_config FROM vendors WHERE id = ?");
             $stmt->execute([$adminUser['id']]);
             $currentConfig = json_decode($stmt->fetchColumn() ?: '{}', true);
 
@@ -71,7 +73,7 @@ try {
             if (isset($input['wompi_private_key']) && !empty($input['wompi_private_key'])) $currentConfig['wompi_private_key'] = $input['wompi_private_key'];
             if (isset($input['wompi_merchant_id'])) $currentConfig['wompi_merchant_id'] = $input['wompi_merchant_id'];
 
-            $stmt = $db->prepare("UPDATE admin_users SET wompi_config = ? WHERE id = ?");
+            $stmt = $db->prepare("UPDATE vendors SET payment_config = ? WHERE id = ?");
             $stmt->execute([json_encode($currentConfig), $adminUser['id']]);
         }
         

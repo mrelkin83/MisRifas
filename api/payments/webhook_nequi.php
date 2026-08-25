@@ -32,20 +32,25 @@ try {
     $nequiSignature = $_SERVER['HTTP_X_NEQUI_SIGNATURE'] ?? '';
     $nequiSecret = getenv('NEQUI_WEBHOOK_SECRET') ?: '';
 
-    if (!empty($nequiSecret)) {
-        if (empty($nequiSignature)) {
-            http_response_code(401);
-            echo json_encode(['error' => 'Signature required']);
-            exit;
-        }
-        $expectedSignature = hash_hmac('sha256', $raw, $nequiSecret);
-        if (!hash_equals($expectedSignature, $nequiSignature)) {
-            http_response_code(401);
-            echo json_encode(['error' => 'Invalid signature']);
-            exit;
-        }
-    } else {
-        error_log('[NEQUI] WARNING: NEQUI_WEBHOOK_SECRET not configured - webhook running without signature verification');
+    // Falla cerrado: sin secreto configurado se rechaza el webhook. La
+    // referencia "TICKET_{raffle_id}_{ticket_id}" es un ID secuencial
+    // adivinable, no un secreto - la firma es la unica proteccion real.
+    if (empty($nequiSecret)) {
+        error_log('[NEQUI] WEBHOOK_SECRET no configurado - rechazando webhook');
+        http_response_code(401);
+        echo json_encode(['error' => 'Webhook not configured']);
+        exit;
+    }
+    if (empty($nequiSignature)) {
+        http_response_code(401);
+        echo json_encode(['error' => 'Signature required']);
+        exit;
+    }
+    $expectedSignature = hash_hmac('sha256', $raw, $nequiSecret);
+    if (!hash_equals($expectedSignature, $nequiSignature)) {
+        http_response_code(401);
+        echo json_encode(['error' => 'Invalid signature']);
+        exit;
     }
 
     Logger::activity('nequi_webhook_received', 0, ['reference' => $payload['reference'] ?? 'unknown', 'status' => $payload['status'] ?? 'unknown']);
@@ -86,7 +91,7 @@ try {
 
     if ($status === 'PAID' || $status === 'APPROVED') {
         // Marcar el boleto como pagado
-        $stmt = $db->prepare("UPDATE tickets SET status = 'paid', payment_status = 'approved', paid_at = NOW() WHERE id = ? AND raffle_id = ?");
+        $stmt = $db->prepare("UPDATE tickets SET status = 'paid', paid_at = NOW() WHERE id = ? AND raffle_id = ? AND status = 'reserved'");
         $stmt->execute([$ticketId, $raffleId]);
 
         if ($stmt->rowCount() > 0) {
@@ -122,7 +127,7 @@ try {
         }
     } elseif ($status === 'DECLINED' || $status === 'FAILED') {
         // Liberar el boleto
-        $stmt = $db->prepare("UPDATE tickets SET status = 'available', payment_status = 'rejected', user_id = NULL, reserved_at = NULL, reserved_until = NULL WHERE id = ? AND raffle_id = ?");
+        $stmt = $db->prepare("UPDATE tickets SET status = 'available', user_id = NULL, reserved_at = NULL, reserved_until = NULL WHERE id = ? AND raffle_id = ?");
         $stmt->execute([$ticketId, $raffleId]);
         Logger::activity('ticket_payment_declined_nequi', 0, ['ticket_id' => $ticketId]);
     }

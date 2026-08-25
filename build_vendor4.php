@@ -1,5 +1,9 @@
 <?php
-$src = fileDIR__ . '/public/admin/index.php';
+if (php_sapi_name() !== 'cli') {
+    http_response_code(403);
+    exit('Este script solo puede ejecutarse por linea de comandos.');
+}
+$src = __DIR__ . '/public/admin/index.php';
 $dst = __DIR__ . '/public/vendor/index.php';
 
 $source = file_get_contents($src);

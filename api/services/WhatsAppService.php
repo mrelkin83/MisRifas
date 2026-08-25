@@ -22,8 +22,10 @@ class WhatsAppService {
             $global[$row['setting_key']] = $row['setting_value'];
         }
 
-        // 2. Credenciales EvolutionAPI del Vendedor
-        $stmt = $db->prepare("SELECT wa_config FROM admin_users WHERE id = ?");
+        // 2. Credenciales EvolutionAPI del Vendedor (tabla vendors - fuente
+        // unica de identidad/config, no admin_users que es legacy y no
+        // comparte secuencia de IDs con vendors)
+        $stmt = $db->prepare("SELECT wa_config FROM vendors WHERE id = ?");
         $stmt->execute([$sellerId]);
         $waConfigRaw = $stmt->fetchColumn();
         $seller = json_decode($waConfigRaw ?: '{}', true);

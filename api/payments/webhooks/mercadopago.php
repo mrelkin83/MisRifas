@@ -26,7 +26,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 $config = require __DIR__ . '/../../../config/app.php';
-$mpSecret = $config['mercadopago']['webhook_secret'] ?? '';
+$mpSecret = $config['payments']['mercadopago']['webhook_secret'] ?? '';
 
 try {
     $raw = file_get_contents('php://input');
@@ -38,19 +38,24 @@ try {
         exit;
     }
 
-    // Validar firma de Mercado Pago (CRÍTICO para seguridad)
+    // Validar firma de Mercado Pago (CRÍTICO para seguridad). Falla cerrado:
+    // sin secreto configurado se rechaza, no se acepta sin verificar.
     $signature = $_SERVER['HTTP_X_SIGNATURE'] ?? $_SERVER['HTTP_X_PAYMENT_NOTIFICATION_SIGNATURE'] ?? '';
-    if (!empty($mpSecret)) {
-        $expectedSignature = hash_hmac('sha256', $raw, $mpSecret);
-        if (!hash_equals($expectedSignature, $signature)) {
-            Logger::error('Mercadopago webhook: firma inválida', [
-                'signature' => $signature,
-                'expected' => $expectedSignature
-            ]);
-            http_response_code(401);
-            echo json_encode(['error' => 'Invalid signature']);
-            exit;
-        }
+    if (empty($mpSecret)) {
+        Logger::error('Mercadopago webhook: MERCADOPAGO_WEBHOOK_SECRET no configurado, rechazando');
+        http_response_code(401);
+        echo json_encode(['error' => 'Webhook not configured']);
+        exit;
+    }
+    $expectedSignature = hash_hmac('sha256', $raw, $mpSecret);
+    if (!hash_equals($expectedSignature, $signature)) {
+        Logger::error('Mercadopago webhook: firma inválida', [
+            'signature' => $signature,
+            'expected' => $expectedSignature
+        ]);
+        http_response_code(401);
+        echo json_encode(['error' => 'Invalid signature']);
+        exit;
     }
 
     // ========================================

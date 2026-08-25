@@ -2,6 +2,10 @@
 /**
  * Script: Inicializar Banners en system_settings
  */
+if (php_sapi_name() !== 'cli') {
+    http_response_code(403);
+    exit('Este script solo puede ejecutarse por linea de comandos.');
+}
 require_once __DIR__ . '/config/database.php';
 
 try {

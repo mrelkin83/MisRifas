@@ -1,4 +1,8 @@
 <?php
+if (php_sapi_name() !== 'cli') {
+    http_response_code(403);
+    exit('Este script solo puede ejecutarse por linea de comandos.');
+}
 $file = __DIR__ . '/public/vendor/index.php';
 $content = file_get_contents($file);
 $lines = explode("\n", $content);

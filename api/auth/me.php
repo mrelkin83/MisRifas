@@ -31,13 +31,23 @@ try {
     $token = $matches[1];
     $db = Database::getInstance()->getConnection();
     
-    // Try admin_users
-    $stmt = $db->prepare("SELECT id, username, email, full_name, role, profile_image, phone, city, department FROM admin_users WHERE auth_token = ?");
+    // Try vendors (misma tabla y mismas condiciones de status/expiracion
+    // que Auth::requireVendor(), para que una suspension sea efectiva aqui
+    // tambien - antes se consultaba admin_users, una tabla espejo sin
+    // relacion garantizada de IDs con vendors)
+    $stmt = $db->prepare("
+        SELECT id, slug, email, business_name, role, logo_url, phone, city, department
+        FROM vendors
+        WHERE auth_token = ? AND status = 'active'
+        AND (auth_token_expires IS NULL OR auth_token_expires > NOW())
+    ");
     $stmt->execute([$token]);
     $user = $stmt->fetch(PDO::FETCH_ASSOC);
-    
+
     if ($user) {
-        $user['name'] = $user['full_name'];
+        $user['name'] = $user['business_name'];
+        $user['full_name'] = $user['business_name'];
+        $user['profile_image'] = $user['logo_url'];
         Response::success($user);
     }
     
