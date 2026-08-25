@@ -992,6 +992,48 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                             </div>
                             <button type="submit" class="btn" style="background:#25D366;color:white;" id="btn-save-wa">Guardar Bot WhatsApp</button>
                         </form>
+
+                        <hr class="my-6">
+
+                        <h3 class="text-md font-bold mb-2">Proveedor de IA</h3>
+                        <p class="text-sm text-gray-500 mb-4">El modelo que atiende la conversación por WhatsApp. Sin esto configurado el bot no puede responder.</p>
+                        <form id="wa-llm-form" class="space-y-4">
+                            <div class="form-group">
+                                <label>Proveedor</label>
+                                <select id="cfg-llm-proveedor" class="w-full px-4 py-2 border rounded">
+                                    <option value="">Selecciona un proveedor…</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Modelo</label>
+                                <input type="text" id="cfg-llm-modelo" class="w-full px-4 py-2 border rounded" placeholder="ej: claude-sonnet-4-5, gpt-4.1-mini">
+                            </div>
+                            <div class="form-group">
+                                <label>API Key</label>
+                                <input type="password" id="cfg-llm-apikey" class="w-full px-4 py-2 border rounded" placeholder="Tu API key del proveedor">
+                                <small id="cfg-llm-apikey-status" class="text-gray-500"></small>
+                            </div>
+                            <button type="submit" class="btn btn--primary" id="btn-save-llm">Guardar Proveedor de IA</button>
+                        </form>
+
+                        <hr class="my-6">
+
+                        <h3 class="text-md font-bold mb-2">Webhook y activación</h3>
+                        <p class="text-sm text-gray-500 mb-4">Genera el token del webhook, pégalo en Evolution API y activa el bot. Sin estos dos pasos el bot no responde nunca, aunque el resto esté configurado.</p>
+                        <div class="space-y-3">
+                            <div>
+                                <button type="button" class="btn" id="btn-wa-token">Generar token de webhook</button>
+                                <span id="wa-token-status" class="text-sm text-gray-500 ml-2"></span>
+                            </div>
+                            <div id="wa-webhook-url-box" class="hidden">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">URL para pegar en Evolution API (solo se muestra una vez)</label>
+                                <input type="text" id="wa-webhook-url" class="w-full px-4 py-2 border rounded font-mono text-xs" readonly onclick="this.select()">
+                            </div>
+                            <label class="flex items-center gap-2 mt-2">
+                                <input type="checkbox" id="cfg-wa-activo">
+                                <span>Bot de WhatsApp activo</span>
+                            </label>
+                        </div>
                     </div>
                 </div>
 
@@ -2616,6 +2658,23 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                 if (w.evo_api_url) document.getElementById('cfg-wa-url').value       = w.evo_api_url;
                 if (w.evo_api_key) document.getElementById('cfg-wa-apikey').value    = w.evo_api_key;
                 if (w.evo_instance) document.getElementById('cfg-wa-instance').value = w.evo_instance;
+
+                const provSelect = document.getElementById('cfg-llm-proveedor');
+                if (provSelect && provSelect.options.length <= 1 && w.llm_proveedores) {
+                    Object.entries(w.llm_proveedores).forEach(([value, label]) => {
+                        const opt = document.createElement('option');
+                        opt.value = value; opt.textContent = label;
+                        provSelect.appendChild(opt);
+                    });
+                }
+                if (provSelect) provSelect.value = w.llm_proveedor || '';
+                document.getElementById('cfg-llm-modelo').value = w.llm_modelo || '';
+                document.getElementById('cfg-llm-apikey-status').textContent = w.llm_api_key_configurado
+                    ? 'Ya hay una API key guardada. Deja el campo vacío para conservarla.' : 'Sin API key guardada.';
+
+                document.getElementById('cfg-wa-activo').checked = !!w.activo;
+                document.getElementById('wa-token-status').textContent = w.webhook_configurado
+                    ? 'Token generado ✅' : 'Sin token generado todavía';
             }
 
             // 2. Datos Personales
@@ -2737,6 +2796,51 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
             Utils.showNotification('Bot WhatsApp configurado ✅', 'success');
         } catch (err) { Utils.showNotification('Error al guardar WhatsApp', 'error'); }
         finally { btn.disabled = false; btn.textContent = 'Guardar Bot WhatsApp'; }
+    });
+
+    document.getElementById('wa-llm-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const btn = document.getElementById('btn-save-llm');
+        btn.disabled = true; btn.textContent = 'Guardando...';
+        try {
+            await API.post('/admin/profile_api.php', {
+                type: 'whatsapp_llm',
+                llm_proveedor: document.getElementById('cfg-llm-proveedor').value,
+                llm_modelo:    document.getElementById('cfg-llm-modelo').value,
+                llm_api_key:   document.getElementById('cfg-llm-apikey').value
+            });
+            document.getElementById('cfg-llm-apikey').value = '';
+            Utils.showNotification('Proveedor de IA guardado ✅', 'success');
+            loadPerfilAPI();
+        } catch (err) { Utils.showNotification(err.message || 'Error al guardar proveedor de IA', 'error'); }
+        finally { btn.disabled = false; btn.textContent = 'Guardar Proveedor de IA'; }
+    });
+
+    document.getElementById('btn-wa-token').addEventListener('click', async () => {
+        if (!confirm('Esto invalida el token anterior (si había uno) y hay que volver a pegarlo en Evolution API. ¿Continuar?')) return;
+        const btn = document.getElementById('btn-wa-token');
+        btn.disabled = true;
+        try {
+            const res = await API.post('/admin/profile_api.php', { type: 'whatsapp_regenerar_token' });
+            document.getElementById('wa-webhook-url').value = res.data.webhook_url;
+            document.getElementById('wa-webhook-url-box').classList.remove('hidden');
+            document.getElementById('wa-token-status').textContent = 'Token generado ✅ — cópialo, no se vuelve a mostrar';
+            Utils.showNotification('Token generado. Pégalo en Evolution API ahora.', 'success');
+        } catch (err) { Utils.showNotification(err.message || 'Error al generar el token', 'error'); }
+        finally { btn.disabled = false; }
+    });
+
+    document.getElementById('cfg-wa-activo').addEventListener('change', async (e) => {
+        const checkbox = e.target;
+        const activar = checkbox.checked;
+        checkbox.disabled = true;
+        try {
+            await API.post('/admin/profile_api.php', { type: 'whatsapp_activar', activo: activar });
+            Utils.showNotification(activar ? 'Bot de WhatsApp activado ✅' : 'Bot de WhatsApp desactivado', 'success');
+        } catch (err) {
+            checkbox.checked = !activar;
+            Utils.showNotification(err.message || 'No se pudo cambiar el estado del bot', 'error');
+        } finally { checkbox.disabled = false; }
     });
 
     // ================================================================

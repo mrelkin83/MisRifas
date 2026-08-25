@@ -1,99 +1,72 @@
 # Base de Datos - MisRifas
 
-## ✅ Estado Actual
+## Estado actual
 
-La base de datos está **completamente configurada y lista para usar**. No necesitas ejecutar ningún script SQL adicional.
+El schema real de la BD `misrifas` se produce aplicando, **en este orden exacto**,
+las 6 migraciones vigentes en esta carpeta. El orden importa por dependencias de
+foreign key (`vendors` antes de que `raffles` pueda referenciarla, `admin_users`
+antes de `vendors`, etc).
 
----
+## Cómo reconstruir la base de datos
 
-## 📁 Archivo Disponible
-
-### `setup_completo.sql` ⭐
-
-**¿Qué contiene?**
-- Creación de todas las 15 tablas del sistema
-- Triggers y procedimientos almacenados
-- 15 Loterías Colombianas precargadas
-- Usuario admin predeterminado
-- Configuración inicial del sistema
-
-**¿Cuándo usarlo?**
-
-**SOLO** si necesitas **recrear la base de datos desde cero**.
-
-**NO lo ejecutes si la base de datos ya está funcionando.**
-
-**Cómo usarlo (si es necesario):**
-
-1. Abre phpMyAdmin
-2. Selecciona la base de datos `misrifas`
-3. Ve a la pestaña SQL
-4. Copia y pega el contenido de `setup_completo.sql`
-5. Haz clic en "Continuar"
-
----
-
-## ✅ Verificación Rápida
-
-Para verificar que tu base de datos está correctamente configurada, ejecuta en phpMyAdmin:
-
-```sql
--- Ver todas las tablas (debe mostrar 15 tablas)
-SHOW TABLES;
-
--- Ver loterías (debe mostrar 15 loterías)
-SELECT COUNT(*) as total FROM lotteries;
-
--- Ver estructura de admin_users (debe tener campo 'department')
-DESCRIBE admin_users;
+```bash
+./install.sh
 ```
 
-**Resultados esperados:**
-- ✅ 15 tablas creadas
-- ✅ 15 loterías cargadas
-- ✅ Campo `department` presente en `admin_users`
+Por defecto conecta como `mysql -u root` (sin password) contra una BD llamada
+`misrifas`. Para otra configuración:
 
----
+```bash
+MYSQL_USER=usuario MYSQL_PWD=clave DB_NAME=otra_bd ./install.sh
+```
 
-## 🚫 Archivos Eliminados
+El script hace `DROP DATABASE` + `CREATE DATABASE` antes de aplicar las
+migraciones — **no tiene guardas de confirmación**, está pensado para
+desarrollo/CI. Si hay datos reales que conservar, sacar un `mysqldump` antes.
 
-Los siguientes archivos fueron eliminados porque **NO son necesarios** y pueden causar errores:
+Si no se puede ejecutar el `.sh` (por ejemplo en Windows sin Git Bash), aplicar
+manualmente en este orden vía `mysql` CLI o phpMyAdmin:
 
-- ❌ `update_lotteries.sql` - Las loterías ya están cargadas
-- ❌ `tapazos.sql` - Ya incluido en setup_completo.sql
-- ❌ `tapazo_module.sql` - Ya incluido en setup_completo.sql
-- ❌ `seed_data.sql` - Datos de prueba innecesarios
-- ❌ `schema.sql` - Reemplazado por setup_completo.sql
+| # | Archivo | Qué agrega |
+|---|---------|------------|
+| 1 | `000_setup_completo_legacy.sql` | Las tablas base: `admin_users`, `users`, `lotteries`, `lottery_results`, `raffles`, `tickets`, `raffle_images`, `raffle_winners`, `banners`, `system_settings`, `notifications`, `tapazos`, `tapazo_jugadores`, vistas (`v_numeros_disponibles`, `v_reservas_expirando`), triggers/procedimientos, las 15 loterías colombianas precargadas y el admin por defecto. |
+| 2 | `v2.1_fix_schema.sql` | Ajusta el ENUM de `raffles.status`, agrega `audit_log` y `password_resets`. |
+| 3 | `v3.0_saas_multi_vendor.sql` | Agrega `vendors`, `raffles.vendor_id` (FK), columnas de scraping en `lottery_results`, tabla `message_queue`. |
+| 4 | `v3.1_pagos_transaccionales.sql` | Agrega `numero_reservas`, `payment_intents`, `webhook_logs`. |
+| 5 | `v3.2_buyer_auth_columns.sql` | Agrega columnas de autenticación de comprador en `users` (incluye `phone_whatsapp`, `auth_token` + índice). |
+| 6 | `v3.3_whatsapp_engine.sql` | Agrega las tablas del motor de WhatsApp: `wa_config`, `wa_conversaciones`, `wa_mensajes`, `wa_agentes`, `wa_eventos`. |
 
----
+Resultado esperado: **27 tablas** (más 2 vistas). Verificar con:
 
-## 📊 Loterías Precargadas
+```sql
+SHOW TABLES;
+SELECT COUNT(*) FROM lotteries;   -- 15
+DESCRIBE admin_users;             -- debe tener columna `department`
+```
 
-Tu base de datos incluye las 15 loterías oficiales de Colombia:
+## `legacy_archive/`
 
-| # | Lotería | Día | Hora |
-|---|---------|-----|------|
-| 1 | Lotería de Cundinamarca | Lunes | 22:30 |
-| 2 | Lotería de Tolima | Lunes | 23:00 |
-| 3 | Lotería Cruz Roja | Martes | 22:30 |
-| 4 | Lotería de Huila | Martes | 22:30 |
-| 5 | Lotería de Manizales | Miércoles | 22:30 |
-| 6 | Lotería del Meta | Miércoles | 22:30 |
-| 7 | Lotería del Valle | Miércoles | 22:30 |
-| 8 | Lotería Quindío | Jueves | 22:30 |
-| 9 | Lotería de Bogotá | Jueves | 22:30 |
-| 10 | Lotería de Santander | Viernes | 23:00 |
-| 11 | Lotería de Medellín | Viernes | 23:00 |
-| 12 | Lotería Risaralda | Viernes | 23:00 |
-| 13 | Lotería de Boyacá | Sábado | 22:40 |
-| 14 | Lotería de Cauca | Sábado | 21:40 |
-| 15 | Extra de Colombia | Sábado | 23:00 |
+Archivos que **NO se aplican** — o son duplicados exactos de una migración
+vigente, o rompen el schema si se aplican después de `000` (columnas duplicadas,
+tablas con shape incompatible):
 
----
+- `001_tapazo_module.sql`, `002_tapazos_legacy.sql` — versión antigua de
+  `tapazos`/`tapazo_jugadores` incompatible con la que ya trae `000` (nombres de
+  columna distintos, en inglés). Aplicarlos tras `000` falla o corrompe la tabla.
+- `003_add_columns.sql` — agrega a `raffles` columnas que `000` ya incluye
+  (`Duplicate column name` si se aplica).
+- `004_update_lotteries.sql` — inserta las mismas 15 loterías que `000` ya carga
+  (inofensivo pero redundante).
+- `setup_completo.sql` — duplicado byte a byte de `000_setup_completo_legacy.sql`.
+- `schema.sql`, `add_columns.sql`, `seed_data.sql`, `tapazo_module.sql`,
+  `tapazos.sql`, `update_lotteries.sql` — sueltos en `database/` (fuera de
+  `migrations/`), predecesores de las migraciones actuales.
 
-## 👤 Usuario Administrador
+Se conservan por historial, no por que haga falta aplicarlos.
 
-Tu base de datos incluye un usuario administrador predeterminado:
+## Usuario administrador por defecto
+
+`000_setup_completo_legacy.sql` crea:
 
 ```
 Email: admin@misrifas.com
@@ -101,63 +74,15 @@ Password: password123
 Rol: super_admin
 ```
 
-**Para iniciar sesión:**
-1. Ve a: `http://localhost/MisRifas/public/admin/index.php?auth=login`
-2. Usa las credenciales anteriores
+Cambiar esta contraseña es obligatorio antes de cualquier despliegue en VPS/producción.
 
----
+## Nuevas migraciones
 
-## 🔧 Mantenimiento
+Para agregar funcionalidad, crear un archivo `vX.Y_descripcion.sql` nuevo en esta
+carpeta y agregarlo al arreglo `MIGRATIONS` de `install.sh` (al final, en orden).
 
-### Migración de Datos
-
-Si necesitas agregar nuevas funcionalidades, crea archivos de migración en la carpeta `database/migrations/`.
-
-### Respaldo de Base de Datos
-
-Para hacer un respaldo de tu base de datos:
+## Respaldo
 
 ```bash
 mysqldump -u root -p misrifas > backup_$(date +%Y%m%d).sql
 ```
-
-O usa phpMyAdmin:
-1. Selecciona la base de datos `misrifas`
-2. Ve a "Exportar"
-3. Haz clic en "Continuar"
-
----
-
-## ❓ Solución de Problemas
-
-### Error: Cannot truncate a table referenced in a foreign key
-
-**Causa:** Intentaste ejecutar un script SQL que usa `TRUNCATE` en una tabla con foreign keys.
-
-**Solución:** **No necesitas ejecutar ese script**. Tu base de datos ya está correctamente configurada.
-
-### Error: Table already exists
-
-**Causa:** Intentaste ejecutar `setup_completo.sql` pero las tablas ya existen.
-
-**Solución:**
-- Si quieres mantener tus datos: **No ejecutes el script**
-- Si quieres empezar desde cero: Elimina todas las tablas primero
-
----
-
-## ✅ ¡Base de Datos Lista!
-
-Tu base de datos está **100% funcional**. Puedes:
-
-1. ✅ Registrar nuevos usuarios
-2. ✅ Crear rifas
-3. ✅ Gestionar boletos
-4. ✅ Procesar pagos
-5. ✅ Ver resultados
-
-**No necesitas ejecutar ningún script SQL adicional.**
-
----
-
-Para más información sobre el uso del sistema, consulta `GUIA_COMPLETA.md` en la raíz del proyecto.

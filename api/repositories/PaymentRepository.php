@@ -161,7 +161,7 @@ class PaymentRepository extends BaseRepository
      */
     public function getPaymentsByUser(int $userId, int $limit = 50, int $offset = 0): array
     {
-        $sql = "SELECT p.*, t.ticket_number, r.title as raffle_title
+        $sql = "SELECT p.*, t.ticket_number, r.name as raffle_title
                 FROM {$this->table} p
                 INNER JOIN tickets t ON p.ticket_id = t.id
                 INNER JOIN raffles r ON t.raffle_id = r.id
@@ -180,8 +180,8 @@ class PaymentRepository extends BaseRepository
      */
     public function getPendingPayments(int $hoursOld = 1): array
     {
-        $sql = "SELECT p.*, u.name as user_name, u.phone as user_phone,
-                       t.ticket_number, r.title as raffle_title
+        $sql = "SELECT p.*, u.name as user_name, u.phone_whatsapp as user_phone,
+                       t.ticket_number, r.name as raffle_title
                 FROM {$this->table} p
                 INNER JOIN users u ON p.user_id = u.id
                 INNER JOIN tickets t ON p.ticket_id = t.id
@@ -247,7 +247,7 @@ class PaymentRepository extends BaseRepository
 
             // Actualizar rifa: marcar comisión como pagada
             $raffleSql = "UPDATE raffles
-                         SET commission_paid = 1, commission_paid_at = NOW()
+                         SET commission_paid = 1, commission_payment_date = NOW()
                          WHERE id = ?";
             $raffleStmt = $this->db->prepare($raffleSql);
             $raffleStmt->execute([$commission['raffle_id']]);

@@ -112,7 +112,7 @@ try {
             // Enviar recordatorio
             $notificationRepo->notifyCommissionDue($raffle['created_by'], [
                 'raffle_id' => $raffle['id'],
-                'raffle_title' => $raffle['title'],
+                'raffle_title' => $raffle['name'],
                 'commission_amount' => $raffle['commission_amount'],
                 'commission_due_date' => $raffle['commission_due_date'],
                 'days_remaining' => $raffle['days_remaining'],
@@ -131,8 +131,8 @@ try {
 
     $tomorrow = date('Y-m-d', strtotime('+1 day'));
 
-    $drawSql = "SELECT DISTINCT r.id, r.title, r.draw_date, l.name as lottery_name,
-                       u.id as user_id, u.phone as user_phone, u.email as user_email,
+    $drawSql = "SELECT DISTINCT r.id, r.name as title, r.draw_date, l.name as lottery_name,
+                       u.id as user_id, u.phone_whatsapp as user_phone, u.email as user_email,
                        GROUP_CONCAT(t.ticket_number ORDER BY t.ticket_number) as user_tickets
                 FROM raffles r
                 INNER JOIN tickets t ON r.id = t.raffle_id

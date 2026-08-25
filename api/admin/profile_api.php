@@ -24,6 +24,7 @@ require_once __DIR__ . '/../../api/whatsapp/RaffleDomainAdapter.php';
 
 use ElkinLinan\WhatsappAiEngine\Engine;
 use ElkinLinan\WhatsappAiEngine\Core\WaConfig;
+use ElkinLinan\WhatsappAiEngine\Providers\LlmProviderManager;
 use ElkinLinan\WhatsappAiEngine\Defecto\PesosColombianos;
 use ElkinLinan\WhatsappAiEngine\Defecto\TodoPermitido;
 use ElkinLinan\WhatsappAiEngine\Defecto\SinUrl;
@@ -57,6 +58,7 @@ try {
 
         arrancarMotorPara((int)$adminUser['id']);
         $waCfg = WaConfig::paraFrontend(Engine::db());
+        $waCfgRaw = WaConfig::cargar(Engine::db());
 
         Response::success([
             'payment_config' => $paymentConfig,
@@ -64,6 +66,13 @@ try {
                 'evo_api_url'  => $waCfg['evolution_url'] ?? '',
                 'evo_instance' => $waCfg['evolution_instancia'] ?? '',
                 'evo_api_key_configurado' => $waCfg['evolution_apikey_configurado'] ?? false,
+                'activo' => !empty($waCfg['activo']),
+                'webhook_configurado' => !empty($waCfgRaw['webhook_token_hash']),
+                'webhook_url_base' => rtrim(getenv('APP_URL') ?: 'http://localhost', '/') . '/api/whatsapp/webhook.php',
+                'llm_proveedor' => $waCfg['llm_proveedor'] ?? '',
+                'llm_modelo' => $waCfg['llm_modelo'] ?? '',
+                'llm_api_key_configurado' => $waCfg['llm_api_key_configurado'] ?? false,
+                'llm_proveedores' => LlmProviderManager::PROVEEDORES,
             ],
         ]);
     }
@@ -103,6 +112,64 @@ try {
 
             Logger::activity('profile_whatsapp_updated', $adminUser['id']);
             Response::success(['message' => 'Configuración WhatsApp guardada']);
+        }
+
+        if ($type === 'whatsapp_llm') {
+            arrancarMotorPara((int)$adminUser['id']);
+
+            $proveedor = trim((string)($input['llm_proveedor'] ?? ''));
+            if ($proveedor !== '' && !array_key_exists($proveedor, LlmProviderManager::PROVEEDORES)) {
+                Response::error('Proveedor de IA no reconocido', null, 400);
+            }
+
+            $campos = [];
+            if (isset($input['llm_proveedor'])) $campos['llm_proveedor'] = $proveedor;
+            if (isset($input['llm_modelo']))    $campos['llm_modelo'] = trim((string)$input['llm_modelo']);
+            // vacio no pisa la clave ya guardada, igual que evolution_apikey arriba
+            if (isset($input['llm_api_key']))   $campos['llm_api_key'] = trim((string)$input['llm_api_key']);
+
+            WaConfig::guardar(Engine::db(), $campos);
+
+            Logger::activity('profile_whatsapp_llm_updated', $adminUser['id']);
+            Response::success(['message' => 'Proveedor de IA guardado']);
+        }
+
+        if ($type === 'whatsapp_regenerar_token') {
+            arrancarMotorPara((int)$adminUser['id']);
+            $token = WaConfig::regenerarWebhookToken(Engine::db());
+            $webhookUrl = rtrim(getenv('APP_URL') ?: 'http://localhost', '/')
+                . '/api/whatsapp/webhook.php?token=' . $token;
+
+            Logger::activity('profile_whatsapp_token_regenerated', $adminUser['id']);
+            Response::success([
+                'message' => 'Token generado. Cópialo ahora: no se vuelve a mostrar.',
+                'webhook_url' => $webhookUrl,
+            ]);
+        }
+
+        if ($type === 'whatsapp_activar') {
+            arrancarMotorPara((int)$adminUser['id']);
+            $activar = !empty($input['activo']);
+
+            if ($activar) {
+                $cfg = WaConfig::cargar(Engine::db(), true);
+                $faltan = [];
+                if (!$cfg || empty($cfg['webhook_token_hash'])) $faltan[] = 'generar el token del webhook';
+                if (!$cfg || empty($cfg['evolution_url']))      $faltan[] = 'la URL de EvolutionAPI';
+                if (!$cfg || empty($cfg['evolution_instancia'])) $faltan[] = 'el nombre de la instancia';
+                if (!$cfg || empty($cfg['evolution_apikey']))   $faltan[] = 'la Global API Key de EvolutionAPI';
+                if (!$cfg || empty($cfg['llm_proveedor']))      $faltan[] = 'el proveedor de IA';
+                if (!$cfg || empty($cfg['llm_modelo']))         $faltan[] = 'el modelo de IA';
+                if (!$cfg || empty($cfg['llm_api_key']))        $faltan[] = 'la API key del proveedor de IA';
+                if ($faltan) {
+                    Response::error('Falta configurar: ' . implode(', ', $faltan) . '.', null, 400);
+                }
+            }
+
+            WaConfig::guardar(Engine::db(), ['activo' => $activar ? 1 : 0]);
+
+            Logger::activity('profile_whatsapp_' . ($activar ? 'activado' : 'desactivado'), $adminUser['id']);
+            Response::success(['message' => $activar ? 'Bot de WhatsApp activado ✅' : 'Bot de WhatsApp desactivado']);
         }
 
         Response::error('Tipo de configuración no reconocido', null, 400);
