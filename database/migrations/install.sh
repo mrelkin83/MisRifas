@@ -33,6 +33,8 @@ MIGRATIONS=(
   "v3.1_pagos_transaccionales.sql"
   "v3.2_buyer_auth_columns.sql"
   "v3.3_whatsapp_engine.sql"
+  "v3.4_fix_created_by_fk.sql"
+  "v3.5_pago_modo_default.sql"
 )
 
 echo "==> Recreando base de datos '$DB_NAME'"

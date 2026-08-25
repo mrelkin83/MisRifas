@@ -24,12 +24,12 @@ try {
     // Si es super_admin ve todas las rifas, sino solo las suyas
     if ($adminUser['role'] === 'super_admin') {
         $stmt = $db->query("
-            SELECT r.*, l.name as lottery_name, u.full_name as creator_name,
+            SELECT r.*, l.name as lottery_name, u.business_name as creator_name,
                 (SELECT COUNT(*) FROM tickets WHERE raffle_id = r.id AND status = 'paid') as sold_tickets,
                 (SELECT COUNT(*) FROM tickets WHERE raffle_id = r.id AND status = 'reserved') as reserved_tickets
             FROM raffles r
             LEFT JOIN lotteries l ON r.lottery_id = l.id
-            LEFT JOIN admin_users u ON r.created_by = u.id
+            LEFT JOIN vendors u ON r.created_by = u.id
             ORDER BY r.created_at DESC
         ");
     } else {

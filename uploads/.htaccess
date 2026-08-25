@@ -1,0 +1,13 @@
+# Defensa en profundidad: uploads/ solo debe servir archivos estaticos
+# (imagenes de comprobantes de pago, rifas, media de WhatsApp). Nunca debe
+# ejecutar PHP, sin importar que validacion de tipo tenga el endpoint que
+# escribio el archivo - bloquea aqui cualquier .php que logre colarse.
+<FilesMatch "\.(php|phar|phtml|pht|php\d|php\.)$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>

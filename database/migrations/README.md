@@ -35,6 +35,8 @@ manualmente en este orden vía `mysql` CLI o phpMyAdmin:
 | 4 | `v3.1_pagos_transaccionales.sql` | Agrega `numero_reservas`, `payment_intents`, `webhook_logs`. |
 | 5 | `v3.2_buyer_auth_columns.sql` | Agrega columnas de autenticación de comprador en `users` (incluye `phone_whatsapp`, `auth_token` + índice). |
 | 6 | `v3.3_whatsapp_engine.sql` | Agrega las tablas del motor de WhatsApp: `wa_config`, `wa_conversaciones`, `wa_mensajes`, `wa_agentes`, `wa_eventos`. |
+| 7 | `v3.4_fix_created_by_fk.sql` | Repunta `raffles.created_by` de `admin_users(id)` (legacy, casi vacía) a `vendors(id)` (la tabla que el código realmente usa) — sin esto, crear una rifa como cualquier vendor menos el admin sembrado original tira un error de foreign key. |
+| 8 | `v3.5_pago_modo_default.sql` | Da a `wa_config.pago_modo` un default real (`'manual'`) en vez de `NULL` — sin esto, el motor de WhatsApp resuelve el modo de cobro como `contra_entrega` para cualquier vendor (nadie lo configura) y confirma pagos de boletos sin haber cobrado nada. |
 
 Resultado esperado: **27 tablas** (más 2 vistas). Verificar con:
 

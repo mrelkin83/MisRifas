@@ -23,6 +23,7 @@ node_modules/
 !/public/assets/uploads/.gitkeep
 !/public/uploads/.gitkeep
 !/uploads/.gitkeep
+!/uploads/.htaccess
 
 # Backups
 *.bak

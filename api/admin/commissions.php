@@ -54,10 +54,10 @@ try {
     if ($adminUser['role'] === 'super_admin') {
         $stmt = $db->query("
             SELECT r.id as raffle_id, r.name as raffle_name, r.commission_amount, r.commission_due_date, r.commission_paid,
-                   u.full_name as creator_name,
+                   u.business_name as creator_name,
                    (SELECT COUNT(*) FROM tickets t WHERE t.raffle_id = r.id AND t.status = 'paid') as total_sales
             FROM raffles r
-            JOIN admin_users u ON r.created_by = u.id
+            JOIN vendors u ON r.created_by = u.id
             WHERE r.commission_amount > 0
             ORDER BY r.commission_due_date ASC
         ");

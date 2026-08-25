@@ -1,7 +1,8 @@
 <?php
 /**
- * Adapta el motor de WhatsApp al dominio de MisRifas: rifas cuyo premio es
- * un producto de tecnologia. No reimplementa reserva/disponibilidad -
+ * Adapta el motor de WhatsApp al dominio de MisRifas: rifas (el premio
+ * puede ser cualquier cosa, no es especifico de tecnologia - esto no es
+ * una tienda ni un restaurante). No reimplementa reserva/disponibilidad -
  * reusa RaffleRepository/TicketRepository/UserRepository, el mismo codigo
  * que ya usan api/tickets/reserve.php y api/raffles/index.php.
  *
@@ -12,11 +13,19 @@
  * parsean para operar sobre todos los tickets referenciados. Ver Fase 2
  * Paso 3 en el plan para la justificacion completa de esta decision.
  *
- * confirmarTransaccion() NO esta expuesta como herramienta invocable por
- * el LLM (confirmado leyendo Core/ToolEngine.php) - solo la llama codigo
- * propio de MisRifas ya verificado: el webhook de Wompi/Nequi tras validar
- * firma, o POST /api/admin/payments.php (action=approve). El bot jamas
- * marca un boleto como pagado por su cuenta.
+ * confirmarTransaccion() NO esta expuesta como herramienta invocable
+ * directamente por el LLM, pero SI la llama el motor internamente (ver
+ * Core/ToolEngine.php::crearPedido() y Payments/PaymentManager.php) en dos
+ * casos: pago de pasarela verificado (legitimo), o modo de cobro
+ * `contra_entrega` (nunca legitimo para una rifa - no hay entrega que
+ * gatille el cobro). El unico webhook/endpoint propio de MisRifas que
+ * llega a marcar un ticket pagado (webhook_nequi.php, webhooks/wompi.php,
+ * webhooks/mercadopago.php, admin/payments.php?action=approve) lo hace con
+ * su propio UPDATE directo a `tickets` - NINGUNO de ellos llama a este
+ * metodo. La proteccion real contra el bypass de "contra_entrega" es que
+ * `wa_config.pago_modo` tiene default 'manual' (migracion v3.5) y nunca
+ * puede resolver a 'contra_entrega' via el fallback `?? 'contra_entrega'`
+ * del motor - ver hallazgo C4 de la auditoria de seguridad, 2026-08-25.
  */
 
 require_once __DIR__ . '/../../config/constants.php';

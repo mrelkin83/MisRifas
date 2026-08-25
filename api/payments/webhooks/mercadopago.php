@@ -162,9 +162,10 @@ try {
 
             // 3. Generar tickets
             $stmt = $db->prepare("
-                INSERT INTO tickets (raffle_id, user_id, ticket_number, status, created_at)
-                SELECT nr.raffle_id, nr.user_id, nr.numero, 'paid', NOW()
-                FROM numero_reservas nr
+                UPDATE tickets t
+                INNER JOIN numero_reservas nr
+                    ON t.raffle_id = nr.raffle_id AND t.ticket_number = nr.numero
+                SET t.status = 'paid', t.user_id = nr.user_id, t.paid_at = NOW()
                 WHERE nr.payment_intent_id = ? AND nr.estado = 'PAGADO'
             ");
             $stmt->execute([$paymentIntent['id']]);

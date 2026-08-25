@@ -21,10 +21,10 @@ class CommissionRepository extends BaseRepository
      */
     public function getRafflesWithUpcomingCommission(int $daysAhead = 10): array
     {
-        $sql = "SELECT r.*, u.full_name as creator_name, u.phone as creator_phone, u.email as creator_email,
+        $sql = "SELECT r.*, u.business_name as creator_name, u.phone as creator_phone, u.email as creator_email,
                        DATEDIFF(r.commission_due_date, CURDATE()) as days_remaining
                 FROM raffles r
-                INNER JOIN admin_users u ON r.created_by = u.id
+                INNER JOIN vendors u ON r.created_by = u.id
                 WHERE r.commission_paid = 0
                 AND r.status = ?
                 AND r.commission_due_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL ? DAY)
@@ -41,9 +41,9 @@ class CommissionRepository extends BaseRepository
      */
     public function getRafflesWithOverdueCommission(): array
     {
-        $sql = "SELECT r.*, u.full_name as creator_name, u.phone as creator_phone, u.email as creator_email
+        $sql = "SELECT r.*, u.business_name as creator_name, u.phone as creator_phone, u.email as creator_email
                 FROM raffles r
-                INNER JOIN admin_users u ON r.created_by = u.id
+                INNER JOIN vendors u ON r.created_by = u.id
                 WHERE r.commission_paid = 0
                 AND r.status = ?
                 AND r.commission_due_date < CURDATE()
@@ -199,10 +199,10 @@ class CommissionRepository extends BaseRepository
     public function getPaidCommissions(int $limit = 100, int $offset = 0): array
     {
         $sql = "SELECT cp.*, r.name as raffle_title, r.draw_date,
-                       u.full_name as creator_name, u.phone as creator_phone
+                       u.business_name as creator_name, u.phone as creator_phone
                 FROM {$this->table} cp
                 INNER JOIN raffles r ON cp.raffle_id = r.id
-                INNER JOIN admin_users u ON r.created_by = u.id
+                INNER JOIN vendors u ON r.created_by = u.id
                 WHERE cp.status = ?
                 ORDER BY cp.confirmed_at DESC
                 LIMIT ? OFFSET ?";
@@ -219,11 +219,11 @@ class CommissionRepository extends BaseRepository
     {
         $sql = "SELECT r.*, cp.amount as commission_amount, cp.reference as commission_reference,
                        cp.created_at as commission_created_at,
-                       u.full_name as creator_name, u.phone as creator_phone, u.email as creator_email,
+                       u.business_name as creator_name, u.phone as creator_phone, u.email as creator_email,
                        DATEDIFF(r.commission_due_date, CURDATE()) as days_remaining
                 FROM raffles r
                 LEFT JOIN commission_payments cp ON r.id = cp.raffle_id AND cp.status = ?
-                INNER JOIN admin_users u ON r.created_by = u.id
+                INNER JOIN vendors u ON r.created_by = u.id
                 WHERE r.commission_paid = 0
                 AND r.status IN (?, ?)
                 ORDER BY r.commission_due_date ASC";
@@ -321,9 +321,9 @@ class CommissionRepository extends BaseRepository
 
         $sql = "SELECT r.id as raffle_id, r.name as title, r.commission_amount,
                        r.commission_due_date, r.commission_paid, r.commission_payment_date,
-                       u.full_name as creator_name, u.email as creator_email, u.phone as creator_phone
+                       u.business_name as creator_name, u.email as creator_email, u.phone as creator_phone
                 FROM raffles r
-                INNER JOIN admin_users u ON r.created_by = u.id
+                INNER JOIN vendors u ON r.created_by = u.id
                 {$whereSql}
                 ORDER BY r.created_at DESC";
 

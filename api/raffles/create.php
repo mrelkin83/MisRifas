@@ -124,6 +124,11 @@ try {
         'winning_mode'       => $input['winning_mode'],
         'status'             => RAFFLE_STATUS_DRAFT,
         'created_by'         => $adminUser['id'],
+        // vendor_id es la columna de scoping que usan api/vendor/list_raffles.php,
+        // list_participants.php y list_payments.php - sin esto, una rifa creada
+        // por este endpoint quedaba invisible para su propio dueno en el panel
+        // de vendor (esos queries filtran por vendor_id, no por created_by).
+        'vendor_id'          => $adminUser['id'],
     ];
 
     $raffleRepo = new RaffleRepository();

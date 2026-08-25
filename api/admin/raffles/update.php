@@ -21,6 +21,7 @@ require_once __DIR__ . '/../../../config/database.php';
 require_once __DIR__ . '/../../../api/utils/Response.php';
 require_once __DIR__ . '/../../../api/utils/Logger.php';
 require_once __DIR__ . '/../../../api/utils/Auth.php';
+require_once __DIR__ . '/../../../api/utils/Validator.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     Response::error('Método no permitido', null, 405);
@@ -49,15 +50,19 @@ try {
     $fields = [];
     $params = [];
 
-    if (isset($input['name'])) { $fields[] = 'name = ?'; $params[] = trim($input['name']); }
+    // Sanitizado igual que api/raffles/create.php - faltaba aqui, y ese hueco
+    // era un XSS almacenado: name/description se renderizan sin escapar via
+    // innerHTML tanto en el dashboard del super_admin como en el storefront
+    // publico (raffle.php).
+    if (isset($input['name'])) { $fields[] = 'name = ?'; $params[] = Validator::sanitize($input['name']); }
     if (isset($input['status'])) { $fields[] = 'status = ?'; $params[] = $input['status']; }
     if (isset($input['ticket_price'])) { $fields[] = 'ticket_price = ?'; $params[] = floatval($input['ticket_price']); }
     if (isset($input['total_tickets'])) { $fields[] = 'total_tickets = ?'; $params[] = intval($input['total_tickets']); }
     if (isset($input['draw_date'])) { $fields[] = 'draw_date = ?'; $params[] = $input['draw_date']; }
     if (isset($input['lottery_id'])) { $fields[] = 'lottery_id = ?'; $params[] = intval($input['lottery_id']); }
-    if (isset($input['whatsapp_contact'])) { $fields[] = 'whatsapp_contact = ?'; $params[] = trim($input['whatsapp_contact']); }
-    if (isset($input['responsible_person'])) { $fields[] = 'responsible_person = ?'; $params[] = trim($input['responsible_person']); }
-    if (isset($input['description'])) { $fields[] = 'description = ?'; $params[] = trim($input['description']); }
+    if (isset($input['whatsapp_contact'])) { $fields[] = 'whatsapp_contact = ?'; $params[] = Validator::sanitize($input['whatsapp_contact']); }
+    if (isset($input['responsible_person'])) { $fields[] = 'responsible_person = ?'; $params[] = Validator::sanitize($input['responsible_person']); }
+    if (isset($input['description'])) { $fields[] = 'description = ?'; $params[] = Validator::sanitize($input['description']); }
 
     if (empty($fields)) {
         Response::error('No hay datos para actualizar');

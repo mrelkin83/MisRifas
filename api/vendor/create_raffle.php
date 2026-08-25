@@ -8,6 +8,7 @@ require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../api/utils/Auth.php';
 require_once __DIR__ . '/../../api/utils/Response.php';
 require_once __DIR__ . '/../../api/utils/Logger.php';
+require_once __DIR__ . '/../../api/utils/Validator.php';
 
 Auth::requireVendor();
 
@@ -17,9 +18,11 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 $input = json_decode(file_get_contents('php://input'), true);
 
-$name = trim($input['name'] ?? '');
-$department = trim($input['department'] ?? '');
-$city = trim($input['city'] ?? '');
+// Sanitizado igual que api/raffles/create.php - este endpoint nunca lo tuvo,
+// dejaba entrar XSS almacenado en name/description sin ningun escape.
+$name = Validator::sanitize(trim($input['name'] ?? ''));
+$department = Validator::sanitize(trim($input['department'] ?? ''));
+$city = Validator::sanitize(trim($input['city'] ?? ''));
 $lottery_id = intval($input['lottery_id'] ?? 0);
 $draw_date = $input['draw_date'] ?? '';
 $ticket_price = floatval($input['ticket_price'] ?? 0);
@@ -27,7 +30,7 @@ $total_tickets = intval($input['total_tickets'] ?? 0);
 $digits = intval($input['digits'] ?? 4);
 $opportunities = intval($input['opportunities'] ?? 1);
 $winning_mode = $input['winning_mode'] ?? 'last_2';
-$description = trim($input['description'] ?? '');
+$description = Validator::sanitize(trim($input['description'] ?? ''));
 
 if (empty($name) || empty($department) || empty($city) || $lottery_id <= 0 || empty($draw_date) || $ticket_price <= 0 || $total_tickets <= 0) {
     Response::error('Todos los campos son requeridos', null, 400);

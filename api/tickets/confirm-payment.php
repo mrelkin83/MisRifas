@@ -73,22 +73,31 @@ try {
 
     $db->beginTransaction();
 
+    // El subtipo declarado en el data-URI NO es de fiar como extension de
+    // archivo (asi entraba un .php disfrazado de "imagen") - whitelist
+    // estricta en el regex, y ademas se valida el contenido real con
+    // getimagesizefromstring() antes de escribir nada a disco, igual que
+    // Uploader::upload() ya hace para los demas flujos de imagen.
     $proofUrl = null;
-    if ($proof && strpos($proof, 'data:image') === 0) {
-        preg_match('/data:image\/(.*?);base64,/', $proof, $matches);
-        $imageType = $matches[1] ?? 'png';
-        $imageData = base64_decode(preg_replace('/^data:image\/\w+;base64,/', '', $proof));
+    if ($proof && strpos($proof, 'data:image') === 0
+        && preg_match('/^data:image\/(jpe?g|png|webp);base64,(.+)$/i', $proof, $matches)) {
+        $imageType = strtolower($matches[1]) === 'jpg' ? 'jpg' : strtolower($matches[1]);
+        $imageData = base64_decode($matches[2], true);
 
-        if ($imageData) {
-            $filename = 'payment_proof_' . $ticketId . '_' . time() . '.' . $imageType;
-            $uploadDir = __DIR__ . '/../../uploads/payment_proofs/';
+        if ($imageData !== false) {
+            $imageInfo = @getimagesizefromstring($imageData);
+            $allowedMimes = ['image/jpeg', 'image/png', 'image/webp'];
+            if ($imageInfo !== false && in_array($imageInfo['mime'], $allowedMimes, true)) {
+                $filename = 'payment_proof_' . $ticketId . '_' . time() . '_' . bin2hex(random_bytes(4)) . '.' . $imageType;
+                $uploadDir = __DIR__ . '/../../uploads/payment_proofs/';
 
-            if (!is_dir($uploadDir)) {
-                mkdir($uploadDir, 0755, true);
-            }
+                if (!is_dir($uploadDir)) {
+                    mkdir($uploadDir, 0755, true);
+                }
 
-            if (file_put_contents($uploadDir . $filename, $imageData) !== false) {
-                $proofUrl = '/uploads/payment_proofs/' . $filename;
+                if (file_put_contents($uploadDir . $filename, $imageData) !== false) {
+                    $proofUrl = '/uploads/payment_proofs/' . $filename;
+                }
             }
         }
     }

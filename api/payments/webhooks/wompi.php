@@ -151,11 +151,18 @@ try {
             ");
             $stmt->execute([$paymentIntent['id']]);
 
-            // 3. Generar tickets
+            // 3. Marcar tickets como pagados. Cada raffle ya tiene una fila
+            // por numero desde su creacion (TicketRepository::generateTickets()),
+            // asi que esto es un UPDATE, no un INSERT - insertar chocaba
+            // siempre con el UNIQUE (raffle_id, ticket_number) y ademas
+            // omitia `opportunities` (NOT NULL sin default), asi que la
+            // transaccion completa hacia rollback en todo pago aprobado: el
+            // comprador quedaba cobrado por Wompi pero sin boleto localmente.
             $stmt = $db->prepare("
-                INSERT INTO tickets (raffle_id, user_id, ticket_number, status, created_at)
-                SELECT nr.raffle_id, nr.user_id, nr.numero, 'paid', NOW()
-                FROM numero_reservas nr
+                UPDATE tickets t
+                INNER JOIN numero_reservas nr
+                    ON t.raffle_id = nr.raffle_id AND t.ticket_number = nr.numero
+                SET t.status = 'paid', t.user_id = nr.user_id, t.paid_at = NOW()
                 WHERE nr.payment_intent_id = ? AND nr.estado = 'PAGADO'
             ");
             $stmt->execute([$paymentIntent['id']]);
