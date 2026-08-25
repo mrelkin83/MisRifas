@@ -17,18 +17,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title><?= $page_title ?></title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: { DEFAULT: '#f59e0b', dark: '#b45309', light: '#fbbf24' }
-                    }
-                }
-            }
-        }
-    </script>
+    <link rel="stylesheet" href="<?= BASE_PATH ?>/public/css/tailwind.min.css">
     <style>
         @font-face {
             font-family: 'Outfit';
@@ -244,7 +233,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
             <?php if (isset($_GET['auth']) && $_GET['auth'] === 'login'): ?>
             <div class="text-center mb-8">
                 <svg class="w-12 h-12 mx-auto text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v1a2 2 0 0 0 0 4v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1a2 2 0 0 0 0-4Z"/><path d="M13 5v14" stroke-dasharray="2 3"/></svg>
-                <h1 class="text-2xl font-bold mt-4">MisRifas</h1>
+                <h1 class="text-2xl font-bold mt-4 text-gray-900">MisRifas</h1>
                 <p class="text-gray-500">Inicia sesión en tu cuenta</p>
             </div>
             <form id="login-form" class="space-y-4">
@@ -294,7 +283,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
             <?php else: ?>
             <div class="text-center mb-8">
                 <svg class="w-12 h-12 mx-auto text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v1a2 2 0 0 0 0 4v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1a2 2 0 0 0 0-4Z"/><path d="M13 5v14" stroke-dasharray="2 3"/></svg>
-                <h1 class="text-2xl font-bold mt-4">Crear Cuenta</h1>
+                <h1 class="text-2xl font-bold mt-4 text-gray-900">Crear Cuenta</h1>
                 <p class="text-gray-500">Regístrate para crear tus rifas</p>
             </div>
             <form id="register-form" class="space-y-4">

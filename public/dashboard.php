@@ -95,18 +95,7 @@ if ($user) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mi Panel - MisRifas</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: { DEFAULT: '#2563eb', dark: '#1e40af', light: '#3b82f6' }
-                    }
-                }
-            }
-        }
-    </script>
+    <link rel="stylesheet" href="<?= $basePath ?>/public/css/tailwind.min.css">
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f172a; }
         .glass-nav { background: rgba(15,23,42,0.75); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-bottom: 1px solid rgba(255,255,255,0.08); }

@@ -11,18 +11,7 @@ require_once __DIR__ . '/../config/app.php';
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>¿Qué es MisRifas? - La plataforma #1 de Sorteos en Colombia</title>
     <script>const BASE_PATH = "<?= BASE_PATH ?>";</script>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: { DEFAULT: '#f59e0b', dark: '#b45309', light: '#fbbf24' }
-                    }
-                }
-            }
-        }
-    </script>
+    <link rel="stylesheet" href="<?= BASE_PATH ?>/public/css/tailwind.min.css">
     <style>
         @font-face {
             font-family: 'Outfit';

@@ -111,18 +111,7 @@ header("Expires: 0");
     <!-- WhatsApp fuerza el refresh si la imagen cambia -->
     <link rel="canonical" href="<?= htmlspecialchars($ogUrl) ?>">
 
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: { DEFAULT: '#f59e0b', dark: '#b45309', light: '#fbbf24' }
-                    }
-                }
-            }
-        }
-    </script>
+    <link rel="stylesheet" href="<?= BASE_PATH ?>/public/css/tailwind.min.css">
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif;}
         body { background: #0f172a; color: #f8fafc; }

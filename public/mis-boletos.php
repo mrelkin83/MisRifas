@@ -15,18 +15,7 @@ require_once __DIR__ . '/../config/database.php';
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title><?= $page_title ?></title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: { DEFAULT: '#f59e0b', dark: '#b45309', light: '#fbbf24' }
-                    }
-                }
-            }
-        }
-    </script>
+    <link rel="stylesheet" href="<?= BASE_PATH ?>/public/css/tailwind.min.css">
     <style>
         @font-face {
             font-family: 'Outfit';

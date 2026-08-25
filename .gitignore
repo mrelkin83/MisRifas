@@ -46,9 +46,6 @@ Thumbs.db
 /cache/
 *.cache
 
-# Compiled CSS (se genera con npm run build:css)
-/public/css/tailwind.min.css
-
 # Tools / Scripts temporales
 /tools/
 
@@ -57,3 +54,4 @@ composer-setup.php
 
 # Backups de proyecto completo (pesados, no son código fuente)
 /MisRifas*.zip
+/database/backups/

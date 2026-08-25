@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@source "../../public/**/*.php";
 
 /* ============================================
    MISRIFAS - Unified Design System
@@ -7,9 +8,10 @@
 
 /* ── Theme Configuration ────────────────────── */
 @theme {
-    --color-primary: #2563eb;
-    --color-primary-dark: #1e40af;
-    --color-primary-light: #3b82f6;
+    --breakpoint-xs: 30rem;
+    --color-primary: #f59e0b;
+    --color-primary-dark: #b45309;
+    --color-primary-light: #fbbf24;
     --color-success: #10b981;
     --color-success-dark: #059669;
     --color-error: #ef4444;
@@ -25,35 +27,44 @@
 }
 
 /* ── Base Reset ────────────────────────────── */
-* {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
+/* En @layer base para que las utilidades de Tailwind (ej. text-primary en
+   un <a>) puedan sobreescribirlo — CSS sin @layer siempre gana sobre
+   cualquier regla dentro de un @layer sin importar la especificidad,
+   así que un reset "a { color: inherit }" suelto rompía silenciosamente
+   cualquier color de texto en enlaces en todo el sitio. */
+@layer base {
+    * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+    }
+
+    html {
+        scroll-behavior: smooth;
+    }
+
+    body {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        background: #0f172a;
+        color: #f8fafc;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        line-height: 1.6;
+    }
+
+    img {
+        max-width: 100%;
+        height: auto;
+        display: block;
+    }
+
+    a {
+        text-decoration: none;
+        color: inherit;
+    }
 }
 
-html {
-    scroll-behavior: smooth;
-}
-
-body {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background: #0f172a;
-    color: #f8fafc;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    line-height: 1.6;
-}
-
-img {
-    max-width: 100%;
-    height: auto;
-    display: block;
-}
-
-a {
-    text-decoration: none;
-    color: inherit;
-}
+@layer components {
 
 /* ── Glass Effects ──────────────────────────── */
 .glass-nav {
@@ -1108,4 +1119,5 @@ a {
 .no-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
+}
 }

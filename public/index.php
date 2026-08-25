@@ -20,18 +20,7 @@ $page_description = "La plataforma más confiable para crear y participar en rif
     <meta http-equiv="Expires" content="0">
     <meta name="description" content="<?= $page_description ?>">
     <title><?= $page_title ?></title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: { DEFAULT: '#f59e0b', dark: '#b45309', light: '#fbbf24' }
-                    }
-                }
-            }
-        }
-    </script>
+    <link rel="stylesheet" href="<?= BASE_PATH ?>/public/css/tailwind.min.css">
     <style>
         /* Fuente display para titulares - autohospedada (nunca <link> a
            Google Fonts en produccion), un solo peso (800) que cubre el uso
