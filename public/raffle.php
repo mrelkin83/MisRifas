@@ -178,6 +178,24 @@ header("Expires: 0");
             .ticket-btn { font-size: 0.9rem !important; }
             header .container { padding: 0 1rem; }
             header a span.text-xl { font-size: 1rem; }
+            #nav-menu {
+                position: fixed;
+                top: 80px;
+                left: 0;
+                right: 0;
+                background: rgba(15, 23, 42, 0.98);
+                backdrop-filter: blur(20px);
+                flex-direction: column;
+                align-items: flex-start;
+                padding: 2rem;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+                z-index: 100;
+                gap: 1.5rem;
+                display: none;
+            }
+            #nav-menu.active {
+                display: flex !important;
+            }
         }
     </style>
 </head>
@@ -546,7 +564,7 @@ header("Expires: 0");
     const raffleId = urlParams.get('id');
 
     if (!raffleId) {
-        window.location.href = '/';
+        window.location.href = BASE_PATH + '/public/index.php';
     }
 
     async function loadRaffleDetails() {
@@ -568,7 +586,7 @@ header("Expires: 0");
 
     function showError() {
         document.getElementById('error-msg').classList.remove('hidden');
-        setTimeout(() => window.location.href = '/', 2000);
+        setTimeout(() => window.location.href = BASE_PATH + '/public/index.php', 2000);
     }
 
     // image_url en BD es relativa a public/ (subida real: Uploader::upload()
@@ -896,6 +914,16 @@ document.getElementById('pay-selected-btn').addEventListener('click', async () =
             ticket.style.display = number.includes(search) ? 'flex' : 'none';
         });
     });
+
+    // Mobile Menu Toggle
+    const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+    const navMenu = document.getElementById('nav-menu');
+    if (mobileMenuBtn && navMenu) {
+        mobileMenuBtn.addEventListener('click', () => {
+            navMenu.classList.toggle('active');
+            navMenu.classList.toggle('hidden');
+        });
+    }
 
     loadRaffleDetails();
 
