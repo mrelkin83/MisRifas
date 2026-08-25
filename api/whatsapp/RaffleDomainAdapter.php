@@ -48,9 +48,25 @@ class RaffleDomainAdapter implements
             ? $this->userRepo->findByPhone($telefono)
             : null;
 
+        // PromptComposer.php exige exactamente estas 4 claves (nombre,
+        // es_nuevo, pedidos_abiertos, puntos - este ultimo puede ser null
+        // pero tiene que existir, lo compara con !== null). No hay concepto
+        // de puntos de fidelidad en MisRifas, se deja null a proposito.
+        // "pedidos_abiertos" se mapea a boletos reservados sin pagar aun.
+        $reservados = 0;
+        if ($user) {
+            foreach ($this->ticketRepo->getUserTickets((int)$user['id']) as $t) {
+                if ($t['status'] === 'reserved') {
+                    $reservados++;
+                }
+            }
+        }
+
         return [
-            'nombre' => $user['name'] ?? ($conversacion['nombre_contacto'] ?: 'Cliente'),
-            'compras_previas' => $user ? count($this->ticketRepo->getUserTickets((int)$user['id'])) : 0,
+            'nombre' => $user['name'] ?? (string)($conversacion['nombre_contacto'] ?? ''),
+            'es_nuevo' => !$user,
+            'pedidos_abiertos' => $reservados,
+            'puntos' => null,
         ];
     }
 
