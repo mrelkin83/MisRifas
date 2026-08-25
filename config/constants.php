@@ -3,12 +3,16 @@
  * Constantes de la Aplicación
  */
 
-// Directorios
-define('ROOT_PATH', dirname(__DIR__, 2));
-define('BACKEND_PATH', ROOT_PATH . '/backend');
-define('PUBLIC_PATH', ROOT_PATH . '/public');
-define('UPLOADS_PATH', ROOT_PATH . '/uploads');
-define('LOGS_PATH', ROOT_PATH . '/logs');
+// Directorios. dirname(__DIR__) = raiz de MisRifas (config/ esta un nivel
+// bajo la raiz) - antes decia dirname(__DIR__, 2), que apuntaba un nivel
+// POR ENCIMA de MisRifas. Nunca causo datos mal escritos porque index.php
+// siempre define PUBLIC_PATH primero (correcto) y nada llegaba a usar
+// UPLOADS_PATH/LOGS_PATH de aqui - pero un cron que las use si lo haria.
+if (!defined('ROOT_PATH')) define('ROOT_PATH', dirname(__DIR__));
+if (!defined('BACKEND_PATH')) define('BACKEND_PATH', ROOT_PATH . '/backend');
+if (!defined('PUBLIC_PATH')) define('PUBLIC_PATH', ROOT_PATH . '/public');
+if (!defined('UPLOADS_PATH')) define('UPLOADS_PATH', ROOT_PATH . '/uploads');
+if (!defined('LOGS_PATH')) define('LOGS_PATH', ROOT_PATH . '/logs');
 
 // Estados de Rifas
 define('RAFFLE_STATUS_DRAFT', 'draft');

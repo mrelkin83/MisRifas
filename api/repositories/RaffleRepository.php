@@ -51,6 +51,11 @@ class RaffleRepository extends BaseRepository
             $params[] = (int)$filters['lottery_id'];
         }
 
+        if (!empty($filters['vendor_id'])) {
+            $sql .= " AND COALESCE(r.vendor_id, r.created_by) = ?";
+            $params[] = (int)$filters['vendor_id'];
+        }
+
         if (!empty($filters['min_price'])) {
             $sql .= " AND r.ticket_price >= ?";
             $params[] = (float)$filters['min_price'];
