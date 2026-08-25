@@ -12,10 +12,11 @@
  */
 
 header('Content-Type: application/json; charset=utf-8');
-header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST, OPTIONS');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+        header('Access-Control-Allow-Origin: *');
+
     http_response_code(200);
     exit;
 }
@@ -63,7 +64,7 @@ try {
     $db = Database::getInstance()->getConnection();
 
     // Validar raffle existe y está activa
-    $stmt = $db->prepare("SELECT id, ticket_price, total_tickets, status FROM raffles WHERE id = ? AND status = 'active'");
+    $stmt = $db->prepare("SELECT id, name, ticket_price, total_tickets, status FROM raffles WHERE id = ? AND status = 'active'");
     $stmt->execute([$raffleId]);
     $raffle = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -177,3 +178,8 @@ try {
         Logger::exception($e);
         Response::serverError('Error al crear la reserva: ' . $e->getMessage());
     }
+
+} catch (Exception $e) {
+    Logger::exception($e);
+    Response::serverError('Error al procesar la solicitud');
+}
