@@ -106,7 +106,7 @@ try {
     // mixta "/\host\archivo" pasaba limpia y Windows la resolvia como una
     // conexion SMB/UNC real hacia ese host (SSRF interno confirmado por
     // auditoria via timing de conexion).
-    $imageUrl = trim($input['image_url'] ?? '/assets/images/placeholder.jpg');
+    $imageUrl = trim($input['image_url'] ?? '/assets/images/placeholder.svg');
     if ($imageUrl !== '' && !Validator::esRutaLocalSegura($imageUrl)) {
         Response::error('image_url invalida: solo se permiten rutas locales', null, 400);
     }

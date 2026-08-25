@@ -728,9 +728,15 @@ $page_description = "La plataforma más confiable para crear y participar en rif
             setTimeout(() => n.remove(), 3000);
         },
         fixUrl(url) {
-            if (!url) return 'https://images.unsplash.com/photo-1540317580384-e5d4361660bd?w=800';
+            // image_url es relativa a public/ (subida real via Uploader::upload()
+            // no trae slash inicial; el default hardcodeado en create.php si trae
+            // uno) - ninguna de las dos formas incluye "public/", que es donde el
+            // archivo vive de verdad. Sin BASE_PATH + "/public/" el <img> apuntaba
+            // a la raiz del dominio/subcarpeta y daba 404 en cualquier deploy que
+            // no sea la raiz del dominio.
+            if (!url) return BASE_PATH + '/public/assets/images/placeholder.svg';
             if (url.startsWith('http')) return url;
-            return (url.startsWith('/') ? '' : '/') + url;
+            return BASE_PATH + '/public/' + url.replace(/^\/?(public\/)?/, '');
         }
     };
 

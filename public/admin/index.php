@@ -2541,7 +2541,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
         
         data.total_tickets = actualTickets;
         data.image_urls = raffleImages;
-        data.image_url = raffleImages.length > 0 ? raffleImages[0] : '/assets/images/placeholder.jpg';
+        data.image_url = raffleImages.length > 0 ? raffleImages[0] : '/assets/images/placeholder.svg';
         data.ticket_price  = parseFloat(data.ticket_price);
         data.digits        = digits;
         data.opportunities = opportunities;
