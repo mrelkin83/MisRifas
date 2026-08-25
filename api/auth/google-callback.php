@@ -15,6 +15,7 @@ session_start();
 require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../utils/Response.php';
 require_once __DIR__ . '/../utils/Validator.php';
+require_once __DIR__ . '/../utils/Auth.php';
 
 // Configuración de Google OAuth
 $GOOGLE_CLIENT_ID = getenv('GOOGLE_CLIENT_ID') ?: 'TU_GOOGLE_CLIENT_ID_AQUI';
@@ -76,64 +77,60 @@ try {
         throw new Exception('No se pudo obtener información del usuario');
     }
 
-    // Conectar a la base de datos
+    // Conectar a la base de datos. Se autentica contra `vendors` -
+    // la misma tabla que usa Auth.php para todo lo demas - en vez de
+    // `admin_users`, que tiene su propio autoincremento independiente
+    // y no comparte identidad real con `vendors` (ver hallazgo C5/H1
+    // de la auditoria: escribir aqui en `admin_users` producia colision
+    // de IDs entre tenants, ademas de que ese INSERT referenciaba
+    // columnas -first_name/last_name/is_active/oauth_provider/oauth_id-
+    // que no existen en el schema real, asi que este flujo jamas
+    // funciono).
     $db = Database::getInstance()->getConnection();
 
-    // Verificar si el usuario ya existe
-    $stmt = $db->prepare("SELECT * FROM admin_users WHERE email = ? LIMIT 1");
+    $stmt = $db->prepare("SELECT * FROM vendors WHERE email = ? LIMIT 1");
     $stmt->execute([$userInfo['email']]);
-    $user = $stmt->fetch(PDO::FETCH_ASSOC);
+    $vendor = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    if (!$user) {
-        // Crear nuevo usuario
+    if (!$vendor) {
         $firstName = $userInfo['given_name'] ?? '';
         $lastName = $userInfo['family_name'] ?? '';
-        $fullName = trim($firstName . ' ' . $lastName) ?: $userInfo['name'] ?? 'Usuario Google';
+        $fullName = trim($firstName . ' ' . $lastName) ?: ($userInfo['name'] ?? 'Vendor Google');
 
+        $slugBase = strtolower(preg_replace('/[^a-z0-9]+/', '-', transliterator_transliterate('Any-Latin; Latin-ASCII; Lower()', $fullName)));
+        $slug = trim($slugBase, '-') . '-' . rand(1000, 9999);
+
+        // Google no entrega telefono con el scope basico - se deja un
+        // placeholder y el vendor lo completa despues desde su perfil.
         $insertStmt = $db->prepare("
-            INSERT INTO admin_users (
-                email, password_hash, first_name, last_name, full_name,
-                phone, department, city, document_id, role, is_active,
-                oauth_provider, oauth_id, created_at
-            ) VALUES (?, '', ?, ?, ?, '', '', '', '', 'vendor', 1, 'google', ?, NOW())
+            INSERT INTO vendors (slug, business_name, email, password_hash, phone, role, status, payment_config, email_verified_at, created_at)
+            VALUES (?, ?, ?, '', '0000000000', 'vendor', 'active', '{\"mode\":\"manual\"}', NOW(), NOW())
         ");
+        $insertStmt->execute([$slug, $fullName, $userInfo['email']]);
+        $vendorId = $db->lastInsertId();
 
-        $insertStmt->execute([
-            $userInfo['email'],
-            $firstName,
-            $lastName,
-            $fullName,
-            $userInfo['id']
-        ]);
-
-        $userId = $db->lastInsertId();
-
-        // Obtener el usuario recién creado
-        $stmt = $db->prepare("SELECT * FROM admin_users WHERE id = ?");
-        $stmt->execute([$userId]);
-        $user = $stmt->fetch(PDO::FETCH_ASSOC);
-    } else {
-        // Actualizar OAuth info si no existe
-        if (empty($user['oauth_provider'])) {
-            $updateStmt = $db->prepare("
-                UPDATE admin_users
-                SET oauth_provider = 'google', oauth_id = ?, updated_at = NOW()
-                WHERE id = ?
-            ");
-            $updateStmt->execute([$userInfo['id'], $user['id']]);
-        }
+        $stmt = $db->prepare("SELECT * FROM vendors WHERE id = ?");
+        $stmt->execute([$vendorId]);
+        $vendor = $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
-    // Generar token de sesión
-    $token = bin2hex(random_bytes(32));
+    if ($vendor['status'] !== 'active') {
+        throw new Exception('Cuenta suspendida o pendiente de verificacion');
+    }
 
-    // Guardar token en sesión
+    // Emitir un auth_token real, compatible con Auth::requireVendor()
+    // (Bearer token) - el mismo mecanismo que usa el login normal.
+    $token = bin2hex(random_bytes(32));
+    $expires = date('Y-m-d H:i:s', strtotime('+30 days'));
+    $stmt = $db->prepare("UPDATE vendors SET auth_token = ?, auth_token_expires = ?, last_login = NOW() WHERE id = ?");
+    $stmt->execute([Auth::hashToken($token), $expires, $vendor['id']]);
+
     $_SESSION['misrifas_token'] = $token;
     $_SESSION['misrifas_user'] = [
-        'id' => $user['id'],
-        'email' => $user['email'],
-        'full_name' => $user['full_name'],
-        'role' => $user['role']
+        'id' => $vendor['id'],
+        'email' => $vendor['email'],
+        'full_name' => $vendor['business_name'],
+        'role' => $vendor['role']
     ];
 
     // Redirigir al panel de admin con script para guardar en localStorage
