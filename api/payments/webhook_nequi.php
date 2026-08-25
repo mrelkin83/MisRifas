@@ -17,7 +17,7 @@ require_once __DIR__ . '/../../config/app.php';
 require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../api/utils/Response.php';
 require_once __DIR__ . '/../../api/utils/Logger.php';
-require_once __DIR__ . '/../../api/services/WhatsAppService.php';
+require_once __DIR__ . '/../../api/whatsapp/notify.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
@@ -97,10 +97,14 @@ try {
         if ($stmt->rowCount() > 0) {
             Logger::activity('ticket_auto_paid_nequi', 0, ['ticket_id' => $ticketId, 'raffle_id' => $raffleId]);
 
-            // Disparar notificación WhatsApp al comprador
+            // Disparar notificación WhatsApp al comprador. u.full_name/u.phone
+            // no existen en `users` (son u.name/u.phone_whatsapp) - bug
+            // preexistente, esta consulta nunca trajo el telefono del
+            // comprador y la notificacion nunca se disparaba. Corregido.
             $infoStmt = $db->prepare("
-                SELECT t.ticket_number, r.name as raffle_name, r.ticket_price, r.draw_date, r.created_by,
-                       u.full_name, u.phone
+                SELECT t.ticket_number, r.name as raffle_name, r.ticket_price, r.draw_date,
+                       COALESCE(r.vendor_id, r.created_by) as vendor_id,
+                       u.name as buyer_name, u.phone_whatsapp as buyer_phone
                 FROM tickets t
                 JOIN raffles r ON t.raffle_id = r.id
                 LEFT JOIN users u ON t.user_id = u.id
@@ -109,20 +113,15 @@ try {
             $infoStmt->execute([$ticketId]);
             $info = $infoStmt->fetch();
 
-            if ($info && $info['phone']) {
+            if ($info && $info['buyer_phone']) {
                 $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
                 $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
                 $ticketUrl = $protocol . '://' . $host . '/MisRifas/public/raffle.php?id=' . intval($raffleId);
-                WhatsAppService::notifyReservation(
-                    $info['created_by'],
-                    $info['raffle_name'],
-                    $info['ticket_number'],
-                    $info['full_name'] ?? 'Comprador',
-                    $info['phone'],
-                    date('Y-m-d', strtotime($info['draw_date'])),
-                    $info['ticket_price'],
-                    $ticketUrl
-                );
+                $precio = number_format((float)$info['ticket_price'], 0, ',', '.');
+                $mensaje = "Hola {$info['buyer_name']}, tu boleto #{$info['ticket_number']} de \"{$info['raffle_name']}\" quedo pagado. "
+                    . "Precio: \${$precio} COP. Sorteo: " . date('d/m/Y', strtotime($info['draw_date'])) . ". "
+                    . "Ver detalle: {$ticketUrl}";
+                notificarWhatsAppVendor((int)$info['vendor_id'], $info['buyer_phone'], $mensaje);
             }
         }
     } elseif ($status === 'DECLINED' || $status === 'FAILED') {

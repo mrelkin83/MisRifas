@@ -15,19 +15,56 @@ require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../api/utils/Response.php';
 require_once __DIR__ . '/../../api/utils/Auth.php';
 require_once __DIR__ . '/../../api/utils/Logger.php';
+require_once __DIR__ . '/../../vendor/autoload.php';
+require_once __DIR__ . '/../../api/whatsapp/MisRifasDb.php';
+require_once __DIR__ . '/../../api/whatsapp/MisRifasTenant.php';
+require_once __DIR__ . '/../../api/whatsapp/MisRifasSecret.php';
+require_once __DIR__ . '/../../api/whatsapp/MisRifasStorage.php';
+require_once __DIR__ . '/../../api/whatsapp/RaffleDomainAdapter.php';
+
+use ElkinLinan\WhatsappAiEngine\Engine;
+use ElkinLinan\WhatsappAiEngine\Core\WaConfig;
+use ElkinLinan\WhatsappAiEngine\Defecto\PesosColombianos;
+use ElkinLinan\WhatsappAiEngine\Defecto\TodoPermitido;
+use ElkinLinan\WhatsappAiEngine\Defecto\SinUrl;
+
+/** La config de WhatsApp ahora vive en wa_config (tabla propia del motor,
+ * secretos cifrados), no en vendors.wa_config (JSON en claro, columna
+ * deprecada - se deja de escribir aqui, no se dropea todavia). */
+function arrancarMotorPara(int $vendorId): void
+{
+    Engine::reiniciar();
+    Engine::arrancar([
+        'db' => new MisRifasDb(),
+        'dominio' => new RaffleDomainAdapter($vendorId),
+        'archivo' => new MisRifasStorage($vendorId),
+        'secreto' => new MisRifasSecret(),
+        'negocio' => new MisRifasTenant($vendorId),
+        'formato' => new PesosColombianos(),
+        'funcion' => new TodoPermitido(),
+        'config' => new SinUrl(),
+    ]);
+}
 
 try {
     $adminUser = Auth::requireAdmin();
     $db = Database::getInstance()->getConnection();
 
     if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-        $stmt = $db->prepare("SELECT payment_config, wa_config FROM vendors WHERE id = ?");
+        $stmt = $db->prepare("SELECT payment_config FROM vendors WHERE id = ?");
         $stmt->execute([$adminUser['id']]);
-        $row = $stmt->fetch();
+        $paymentConfig = json_decode($stmt->fetchColumn() ?: '{}', true);
+
+        arrancarMotorPara((int)$adminUser['id']);
+        $waCfg = WaConfig::paraFrontend(Engine::db());
 
         Response::success([
-            'payment_config' => json_decode($row['payment_config'] ?? '{}', true),
-            'wa_config'      => json_decode($row['wa_config'] ?? '{}', true),
+            'payment_config' => $paymentConfig,
+            'wa_config'      => [
+                'evo_api_url'  => $waCfg['evolution_url'] ?? '',
+                'evo_instance' => $waCfg['evolution_instancia'] ?? '',
+                'evo_api_key_configurado' => $waCfg['evolution_apikey_configurado'] ?? false,
+            ],
         ]);
     }
 
@@ -53,16 +90,16 @@ try {
         }
 
         if ($type === 'whatsapp') {
-            $stmt = $db->prepare("SELECT wa_config FROM vendors WHERE id = ?");
-            $stmt->execute([$adminUser['id']]);
-            $current = json_decode($stmt->fetchColumn() ?: '{}', true);
+            arrancarMotorPara((int)$adminUser['id']);
 
-            if (isset($input['evo_api_url']))    $current['evo_api_url']   = rtrim(trim($input['evo_api_url']), '/');
-            if (!empty($input['evo_api_key']))   $current['evo_api_key']   = trim($input['evo_api_key']);
-            if (isset($input['evo_instance']))   $current['evo_instance']  = trim($input['evo_instance']);
+            $campos = [];
+            if (isset($input['evo_api_url']))  $campos['evolution_url'] = rtrim(trim($input['evo_api_url']), '/');
+            if (isset($input['evo_instance'])) $campos['evolution_instancia'] = trim($input['evo_instance']);
+            // evolution_apikey esta en WaConfig::SECRETOS - un valor vacio no
+            // pisa el ya guardado (mismo comportamiento que el codigo viejo).
+            if (isset($input['evo_api_key']))  $campos['evolution_apikey'] = trim($input['evo_api_key']);
 
-            $stmt = $db->prepare("UPDATE vendors SET wa_config = ? WHERE id = ?");
-            $stmt->execute([json_encode($current), $adminUser['id']]);
+            WaConfig::guardar(Engine::db(), $campos);
 
             Logger::activity('profile_whatsapp_updated', $adminUser['id']);
             Response::success(['message' => 'Configuración WhatsApp guardada']);

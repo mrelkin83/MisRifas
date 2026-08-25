@@ -21,7 +21,7 @@ try {
     $db = Database::getInstance()->getConnection();
 
     $stmt = $db->query(
-        "SELECT mq.*, v.wa_config, v.business_name as vendor_name
+        "SELECT mq.*, v.business_name as vendor_name
          FROM message_queue mq
          JOIN vendors v ON mq.vendor_id = v.id
          WHERE mq.status = 'pending'
@@ -81,145 +81,48 @@ try {
     exit(1);
 }
 
+/**
+ * Envia via el motor whatsapp-engine (Channel\EvolutionClient), leyendo la
+ * config del vendor desde wa_config - reemplaza el cURL manual a Evolution
+ * que tenia este archivo antes (duplicaba lo que ya hace el motor).
+ *
+ * NOTA: la version anterior de esta funcion leia $msg['type']/$msg['data']/
+ * $msg['wa_config'] - ninguna de esas 3 columnas existe en message_queue
+ * (las reales son message_type/variables, y wa_config vive en su propia
+ * tabla ahora, no en un JOIN a vendors). Bug preexistente, nunca antes
+ * hizo un envio real exitoso. Corregido de paso.
+ */
 function processWhatsApp($msg) {
-    $waConfig = json_decode($msg['wa_config'] ?? '{}', true);
+    require_once __DIR__ . '/../api/whatsapp/notify.php';
 
-    $instance = $waConfig['evo_instance'] ?? '';
-    $apiUrl = $waConfig['evo_api_url'] ?? '';
-    $apiKey = $waConfig['evo_api_key'] ?? '';
+    $vendorId = (int)$msg['vendor_id'];
+    $texto = whatsAppTextoDeMensaje($msg);
+    $enviado = notificarWhatsAppVendor($vendorId, $msg['recipient_phone'], $texto);
 
-    if (empty($instance) || empty($apiUrl) || empty($apiKey)) {
-        Logger::error('WhatsApp: vendor sin configuracion EvolutionAPI', ['vendor_id' => $msg['vendor_id']]);
-        return false;
-    }
-
-    $type = $msg['type'] ?? 'generic';
-    $data = json_decode($msg['data'] ?? '{}', true);
-    $success = false;
-
-    switch ($type) {
-        case 'reservation':
-            $templateName = $data['template_name'] ?? 'ticket_reserved_v1';
-            $params = $data['params'] ?? [];
-            $success = sendTemplateWhatsApp($apiUrl, $instance, $apiKey, $msg['recipient_phone'], $templateName, $params);
-            break;
-
-        case 'payment_confirmed':
-            $templateName = $data['template_name'] ?? 'payment_confirmed_v1';
-            $params = $data['params'] ?? [];
-            $success = sendTemplateWhatsApp($apiUrl, $instance, $apiKey, $msg['recipient_phone'], $templateName, $params);
-            break;
-
-        case 'winner':
-            $templateName = $data['template_name'] ?? 'winner_notification_v1';
-            $params = $data['params'] ?? [];
-            $success = sendTemplateWhatsApp($apiUrl, $instance, $apiKey, $msg['recipient_phone'], $templateName, $params);
-            break;
-
-        case 'no_winner':
-            $templateName = $data['template_name'] ?? 'no_winner_v1';
-            $params = $data['params'] ?? [];
-            $success = sendTemplateWhatsApp($apiUrl, $instance, $apiKey, $msg['recipient_phone'], $templateName, $params);
-            break;
-
-        case 'vendor_winner':
-            $templateName = $data['template_name'] ?? 'vendor_winner_v1';
-            $params = $data['params'] ?? [];
-            $success = sendTemplateWhatsApp($apiUrl, $instance, $apiKey, $msg['recipient_phone'], $templateName, $params);
-            break;
-
-        default:
-            $success = sendTextWhatsApp($apiUrl, $instance, $apiKey, $msg['recipient_phone'], $msg['body_text']);
-            break;
-    }
-
-    if ($success) {
+    if ($enviado) {
         Logger::info('WhatsApp sent', [
             'number' => $msg['recipient_phone'],
-            'type' => $type,
+            'type' => $msg['message_type'] ?? 'generic',
             'message_id' => $msg['id']
         ]);
+    } else {
+        Logger::error('WhatsApp send failed', ['number' => $msg['recipient_phone'], 'message_id' => $msg['id']]);
     }
-
-    return $success;
+    return $enviado;
 }
 
-function sendTemplateWhatsApp($apiUrl, $instance, $apiKey, $number, $templateName, $params) {
-    $url = "{$apiUrl}/message/sendText/{$instance}";
-    $payload = json_encode([
-        'number' => $number,
-        'options' => [
-            'delay' => 1200,
-            'presence' => 'composing'
-        ],
-        'textMessage' => [
-            'template' => $templateName,
-            'templateParams' => $params
-        ]
-    ]);
-
-    $ch = curl_init($url);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_POST, true);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
-    curl_setopt($ch, CURLOPT_HTTPHEADER, [
-        'Content-Type: application/json',
-        'apikey: ' . $apiKey
-    ]);
-
-    $response = curl_exec($ch);
-    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
-
-    if ($httpCode >= 200 && $httpCode < 300) {
-        return true;
+/**
+ * body_text ya viene compuesto por MessageBuilderService al encolar el
+ * mensaje - no hace falta plantillas aparte (esas eran plantillas de
+ * WhatsApp Business Cloud API, que no aplican: Evolution/Baileys manda
+ * texto libre, no plantillas pre-aprobadas por Meta).
+ */
+function whatsAppTextoDeMensaje($msg) {
+    if (!empty($msg['body_text'])) {
+        return $msg['body_text'];
     }
-
-    Logger::error('WhatsApp template send failed', [
-        'number' => $number,
-        'template' => $templateName,
-        'http_code' => $httpCode,
-        'response' => $response
-    ]);
-    return false;
-}
-
-function sendTextWhatsApp($apiUrl, $instance, $apiKey, $number, $text) {
-    $url = "{$apiUrl}/message/sendText/{$instance}";
-    $payload = json_encode([
-        'number' => $number,
-        'options' => [
-            'delay' => 1200,
-            'presence' => 'composing'
-        ],
-        'textMessage' => [
-            'text' => $text
-        ]
-    ]);
-
-    $ch = curl_init($url);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_POST, true);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
-    curl_setopt($ch, CURLOPT_HTTPHEADER, [
-        'Content-Type: application/json',
-        'apikey: ' . $apiKey
-    ]);
-
-    $response = curl_exec($ch);
-    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
-
-    if ($httpCode >= 200 && $httpCode < 300) {
-        return true;
-    }
-
-    Logger::error('WhatsApp text send failed', [
-        'number' => $number,
-        'http_code' => $httpCode,
-        'response' => $response
-    ]);
-    return false;
+    $vars = json_decode($msg['variables'] ?? '{}', true) ?: [];
+    return $vars['texto'] ?? 'Tienes una notificacion de MisRifas.';
 }
 
 function processEmail($msg) {

@@ -9,7 +9,7 @@ require_once __DIR__ . '/../config/constants.php';
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../api/utils/Logger.php';
 require_once __DIR__ . '/../api/repositories/RaffleRepository.php';
-require_once __DIR__ . '/../api/services/NotificationService.php';
+require_once __DIR__ . '/../api/whatsapp/notify.php';
 
 // Verificar CLI o secret
 if (php_sapi_name() !== 'cli') {
@@ -26,7 +26,6 @@ Logger::info("=== Iniciando: Verificar comisiones pendientes ===");
 
 try {
     $raffleRepo = new RaffleRepository();
-    $notificationService = new NotificationService();
 
     // Obtener rifas con comisión pendiente
     $raffles = $raffleRepo->getRafflesWithPendingCommission();
@@ -56,11 +55,10 @@ try {
 
             try {
                 // Notificar por WhatsApp
-                $notificationService->sendWhatsAppMessage(
-                    $raffle['whatsapp_contact'],
-                    $message
-                );
-                $notifiedCount++;
+                $vendorId = (int)($raffle['vendor_id'] ?? $raffle['created_by']);
+                if (notificarWhatsAppVendor($vendorId, $raffle['whatsapp_contact'], $message)) {
+                    $notifiedCount++;
+                }
             } catch (Exception $e) {
                 Logger::error("Error al notificar bloqueo de rifa", [
                     'raffle_id' => $raffle['id'],
