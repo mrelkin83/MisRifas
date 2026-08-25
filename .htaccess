@@ -11,6 +11,14 @@ SetEnvIf Request_URI "^/MisRifas/" IS_DEV
     RewriteEngine On
     RewriteBase /MisRifas/
 
+    # Forzar HTTPS en producción (se excluye localhost/127.0.0.1 para no
+    # romper el entorno de desarrollo local sin TLS). Va primero, antes de
+    # cualquier otra regla, para que ningún request se procese en texto plano.
+    RewriteCond %{HTTPS} off
+    RewriteCond %{HTTP_HOST} !^localhost [NC]
+    RewriteCond %{HTTP_HOST} !^127\.0\.0\.1
+    RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
     # Pasar el header Authorization a PHP (mod_fcgid/CGI lo descarta por
     # defecto, rompiendo toda la autenticacion Bearer de vendors/admin/users)
     RewriteCond %{HTTP:Authorization} ^(.*)

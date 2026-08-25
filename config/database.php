@@ -12,6 +12,7 @@ class Database
     private static $instance = null;
     private $connection;
     private $host;
+    private $port;
     private $dbname;
     private $username;
     private $password;
@@ -23,6 +24,7 @@ class Database
         self::loadEnv();
 
         $this->host     = getenv('DB_HOST')    ?: 'localhost';
+        $this->port     = getenv('DB_PORT')    ?: 3306;
         $this->dbname   = getenv('DB_NAME')    ?: '';
         $this->username = getenv('DB_USER')    ?: '';
         $this->password = getenv('DB_PASS')    ?: '';
@@ -33,7 +35,7 @@ class Database
         }
 
         try {
-            $dsn = "mysql:host={$this->host};dbname={$this->dbname};charset={$this->charset};port=3306";
+            $dsn = "mysql:host={$this->host};dbname={$this->dbname};charset={$this->charset};port={$this->port}";
 
             $options = [
                 PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
