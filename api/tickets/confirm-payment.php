@@ -40,11 +40,12 @@ try {
     }
 
     $ticketId = (int)($input['ticket_id'] ?? 0);
+    $reservationId = trim($input['reservation_id'] ?? '');
     $paymentMethod = strtolower(trim($input['payment_method'] ?? ''));
     $proof = $input['proof'] ?? null;
 
-    if ($ticketId <= 0) {
-        Response::error('ID de ticket invalido', null, 400);
+    if ($ticketId <= 0 && $reservationId === '') {
+        Response::error('ID de ticket o de reserva invalido', null, 400);
     }
 
     $allowedMethods = ['nequi', 'bancolombia', 'daviplata', 'efecty', 'manual'];
@@ -54,21 +55,45 @@ try {
 
     $db = Database::getInstance()->getConnection();
 
-    $stmt = $db->prepare("
-        SELECT t.*, r.ticket_price, r.name as raffle_title
-        FROM tickets t
-        INNER JOIN raffles r ON t.raffle_id = r.id
-        WHERE t.id = ?
-    ");
-    $stmt->execute([$ticketId]);
-    $ticket = $stmt->fetch(PDO::FETCH_ASSOC);
+    // reservation_id agrupa varios boletos reservados juntos (selector
+    // multiple de raffle.php via create-reservation.php) - se resuelve a
+    // la lista real de tickets uniendo con numero_reservas, ya que
+    // `tickets` no guarda el reservation_id directamente.
+    if ($reservationId !== '') {
+        $stmt = $db->prepare("
+            SELECT t.*, r.ticket_price, r.name as raffle_title
+            FROM numero_reservas nr
+            INNER JOIN tickets t ON t.raffle_id = nr.raffle_id AND t.ticket_number = nr.numero
+            INNER JOIN raffles r ON t.raffle_id = r.id
+            WHERE nr.reservation_id = ?
+        ");
+        $stmt->execute([$reservationId]);
+        $tickets = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    if (!$ticket) {
-        Response::error('Ticket no encontrado', null, 404);
+        if (empty($tickets)) {
+            Response::error('Reserva no encontrada', null, 404);
+        }
+    } else {
+        $stmt = $db->prepare("
+            SELECT t.*, r.ticket_price, r.name as raffle_title
+            FROM tickets t
+            INNER JOIN raffles r ON t.raffle_id = r.id
+            WHERE t.id = ?
+        ");
+        $stmt->execute([$ticketId]);
+        $ticket = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$ticket) {
+            Response::error('Ticket no encontrado', null, 404);
+        }
+
+        $tickets = [$ticket];
     }
 
-    if ($ticket['status'] !== 'reserved') {
-        Response::error('El ticket no esta reservado o ya fue pagado (estado: ' . $ticket['status'] . ')');
+    foreach ($tickets as $t) {
+        if ($t['status'] !== 'reserved') {
+            Response::error('El boleto #' . $t['ticket_number'] . ' no esta reservado o ya fue pagado (estado: ' . $t['status'] . ')');
+        }
     }
 
     $db->beginTransaction();
@@ -88,7 +113,8 @@ try {
             $imageInfo = @getimagesizefromstring($imageData);
             $allowedMimes = ['image/jpeg', 'image/png', 'image/webp'];
             if ($imageInfo !== false && in_array($imageInfo['mime'], $allowedMimes, true)) {
-                $filename = 'payment_proof_' . $ticketId . '_' . time() . '_' . bin2hex(random_bytes(4)) . '.' . $imageType;
+                $filenamePrefix = $reservationId !== '' ? preg_replace('/[^a-zA-Z0-9_-]/', '', $reservationId) : (string)$ticketId;
+                $filename = 'payment_proof_' . $filenamePrefix . '_' . time() . '_' . bin2hex(random_bytes(4)) . '.' . $imageType;
                 $uploadDir = __DIR__ . '/../../uploads/payment_proofs/';
 
                 if (!is_dir($uploadDir)) {
@@ -102,36 +128,45 @@ try {
         }
     }
 
-    $reference = 'PAY-' . $ticketId . '-' . strtoupper(bin2hex(random_bytes(4)));
-    $amount = $ticket['ticket_price'];
-    $userId = $ticket['user_id'];
-
+    // Un comprobante cubre todos los boletos de la reserva (selector
+    // multiple) - se inserta una fila en `payments` por boleto, todas
+    // apuntando al mismo comprobante, para que la revision/aprobacion del
+    // vendedor (api/admin/payments.php) siga operando boleto por boleto
+    // sin cambios.
+    $ip = $_SERVER['REMOTE_ADDR'] ?? '';
+    $gatewayData = json_encode(['proof_url' => $proofUrl, 'method' => $paymentMethod, 'manual' => true, 'reservation_id' => $reservationId ?: null]);
     $stmtPayment = $db->prepare("
         INSERT INTO payments (user_id, raffle_id, ticket_id, amount, payment_method, transaction_reference, transaction_status, payment_gateway_response, ip_address, created_at, updated_at)
         VALUES (?, ?, ?, ?, ?, ?, 'pending', ?, ?, NOW(), NOW())
-        ON DUPLICATE KEY UPDATE transaction_status = 'pending', payment_gateway_response = VALUES(payment_gateway_response), updated_at = NOW()
     ");
-    $gatewayData = json_encode(['proof_url' => $proofUrl, 'method' => $paymentMethod, 'manual' => true]);
-    $ip = $_SERVER['REMOTE_ADDR'] ?? '';
-    $stmtPayment->execute([$userId, $ticket['raffle_id'], $ticketId, $amount, $paymentMethod, $reference, $gatewayData, $ip]);
+
+    $totalAmount = 0;
+    $ticketIds = [];
+    $userId = null;
+    foreach ($tickets as $t) {
+        $reference = 'PAY-' . $t['id'] . '-' . strtoupper(bin2hex(random_bytes(4)));
+        $stmtPayment->execute([$t['user_id'], $t['raffle_id'], $t['id'], $t['ticket_price'], $paymentMethod, $reference, $gatewayData, $ip]);
+        $totalAmount += (float)$t['ticket_price'];
+        $ticketIds[] = (int)$t['id'];
+        $userId = $t['user_id'];
+    }
 
     $db->commit();
 
     Logger::activity('payment_proof_reported', (int)$userId, [
-        'ticket_id' => $ticketId,
-        'amount' => $amount,
+        'ticket_ids' => $ticketIds,
+        'reservation_id' => $reservationId ?: null,
+        'amount' => $totalAmount,
         'method' => $paymentMethod,
-        'reference' => $reference,
         'has_proof' => !empty($proofUrl)
     ]);
 
     Response::success([
-        'ticket_id' => $ticketId,
+        'ticket_ids' => $ticketIds,
         'status' => 'reserved',
         'payment_status' => 'pending_review',
-        'reference' => $reference,
-        'amount' => (float)$amount
-    ], 'Comprobante recibido. Tu boleto quedara pagado cuando el vendedor verifique el pago.');
+        'amount' => $totalAmount
+    ], 'Comprobante recibido. Tu' . (count($ticketIds) > 1 ? 's boletos quedaran pagados' : ' boleto quedara pagado') . ' cuando el vendedor verifique el pago.');
 
 } catch (Exception $e) {
     if ($db && $db->inTransaction()) {

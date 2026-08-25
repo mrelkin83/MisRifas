@@ -68,11 +68,11 @@ $page_title = "Pago - MisRifas";
 
                 <div id="reservation-info" class="bg-primary/10 border border-primary/20 rounded-xl p-4 mb-6">
                     <div class="flex justify-between items-center mb-2">
-                        <span class="text-slate-300 text-sm">Boleto:</span>
-                        <span id="ticket-number" class="text-xl font-black text-primary font-mono">--</span>
+                        <span id="ticket-number-label" class="text-slate-300 text-sm">Boleto:</span>
+                        <span id="ticket-number" class="text-xl font-black text-primary font-mono text-right">--</span>
                     </div>
                     <div class="flex justify-between items-center mb-2">
-                        <span class="text-slate-300 text-sm">Precio:</span>
+                        <span class="text-slate-300 text-sm">Total:</span>
                         <span id="ticket-price" class="text-xl font-black text-primary font-mono">$0</span>
                     </div>
                     <div class="flex justify-between items-center pt-2 border-t border-primary/20">
@@ -203,6 +203,7 @@ $page_title = "Pago - MisRifas";
 
     const urlParams = new URLSearchParams(window.location.search);
     const ticketId = urlParams.get('id') || urlParams.get('ticket');
+    const reservationId = urlParams.get('reservation_id');
 
     let selectedMethod = null;
     let countdownInterval = null;
@@ -236,15 +237,22 @@ $page_title = "Pago - MisRifas";
         if (reservation) {
             try {
                 const data = JSON.parse(reservation);
-                document.getElementById('ticket-number').textContent = '#' + (data.ticket_number || '--');
-                document.getElementById('ticket-price').textContent = Utils.formatPrice(data.ticket_price || 0);
+                if (data.numeros && data.numeros.length) {
+                    // Reserva de varios boletos (selector multiple de raffle.php)
+                    document.getElementById('ticket-number-label').textContent = data.numeros.length > 1 ? 'Boletos:' : 'Boleto:';
+                    document.getElementById('ticket-number').textContent = data.numeros.map(n => '#' + n).join(', ');
+                    document.getElementById('ticket-price').textContent = Utils.formatPrice(data.total_amount || 0);
+                } else {
+                    document.getElementById('ticket-number').textContent = '#' + (data.ticket_number || '--');
+                    document.getElementById('ticket-price').textContent = Utils.formatPrice(data.ticket_price || 0);
+                }
                 if (data.reserved_until) {
                     startExpirationCountdown(data.reserved_until);
                 }
             } catch (e) {
                 console.error('Error parsing reservation:', e);
             }
-        } else if (!ticketId) {
+        } else if (!ticketId && !reservationId) {
             // Si no hay nada, mandarlo al inicio
             window.location.href = BASE_PATH + '/public/index.php';
         }
@@ -328,10 +336,14 @@ $page_title = "Pago - MisRifas";
             });
 
             const payload = {
-                ticket_id: ticketId,
                 payment_method: selectedMethod,
                 proof: proofData
             };
+            if (reservationId) {
+                payload.reservation_id = reservationId;
+            } else {
+                payload.ticket_id = ticketId;
+            }
 
             const response = await API.post('/tickets/confirm-payment.php', payload);
 

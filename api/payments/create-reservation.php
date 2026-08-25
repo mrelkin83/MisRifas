@@ -22,8 +22,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 }
 
 require_once __DIR__ . '/../../config/app.php';
+require_once __DIR__ . '/../../config/constants.php';
+require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../api/utils/Response.php';
 require_once __DIR__ . '/../../api/utils/Logger.php';
+require_once __DIR__ . '/../../api/utils/Validator.php';
+require_once __DIR__ . '/../../api/repositories/UserRepository.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     Response::error('Método no permitido', null, 405);
@@ -49,9 +53,31 @@ try {
     }
 
     $gateway = trim($input['payment_gateway'] ?? '');
-    if ($gateway !== 'wompi') {
-        Response::error('Solo se acepta Wompi como gateway de pago', null, 400);
+    if (!in_array($gateway, ['wompi', 'manual'], true)) {
+        Response::error('Gateway de pago invalido. Permitidos: wompi, manual', null, 400);
     }
+
+    // Igual que api/tickets/reserve.php: la compra es de invitado, asi que
+    // se identifica al comprador por nombre+telefono (no hay sesion PHP
+    // iniciada en este flujo) y se busca/crea su fila en `users`. Sin esto
+    // `numero_reservas`/`tickets`/`payments` quedaban con user_id NULL,
+    // y payments.user_id es NOT NULL - confirm-payment.php fallaba siempre.
+    $validator = new Validator($input);
+    $validator
+        ->required('user.name', 'El nombre es requerido')
+        ->minLength('user.name', 3, 'El nombre debe tener al menos 3 caracteres')
+        ->required('user.phone', 'El telefono es requerido')
+        ->phoneColombia('user.phone', 'El telefono debe ser valido de Colombia');
+    if (!empty($input['user']['email'])) {
+        $validator->email('user.email', 'El email no es valido');
+    }
+    if ($validator->fails()) {
+        Response::validationError($validator->getErrors());
+    }
+
+    $userName = Validator::sanitize($input['user']['name']);
+    $userPhone = Validator::sanitize($input['user']['phone']);
+    $userEmail = !empty($input['user']['email']) ? Validator::sanitize($input['user']['email']) : null;
 
     // Validar números (solo dígitos, 2-4 caracteres)
     foreach ($numeros as $numero) {
@@ -62,6 +88,18 @@ try {
     }
 
     $db = Database::getInstance()->getConnection();
+
+    // Buscar o crear el comprador (misma logica que reserve.php)
+    $userRepo = new UserRepository();
+    $user = $userRepo->findByPhone($userPhone);
+    if (!$user) {
+        $userId = $userRepo->createUser([
+            'name' => $userName,
+            'phone_whatsapp' => $userPhone,
+            'email' => $userEmail,
+        ]);
+        $user = $userRepo->findById($userId);
+    }
 
     // Validar raffle existe y está activa
     $stmt = $db->prepare("SELECT id, name, ticket_price, total_tickets, status FROM raffles WHERE id = ? AND status = 'active'");
@@ -116,7 +154,7 @@ try {
             if (!$ticketRow || $ticketRow['status'] !== 'available') {
                 throw new Exception('El número ' . $numero . ' ya no está disponible. Selecciona otros números para continuar.');
             }
-            $updateTicketStmt->execute([$_SESSION['user_id'] ?? null, $expiresAt, $ticketRow['id']]);
+            $updateTicketStmt->execute([$user['id'], $expiresAt, $ticketRow['id']]);
         }
 
         // 1. Insertar en numero_reservas (cada número individualmente)
@@ -126,30 +164,36 @@ try {
             VALUES (?, ?, 'RESERVADO', ?, ?, NOW(), ?)
         ");
         foreach ($numeros as $numero) {
-            $stmt->execute([$raffleId, $numero, $_SESSION['user_id'] ?? null, $reservationId, $expiresAt]);
+            $stmt->execute([$raffleId, $numero, $user['id'], $reservationId, $expiresAt]);
         }
 
-        // 2. Crear payment_intent
-        $stmt = $db->prepare("
-            INSERT INTO payment_intents
-                (raffle_id, user_id, amount, gateway, status, created_at)
-            VALUES (?, ?, ?, ?, 'PENDING', NOW())
-        ");
-        $stmt->execute([$raffleId, $_SESSION['user_id'], $amount, $gateway]);
+        // 2. payment_intent: solo tiene sentido para el gateway automatico
+        // (wompi), que lo usa para hacer seguimiento del webhook. El flujo
+        // manual (comprobante + revision humana) no lo necesita - usa
+        // reservation_id como unica clave de agrupacion, igual que el resto
+        // del flujo manual de la plataforma.
+        $paymentIntentId = null;
+        if ($gateway === 'wompi') {
+            $stmt = $db->prepare("
+                INSERT INTO payment_intents
+                    (raffle_id, user_id, amount, gateway, status, created_at)
+                VALUES (?, ?, ?, ?, 'PENDING', NOW())
+            ");
+            $stmt->execute([$raffleId, $user['id'], $amount, $gateway]);
 
-        $paymentIntentId = $db->lastInsertId();
+            $paymentIntentId = $db->lastInsertId();
 
-        // 3. Actualizar numero_reservas con payment_intent_id
-        $stmt = $db->prepare("
-            UPDATE numero_reservas
-            SET payment_intent_id = ?
-            WHERE reservation_id = ?
-        ");
-        $stmt->execute([$paymentIntentId, $reservationId]);
+            $stmt = $db->prepare("
+                UPDATE numero_reservas
+                SET payment_intent_id = ?
+                WHERE reservation_id = ?
+            ");
+            $stmt->execute([$paymentIntentId, $reservationId]);
+        }
 
         $db->commit();
 
-        Logger::activity('reservation_created', $_SESSION['user_id'], [
+        Logger::activity('reservation_created', $user['id'], [
             'raffle_id' => $raffleId,
             'numeros_count' => count($numeros),
             'amount' => $amount,
@@ -176,9 +220,7 @@ try {
             ]
         ];
 
-        // Datos por gateway (SOLO Wompi)
         if ($gateway === 'wompi') {
-            global $config;
             $wompiData = [
                 'amount_in_cents' => intval($amount * 100),
                 'currency' => 'COP',
@@ -191,6 +233,9 @@ try {
             ];
 
             $responseData['wompi'] = $wompiData;
+            $responseData['payment_url'] = $wompiData['redirect_url'];
+        } else {
+            $responseData['payment_url'] = BASE_PATH . '/public/payment.php?reservation_id=' . $reservationId;
         }
 
         Response::success($responseData, 'Reserva creada exitosamente');

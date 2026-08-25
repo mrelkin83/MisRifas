@@ -169,7 +169,7 @@ try {
     ]);
 
     // Generar URL de pago
-    $paymentUrl = '/payment?ticket=' . $ticket['id'];
+    $paymentUrl = BASE_PATH . '/public/payment.php?ticket=' . $ticket['id'];
 
     // Respuesta exitosa
     Response::success([

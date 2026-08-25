@@ -395,6 +395,10 @@ header("Expires: 0");
                                     </div>
                                 </div>
                                 <div id="selected-numbers-display" class="flex flex-wrap gap-2 mb-4"></div>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+                                    <input type="text" id="buyer-name" required placeholder="Tu nombre" class="w-full px-4 py-3 rounded-xl bg-black/30 border border-white/10 text-white placeholder:text-slate-500 focus:outline-none focus:border-amber-500">
+                                    <input type="tel" id="buyer-phone" required placeholder="WhatsApp (3001234567)" pattern="[3][0-9]{9}" class="w-full px-4 py-3 rounded-xl bg-black/30 border border-white/10 text-white placeholder:text-slate-500 focus:outline-none focus:border-amber-500">
+                                </div>
                                 <button id="pay-selected-btn" class="w-full py-4 bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-black rounded-xl text-lg hover:brightness-110 disabled:opacity-50 disabled:grayscale transition-all shadow-[0_0_20px_rgba(245,158,11,0.3)] hover:shadow-[0_0_25px_rgba(245,158,11,0.5)]">
                                     Pagar números seleccionados →
                                 </button>
@@ -409,56 +413,6 @@ header("Expires: 0");
             </div>
         </div>
     </main>
-
-    <div id="purchase-modal" class="modal-overlay hidden">
-        <div class="modal-overlay__backdrop" onclick="closePurchaseModal()"></div>
-        <div class="modal-overlay__content border-t-4 border-t-amber-500">
-            <button onclick="closePurchaseModal()" class="absolute top-4 right-5 text-3xl text-slate-400 hover:text-white transition-colors">&times;</button>
-
-            <h2 class="text-2xl font-black mb-2 text-white">Confirma tus datos</h2>
-            <p class="text-slate-400 text-sm mb-6">Solo necesitamos esta información para contactarte si ganas.</p>
-
-            <div class="bg-slate-800/50 rounded-2xl p-6 mb-8 text-center border border-slate-700 relative overflow-hidden">
-                <div class="absolute inset-0 bg-gradient-to-r from-amber-500/10 to-amber-400/10 z-0"></div>
-                <div class="relative z-10">
-                    <p class="text-slate-300 font-medium mb-2 uppercase tracking-widest text-xs">Cupo Seleccionado</p>
-                    <div id="modal-ticket-number" class="text-6xl font-black bg-clip-text text-transparent bg-gradient-to-b from-white to-slate-400 drop-shadow-xl mb-4">00</div>
-                    <div class="inline-block bg-slate-900/80 px-4 py-2 rounded-lg border border-slate-700">
-                        <p class="text-slate-400 text-xs">Juegas con los números:<br><span id="modal-opportunities" class="text-amber-400 font-mono text-sm tracking-widest">--</span></p>
-                    </div>
-                </div>
-            </div>
-
-            <form id="purchase-form" class="space-y-5">
-                <div>
-                    <label class="block text-sm font-semibold text-slate-300 mb-2">Nombre completo *</label>
-                    <input type="text" id="buyer-name" required class="w-full px-4 py-3 rounded-xl" placeholder="Tu nombre verdadero">
-                </div>
-
-                <div>
-                    <label class="block text-sm font-semibold text-slate-300 mb-2">WhatsApp *</label>
-                    <input type="tel" id="buyer-phone" required class="w-full px-4 py-3 rounded-xl" placeholder="3001234567" pattern="[3][0-9]{9}">
-                    <small class="text-amber-400 text-xs mt-2 block flex items-center gap-1"><svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path stroke-linecap="round" d="M12 11v5M12 8h.01"/></svg> Recibirás los resultados aquí</small>
-                </div>
-
-                <div>
-                    <label class="block text-sm font-semibold text-slate-300 mb-2">Email <span class="text-slate-500 font-normal">(Opcional)</span></label>
-                    <input type="email" id="buyer-email" class="w-full px-4 py-3 rounded-xl" placeholder="correo@ejemplo.com">
-                </div>
-
-                <div class="hidden">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Tiempo de reserva</label>
-                    <select id="reservation-hours" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-primary">
-                        <option value="2" selected>2 horas</option>
-                    </select>
-                </div>
-
-                <button type="submit" id="reserve-btn" class="w-full py-4 mt-4 bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-black rounded-xl text-lg hover:brightness-110 disabled:opacity-50 transition-all shadow-[0_0_20px_rgba(245,158,11,0.3)] hover:shadow-[0_0_25px_rgba(245,158,11,0.5)]">
-                    Ir a pagar seguro
-                </button>
-            </form>
-        </div>
-    </div>
 
     <footer class="bg-[#0b1120] text-slate-500 py-10 border-t border-slate-800 mt-20">
         <div class="container mx-auto px-4 text-center">
@@ -740,6 +694,13 @@ function updateSelectionSummary() {
 document.getElementById('pay-selected-btn').addEventListener('click', async () => {
     if (selectedTickets.length === 0) return;
 
+    const buyerName = document.getElementById('buyer-name').value.trim();
+    const buyerPhone = document.getElementById('buyer-phone').value.trim();
+    if (!buyerName || !buyerPhone) {
+        Utils.showNotification('Completa tu nombre y WhatsApp para continuar', 'error');
+        return;
+    }
+
     const btn = document.getElementById('pay-selected-btn');
     btn.disabled = true;
     btn.textContent = 'Procesando reserva...';
@@ -749,24 +710,26 @@ document.getElementById('pay-selected-btn').addEventListener('click', async () =
         const response = await API.post('/payments/create-reservation.php', {
             raffle_id: raffleId,
             numeros: numeros,
-            payment_gateway: 'wompi',
-            customer_email: document.getElementById('buyer-email')?.value || '',
-            customer_name: document.getElementById('buyer-name')?.value || ''
+            payment_gateway: 'manual',
+            user: { name: buyerName, phone: buyerPhone }
         });
 
         if (response.success) {
             const data = response.data;
 
-            localStorage.setItem('reservation_id', data.reservation_id);
-            localStorage.setItem('payment_intent_id', data.payment_intent_id);
-            localStorage.setItem('selected_numbers', JSON.stringify(data.numeros));
-            localStorage.setItem('payment_amount', data.amount);
-            localStorage.setItem('raffle_id', data.raffle.id);
+            localStorage.setItem('current_reservation', JSON.stringify({
+                reservation_id: data.reservation_id,
+                numeros: data.numeros,
+                ticket_price: currentRaffle.ticket_price,
+                total_amount: data.amount,
+                reserved_until: data.expires_at,
+                raffle_name: data.raffle.name
+            }));
 
             Utils.showNotification('Reserva creada exitosamente. Redirigiendo al pago...', 'success');
 
             setTimeout(() => {
-                window.location.href = '/public/pago-procesando.php?reservation_id=' + data.reservation_id + '&payment_intent_id=' + data.payment_intent_id;
+                window.location.href = data.payment_url;
             }, 1500);
         } else {
             Utils.showNotification(response.message || 'Error al crear reserva', 'error');
@@ -779,68 +742,6 @@ document.getElementById('pay-selected-btn').addEventListener('click', async () =
         btn.textContent = 'Pagar números seleccionados →';
     }
 });
-
-    function closePurchaseModal() {
-        document.getElementById('purchase-modal').classList.add('hidden');
-    }
-
-    document.getElementById('purchase-form').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const name = document.getElementById('buyer-name').value.trim();
-        const phone = document.getElementById('buyer-phone').value.trim();
-        const email = document.getElementById('buyer-email').value.trim();
-        const hours = parseInt(document.getElementById('reservation-hours').value);
-
-        if (!name || !phone) {
-            Utils.showNotification('Completa los campos obligatorios', 'error');
-            return;
-        }
-
-        const btn = document.getElementById('reserve-btn');
-        btn.disabled = true;
-        btn.textContent = 'Procesando...';
-
-        try {
-            const data = {
-                raffle_id: raffleId,
-                ticket_number: selectedTicket.ticket_number,
-                user: { name, phone, email: email || null },
-                reservation_hours: hours
-            };
-            const response = await API.post('/tickets/reserve.php', data);
-            if (response.success) {
-                Utils.showNotification('¡Boleto reservado exitosamente!', 'success');
-                closePurchaseModal();
-                // Guardar datos de reserva en localStorage para payment.php
-                if (response.data && response.data.ticket && response.data.raffle && response.data.payment_url) {
-                    const reservationData = {
-                        ticket_id: response.data.ticket.id,
-                        ticket_number: response.data.ticket.ticket_number,
-                        ticket_price: response.data.raffle.ticket_price,
-                        reserved_until: response.data.ticket.reserved_until,
-                        raffle_name: response.data.raffle.name
-                    };
-                    localStorage.setItem('current_reservation', JSON.stringify(reservationData));
-                }
-
-                setTimeout(() => {
-                    if (response.data && response.data.payment_url) {
-                        window.location.href = response.data.payment_url;
-                    } else {
-                        localStorage.removeItem('current_reservation');
-                        window.location.href = '/mis-boletos';
-                    }
-                }, 1500);
-            } else {
-                Utils.showNotification(response.message || 'Error al reservar', 'error');
-            }
-        } catch (error) {
-            Utils.showNotification(error.message || 'Error al reservar el boleto', 'error');
-        } finally {
-            btn.disabled = false;
-            btn.textContent = 'Reservar Boleto';
-        }
-    });
 
     function startCountdown() {
         if (countdownInterval) clearInterval(countdownInterval);
