@@ -1,0 +1,324 @@
+/**
+ * Estilos para páginas de pago y mis boletos
+ */
+
+.payment-main, .main {
+    min-height: calc(100vh - var(--header-height));
+    padding: var(--space-8) 0;
+    background: var(--gray-50);
+}
+
+.page-title {
+    text-align: center;
+    font-size: var(--font-size-3xl);
+    font-weight: 800;
+    margin-bottom: var(--space-8);
+    color: var(--gray-900);
+}
+
+/* Payment Container */
+.payment-container {
+    max-width: 700px;
+    margin: 0 auto;
+}
+
+.payment-header {
+    text-align: center;
+    margin-bottom: var(--space-8);
+}
+
+.success-icon {
+    font-size: 4rem;
+    margin-bottom: var(--space-4);
+}
+
+.payment-header h1 {
+    font-size: var(--font-size-3xl);
+    font-weight: 800;
+    margin-bottom: var(--space-2);
+    color: var(--success-color);
+}
+
+.payment-header p {
+    color: var(--gray-600);
+}
+
+/* Timer Card */
+.timer-card {
+    background: white;
+    padding: var(--space-6);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-lg);
+    text-align: center;
+    margin-bottom: var(--space-6);
+}
+
+.timer {
+    font-size: var(--font-size-4xl);
+    font-weight: 800;
+    color: var(--primary-color);
+    margin-top: var(--space-3);
+}
+
+/* Info Cards */
+.ticket-info-card,
+.payment-instructions,
+.important-note,
+.lookup-card {
+    background: white;
+    padding: var(--space-8);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-md);
+    margin-bottom: var(--space-6);
+}
+
+.ticket-info-card h2,
+.payment-instructions h2,
+.important-note h3,
+.lookup-card h2 {
+    font-size: var(--font-size-xl);
+    font-weight: 700;
+    margin-bottom: var(--space-4);
+    color: var(--gray-900);
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-4);
+}
+
+.info-item {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+}
+
+.info-item .label {
+    font-size: var(--font-size-sm);
+    color: var(--gray-500);
+}
+
+.info-item .value {
+    font-size: var(--font-size-lg);
+    font-weight: 700;
+    color: var(--gray-900);
+}
+
+.info-item .ticket-number {
+    font-size: var(--font-size-2xl);
+    color: var(--primary-color);
+}
+
+.info-item .price {
+    color: var(--success-color);
+}
+
+/* Payment Method */
+.payment-method {
+    margin-bottom: var(--space-6);
+    padding: var(--space-6);
+    border: 2px solid var(--gray-200);
+    border-radius: var(--radius-lg);
+}
+
+.method-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    margin-bottom: var(--space-4);
+}
+
+.method-icon {
+    font-size: var(--font-size-2xl);
+}
+
+.method-header h3 {
+    font-size: var(--font-size-xl);
+    font-weight: 700;
+    color: var(--gray-900);
+}
+
+.steps-list {
+    list-style: none;
+    counter-reset: step-counter;
+    margin-bottom: var(--space-6);
+}
+
+.steps-list li {
+    counter-increment: step-counter;
+    padding-left: var(--space-8);
+    position: relative;
+    margin-bottom: var(--space-3);
+    line-height: 1.8;
+}
+
+.steps-list li::before {
+    content: counter(step-counter);
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 28px;
+    height: 28px;
+    background: var(--primary-color);
+    color: white;
+    border-radius: var(--radius-full);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: var(--font-size-sm);
+}
+
+.bank-details {
+    background: var(--gray-50);
+    padding: var(--space-4);
+    border-radius: var(--radius-lg);
+}
+
+.bank-details p {
+    margin-bottom: var(--space-2);
+}
+
+/* Important Note */
+.important-note {
+    background: #fff3cd;
+    border-left: 4px solid var(--warning-color);
+}
+
+.important-note ul {
+    list-style: disc;
+    padding-left: var(--space-6);
+}
+
+.important-note li {
+    margin-bottom: var(--space-2);
+}
+
+/* Contact Support */
+.contact-support {
+    text-align: center;
+    padding: var(--space-6);
+}
+
+.contact-support p {
+    margin-bottom: var(--space-3);
+    color: var(--gray-600);
+}
+
+/* Lookup Form */
+.lookup-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+}
+
+.divider {
+    text-align: center;
+    position: relative;
+    margin: var(--space-2) 0;
+}
+
+.divider span {
+    background: white;
+    padding: 0 var(--space-3);
+    color: var(--gray-400);
+    font-weight: 600;
+}
+
+.divider::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
+    height: 1px;
+    background: var(--gray-300);
+    z-index: -1;
+}
+
+/* Tickets Container */
+.tickets-container {
+    margin-top: var(--space-8);
+}
+
+.tickets-container h2 {
+    font-size: var(--font-size-2xl);
+    font-weight: 700;
+    margin-bottom: var(--space-6);
+    color: var(--gray-900);
+}
+
+.tickets-list {
+    display: grid;
+    gap: var(--space-4);
+}
+
+.ticket-card {
+    background: white;
+    padding: var(--space-6);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-md);
+}
+
+.ticket-card__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: start;
+    margin-bottom: var(--space-4);
+}
+
+.ticket-card__header h3 {
+    font-size: var(--font-size-lg);
+    font-weight: 700;
+    color: var(--gray-900);
+}
+
+.status {
+    padding: var(--space-1) var(--space-3);
+    border-radius: var(--radius-full);
+    font-size: var(--font-size-xs);
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.status--reserved {
+    background: var(--warning-color);
+    color: white;
+}
+
+.status--paid {
+    background: var(--success-color);
+    color: white;
+}
+
+.status--available {
+    background: var(--gray-300);
+    color: var(--gray-700);
+}
+
+.ticket-card__body p {
+    margin-bottom: var(--space-2);
+    color: var(--gray-700);
+}
+
+.ticket-number-display {
+    font-size: 3rem;
+    font-weight: 800;
+    color: var(--primary-color);
+    text-align: center;
+    margin: var(--space-4) 0;
+}
+
+@media (max-width: 640px) {
+    .info-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .ticket-info-card,
+    .payment-instructions,
+    .important-note,
+    .lookup-card {
+        padding: var(--space-6);
+    }
+}

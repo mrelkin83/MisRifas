@@ -1,0 +1,186 @@
+================================================================================
+  CHECKLIST DE VERIFICACIÓN POST-INSTALACIÓN
+================================================================================
+
+Use este checklist para verificar que el sistema esté funcionando correctamente
+después de la instalación.
+
+================================================================================
+1. VERIFICACIÓN DE ARCHIVOS
+================================================================================
+
+□ Archivos subidos al servidor (37 archivos totales)
+□ Archivo .env presente y editable
+□ Archivo .htaccess presente
+□ Carpeta /uploads/raffles/ con permisos 755
+□ Carpeta /logs/ con permisos 755
+
+================================================================================
+2. VERIFICACIÓN DE BASE DE DATOS
+================================================================================
+
+□ Base de datos creada
+□ Archivo schema.sql importado correctamente
+□ 9 tablas creadas:
+  □ users
+  □ admin_users
+  □ lotteries
+  □ raffles
+  □ tickets
+  □ payments
+  □ notifications
+  □ commissions
+  □ audit_logs
+
+================================================================================
+3. VERIFICACIÓN DE CONFIGURACIÓN (.env)
+================================================================================
+
+□ DB_HOST configurado
+□ DB_NAME configurado
+□ DB_USER configurado
+□ DB_PASS configurado
+□ APP_ENV cambiado a "production"
+□ APP_DEBUG cambiado a "false"
+□ APP_URL configurado con tu dominio
+□ APP_SECRET_KEY cambiado (usar generador aleatorio)
+
+================================================================================
+4. VERIFICACIÓN DE FUNCIONAMIENTO
+================================================================================
+
+□ Página principal carga correctamente (index.html)
+□ No aparecen errores de PHP
+□ No aparecen errores de base de datos
+□ Estilos CSS se cargan correctamente
+□ JavaScript funciona sin errores (revisar consola del navegador)
+
+================================================================================
+5. VERIFICACIÓN DE API REST
+================================================================================
+
+Probar endpoints principales:
+
+□ GET /api/raffles/ - Listar rifas
+□ POST /api/tickets/reserve.php - Reservar boleto
+□ POST /api/payments/confirm.php - Confirmar pago
+
+Verificar que respondan JSON correctamente.
+
+================================================================================
+6. VERIFICACIÓN DE SEGURIDAD
+================================================================================
+
+□ Intento de acceso a /backend/ debe mostrar 403 Forbidden
+□ Intento de acceso a /database/ debe mostrar 403 Forbidden
+□ Intento de acceso a /logs/ debe mostrar 403 Forbidden
+□ Intento de acceso a .env debe mostrar 403 Forbidden
+□ Listado de directorios deshabilitado (Options -Indexes)
+
+================================================================================
+7. VERIFICACIÓN DE CRON JOBS (OPCIONAL)
+================================================================================
+
+Si configuraste Cron Jobs en cPanel:
+
+□ release_reservations.php - Se ejecuta cada 15 minutos
+□ send_reminders.php - Se ejecuta diariamente a las 2am
+□ check_commissions.php - Se ejecuta diariamente a las 4am
+□ process_notifications.php - Se ejecuta cada 5 minutos
+
+================================================================================
+8. VERIFICACIÓN DE INTEGRACIONES (OPCIONAL)
+================================================================================
+
+Si configuraste integraciones externas:
+
+□ Nequi API - Credenciales configuradas en .env
+□ WhatsApp API - Token y phone_id configurados en .env
+□ SMTP Email - Credenciales SMTP configuradas en .env
+
+================================================================================
+9. PRUEBA DE FLUJO COMPLETO
+================================================================================
+
+Realizar prueba end-to-end:
+
+□ Crear una rifa de prueba
+□ Navegar a la página principal
+□ Ver detalle de la rifa
+□ Seleccionar un boleto
+□ Completar formulario de reserva
+□ Verificar que se reserve correctamente
+□ Verificar que aparezca en "Mis Boletos"
+□ Verificar que el boleto se libere después del tiempo de reserva
+
+================================================================================
+10. VERIFICACIÓN DE LOGS
+================================================================================
+
+□ Archivo /logs/app.log se está creando
+□ Archivo /logs/error.log se está creando
+□ No aparecen errores críticos en los logs
+
+================================================================================
+COMANDOS ÚTILES PARA VERIFICACIÓN
+================================================================================
+
+# Verificar permisos de carpetas (desde terminal SSH)
+ls -la /ruta/completa/uploads/raffles/
+ls -la /ruta/completa/logs/
+
+# Verificar logs en tiempo real
+tail -f /ruta/completa/logs/app.log
+tail -f /ruta/completa/logs/error.log
+
+# Verificar conexión a base de datos (desde MySQL)
+USE misrifas;
+SHOW TABLES;
+SELECT COUNT(*) FROM raffles;
+
+# Probar API desde terminal
+curl -X GET https://tu-dominio.com/api/raffles/
+
+================================================================================
+SOLUCIÓN DE PROBLEMAS COMUNES
+================================================================================
+
+PROBLEMA: Página en blanco
+SOLUCIÓN: Verificar logs de PHP, activar display_errors temporalmente
+
+PROBLEMA: Error de conexión a base de datos
+SOLUCIÓN: Verificar credenciales en .env, verificar que MySQL esté corriendo
+
+PROBLEMA: 500 Internal Server Error
+SOLUCIÓN: Verificar permisos de archivos, verificar mod_rewrite habilitado
+
+PROBLEMA: Estilos no se cargan
+SOLUCIÓN: Verificar rutas en HTML, verificar que /public/css/ sea accesible
+
+PROBLEMA: API devuelve 404
+SOLUCIÓN: Verificar reglas de .htaccess, verificar mod_rewrite
+
+================================================================================
+CONTACTO PARA SOPORTE
+================================================================================
+
+Si completaste todos los pasos del checklist y el sistema no funciona:
+
+1. Revisar logs del servidor (/logs/app.log y /logs/error.log)
+2. Revisar logs de Apache/Nginx
+3. Verificar versión de PHP (debe ser 8.0 o superior)
+4. Verificar versión de MySQL (debe ser 8.0 o superior)
+
+================================================================================
+SISTEMA VERIFICADO COMPLETAMENTE ✅
+================================================================================
+
+Fecha de verificación: _____________________
+Verificado por: ____________________________
+
+Notas adicionales:
+_________________________________________________________________
+_________________________________________________________________
+_________________________________________________________________
+
+================================================================================

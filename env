@@ -1,0 +1,92 @@
+# ============================================
+# PLATAFORMA DE RIFAS - CONFIGURACIÓN
+# ============================================
+
+# Entorno (development, production)
+APP_ENV=development
+APP_DEBUG=true
+APP_URL=http://localhost/MisRifas
+APP_TIMEZONE=America/Bogota
+
+# Base de Datos
+DB_HOST=localhost
+DB_PORT=3306
+DB_NAME=misrifas
+DB_USER=root
+DB_PASS=
+DB_CHARSET=utf8mb4
+
+# Seguridad
+APP_SECRET_KEY=k7Xp2mQw9vLnR4tZyBcDjFhGsUeAoNiK
+SESSION_LIFETIME=86400
+CSRF_TOKEN_LIFETIME=3600
+PASSWORD_MIN_LENGTH=8
+
+# Pagos - Nequi (DESHABILITADO)
+NEQUI_ENABLED=false
+NEQUI_API_URL=https://api.nequi.com.co
+NEQUI_API_KEY=
+NEQUI_API_SECRET=
+NEQUI_WEBHOOK_SECRET=
+NEQUI_MERCHANT_ID=
+
+# Notificaciones - WhatsApp (DESHABILITADO)
+WHATSAPP_ENABLED=false
+WHATSAPP_API_URL=https://graph.facebook.com/v18.0
+WHATSAPP_ACCESS_TOKEN=
+WHATSAPP_PHONE_NUMBER_ID=
+WHATSAPP_BUSINESS_ACCOUNT_ID=
+
+# Notificaciones - Email (DESHABILITADO)
+EMAIL_ENABLED=false
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_ENCRYPTION=tls
+SMTP_USER=
+SMTP_PASS=
+EMAIL_FROM_ADDRESS=
+EMAIL_FROM_NAME="MisRifas Colombia"
+
+# Límites y Restricciones
+MAX_UPLOAD_SIZE=5242880
+ALLOWED_IMAGE_TYPES=jpg,jpeg,png,gif,webp
+RESERVATION_HOURS_DEFAULT=2
+MAX_TICKETS_PER_PURCHASE=10
+MIN_TICKET_PRICE=1000
+MAX_TICKET_PRICE=1000000
+
+# Rate Limiting
+RATE_LIMIT_ENABLED=true
+RATE_LIMIT_MAX_REQUESTS=60
+RATE_LIMIT_WINDOW_MINUTES=1
+
+# Logs
+LOG_LEVEL=debug
+LOG_FILE_PATH=logs/app.log
+ERROR_LOG_FILE_PATH=logs/error.log
+
+# Cache (deshabilitado)
+CACHE_ENABLED=false
+CACHE_DRIVER=file
+REDIS_HOST=127.0.0.1
+REDIS_PORT=6379
+REDIS_PASSWORD=
+
+# Google Analytics (deshabilitado)
+GA_ENABLED=false
+GA_TRACKING_ID=
+
+# reCAPTCHA (deshabilitado)
+RECAPTCHA_ENABLED=false
+RECAPTCHA_SITE_KEY=
+RECAPTCHA_SECRET_KEY=
+
+# Meta Tags por defecto
+META_TITLE="MisRifas - Plataforma de Rifas Digitales en Colombia"
+META_DESCRIPTION="La plataforma más confiable para crear y participar en rifas digitales en Colombia. 100% gratuita y segura."
+META_KEYWORDS="rifas,rifas colombia,rifas digitales,sorteos,loterías"
+META_IMAGE=assets/images/og-default.jpg
+
+# Cron Jobs
+CRON_ENABLED=false
+CRON_SECRET_KEY=

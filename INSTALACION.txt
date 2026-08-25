@@ -1,0 +1,106 @@
+==============================================================
+  MISRIFAS - INSTALACIÓN EN HOSTING COMPARTIDO
+==============================================================
+
+REQUISITOS:
+- PHP 8.0 o superior
+- MySQL 8.0 o superior
+- Servidor Apache/Nginx con mod_rewrite habilitado
+
+==============================================================
+PASOS DE INSTALACIÓN (5 PASOS)
+==============================================================
+
+1. SUBIR ARCHIVOS
+   - Subir todos los archivos al hosting (vía FTP/cPanel)
+   - Directorio público: /public_html/ o /www/
+
+2. CONFIGURAR BASE DE DATOS
+   - Crear base de datos MySQL desde cPanel
+   - Importar archivo: /database/schema.sql
+   - Anotar: nombre BD, usuario, contraseña
+
+3. EDITAR ARCHIVO .ENV
+   - Ubicación: /MisRifas/.env
+   - Modificar credenciales de base de datos:
+     DB_HOST=localhost
+     DB_NAME=tu_base_datos
+     DB_USER=tu_usuario
+     DB_PASS=tu_contraseña
+
+   - Cambiar APP_ENV a production:
+     APP_ENV=production
+     APP_DEBUG=false
+
+4. CONFIGURAR PERMISOS
+   - /uploads/raffles/  -> 755 (escritura)
+   - /logs/             -> 755 (escritura)
+
+5. VERIFICAR INSTALACIÓN
+   - Abrir en navegador: http://tu-dominio.com
+   - Debe cargar la página principal
+   - Verificar que las rifas se muestren correctamente
+
+==============================================================
+CONFIGURACIÓN DE CRON JOBS (OPCIONAL)
+==============================================================
+
+Desde cPanel -> Cron Jobs, agregar:
+
+*/15 * * * * php /ruta/completa/cron/release_reservations.php
+0 2 * * * php /ruta/completa/cron/send_reminders.php
+0 4 * * * php /ruta/completa/cron/check_commissions.php
+*/5 * * * * php /ruta/completa/cron/process_notifications.php
+
+==============================================================
+ESTRUCTURA DEL PROYECTO
+==============================================================
+
+/MisRifas/
+├── .env                    (EDITAR - Configuración)
+├── .htaccess               (NO MODIFICAR)
+├── api/                    (Endpoints REST)
+├── backend/                (Lógica PHP)
+│   ├── config/             (Configuración)
+│   ├── repositories/       (Base de datos)
+│   ├── services/           (Servicios)
+│   └── utils/              (Utilidades)
+├── cron/                   (Tareas programadas)
+├── database/               (SQL)
+│   └── schema.sql          (Importar en MySQL)
+├── public/                 (Frontend - acceso público)
+│   ├── index.html          (Página principal)
+│   ├── css/
+│   ├── js/
+│   └── assets/
+├── uploads/                (Imágenes - permisos 755)
+└── logs/                   (Logs - permisos 755)
+
+==============================================================
+SOLUCIÓN DE PROBLEMAS
+==============================================================
+
+ERROR: "Database connection failed"
+- Verificar credenciales en .env
+- Verificar que la BD existe
+- Verificar usuario tiene permisos
+
+ERROR: "500 Internal Server Error"
+- Verificar PHP 8.0+ instalado
+- Verificar permisos en /uploads y /logs
+- Revisar logs del servidor
+
+ERROR: "Página en blanco"
+- Activar display_errors en PHP
+- Revisar archivo /logs/error.log
+
+==============================================================
+SOPORTE TÉCNICO
+==============================================================
+
+Para soporte adicional, revisar:
+- Logs del servidor: /logs/app.log
+- Logs de errores: /logs/error.log
+- Logs de Apache/Nginx
+
+==============================================================

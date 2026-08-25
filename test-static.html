@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Test Estáticos</title>
+    <style>
+        body { font-family: Arial; padding: 40px; background: #f0f0f0; }
+        .test { background: white; padding: 20px; margin: 10px 0; border-radius: 8px; }
+        .ok { color: green; font-weight: bold; }
+        .fail { color: red; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1>Prueba de Archivos Estáticos</h1>
+    
+    <div class="test">
+        <h2>CSS Test</h2>
+        <p>CSS cargado: <span class="ok">SÍ</span></p>
+        <p>Si ves este texto con fondo blanco y bordes redondeados, el CSS inline funciona.</p>
+    </div>
+    
+    <div class="test">
+        <h2>JS Test</h2>
+        <p id="js-result">Probando JavaScript...</p>
+    </div>
+    
+    <div class="test">
+        <h2>Enlaces directos</h2>
+        <p><a href="/MisRifas/css/main.css" target="_blank">Abrir CSS</a></p>
+        <p><a href="/MisRifas/js/app.js" target="_blank">Abrir JS</a></p>
+        <p><a href="/MisRifas/" target="_blank">Ir a MisRifas</a></p>
+    </div>
+    
+    <script>
+        document.getElementById('js-result').innerHTML = '<span style="color:green;font-weight:bold">JavaScript funciona correctamente</span>';
+    </script>
+</body>
+</html>

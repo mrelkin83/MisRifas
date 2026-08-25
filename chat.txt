@@ -1,0 +1,81 @@
+la lógica no se aplicó, si selecciono 10000 boletos el valor automático en cifras debe ser de 4 cifras  y solo deben aparecer las opciones en oportunidades 1,2,4 y5 solo deben aparecer las opciones en modo de ganar 4 ultimas cifras, no modificables estos valores
+
+
+
+Ojo recomendación importante NO NEGOCIABLE: "Esta prohibido modificar o alterar lo que ya funciona en otras secciones o demás funcionalidades del sistema lo que ya funciona es INTOCABLE.
+en crear rifas vamos a cambiar el nombre Total Boletos por Total Boletas , Vamos a cambiar el nombre  de Precio Por Boleto Por Precio Por Boleta, y en este orden deben aparecer Precio por Boleta, Total Boletos, Cifras, oportunidades, Modo de ganar, Lotería, fecha del sorteo, whatsapp de contacto y responsable, que automáticamente en esta ultima opción debe insertarse el nombre del perfil de la cuenta que crea la rifa
+
+Organizado lo anterior luego aplicamos esta lógica: si la rifa es de 1000 boletos, automáticamente y únicamente debe habilitar solo la opción 3 cifras las demás opciones quedan deshabilitadas, si la rifa es de 10.000 boletos, automáticamente y únicamente debe habilitar solo la opción 4 cifras  4 cifras las demás opciones quedan deshabilitadas , si la rifa es de 100 boletos automáticamente y únicamente debe habilitar solo la opción 2 cifras las demás opciones quedan deshabilitadas, si la rifa es de 2 cifras únicamente debe habilitar el modo de ganar 2 primeras y 2 ultimas cifras, si la rifa es de 3 cifras únicamente debe habilitar el modo de ganar 3 primeras y 3 ultimas cifras, si la rifa es de 4 cifras únicamente debe habilitar el modo de ganar  4 ultimas cifras
+
+
+Ojo recomendación importante NO NEGOCIABLE: "Esta prohibido modificar o alterar lo que ya funciona en otras secciones o demás funcionalidades del sistema lo que ya funciona es INTOCABLE.
+cambiaste las rutas pero localmente ninguna seccione esta funcionando, a cualquier enlace que me dirija  me arroja este error Not Found
+The requested URL was not found on this server.
+
+Apache/2.4.58 (Win64) OpenSSL/3.1.3 PHP/8.0.30 Server at localhost Port 80
+
+
+
+
+nuevo contexto para tener en cuenta
+
+Ojo recomendación importante NO NEGOCIABLE: "Esta prohibido modificar o alterar lo que ya funciona en otras secciones o demás funcionalidades del sistema lo que ya funciona es INTOCABLE. En el dashboard de usuarios regulares no debe aparecer las secciones gestión de portadas, comisiones , campañas de email, y la en parte superior derecho de todos los dashboard donde aparece el icono de perfil el nombre del usuario de aparecer
+
+si es una rifa de 1000 boletos(números) de 3 cifras, de 4 oportunidades, solo debe generar 250 boletos y cada boleto debe generar 4 números random a cada boleto del 000 al 999 y estos numero generados son los que participan en el sorteo, este boleto deber ser único y ningún otro boleto debe tener los mismos números o que se repita alguno de los números en otro boleto, mejor así. en la presentación de cada boleto deben aparecer los números random generados.
+
+si es una rifa de 1000 boletos(números) de 3 cifras, de 2 oportunidades, solo debe generar 500 boletos y cada boleto debe generar 2 números random a cada boleto del 000 al 999 y estos numero generados son los que participan en el sorteo, este boleto deber ser único y ningún otro boleto debe tener los mismos números o que se repita alguno de los números en otro boleto, mejor así. en la presentación de cada boleto deben aparecer los números random generados.
+
+si es una rifa de 1000 boletos(números) de 3 cifras, de 5 oportunidades, solo debe generar 200 boletos y cada boleto debe generar 5 números random a cada boleto del 000 al 999 y estos numero generados son los que participan en el sorteo, este boleto deber ser único y ningún otro boleto debe tener los mismos números o que se repita alguno de los números en otro boleto, mejor así. en la presentación de cada boleto deben aparecer los números random generados.
+
+si es una rifa de 1000 boletos(números) de 3 cifras, de 1 oportunidades, solo debe generar 1000 boletos y cada boleto debe generar 1 números random a cada boleto del 000 al 999 y estos numero generados son los que participan en el sorteo, este boleto deber ser único y ningún otro boleto debe tener los mismos números o que se repita alguno de los números en otro boleto, mejor así. en la presentación de cada boleto deben aparecer los números random generados.
+
+Esta lógica solo debe aplicar para rifas de 3 y 4 cifras boletos de 1000 a 10000,no aplica para rifas de 2 cifras, las rifas de 2 cifras cuando se seleccione la cantidad de 100 boletos habilite automáticamente el numero de 1 oportunidades, el modo de ganar 2 ultimas y 2 primeras cifras solo aplica para rifas de 2 cifras, al igual que el modo de ganar 3 ultimas y 3 primeras cifras solo aplica para rifas de 3 cifras, al igual que el modo de ganar 4 ultimas  cifras solo aplica para rifas de 4 cifras
+
+
+
+Organizado lo anterior luego aplicamos esta lógica: si la rifa es de 1000 boletos, automáticamente y únicamente debe habilitar solo la opción 3 cifras las demás opciones quedan deshabilitadas, si la rifa es de 10.000 boletos, automáticamente y únicamente debe habilitar solo la opción 4 cifras  4 cifras las demás opciones quedan deshabilitadas , si la rifa es de 100 boletos automáticamente y únicamente debe habilitar solo la opción 2 cifras las demás opciones quedan deshabilitadas, si la rifa es de 2 cifras únicamente debe habilitar el modo de ganar 2 primeras y 2 ultimas cifras, si la rifa es de 3 cifras únicamente debe habilitar el modo de ganar 3 primeras y 3 ultimas cifras, si la rifa es de 4 cifras únicamente debe habilitar el modo de ganar  4 ultimas cifras
+
+solo debes ajustar lo que te pido no modifiques lo que ya esta funcionando, en el dashboard de usuarios regulares no debe aparecer las secciones gestión de portadas, comisiones , campañas de email, y la sección de mis boletos en todos los usuarios incluyendo el super admin , esta opción debe mostrar las boletas compradas, debe llamarse boletas compradas
+
+
+
+esta prohibido modificar o alterar lo que ya funciona en otras secciones o demás funcionalidades del sistema. el botón superior mis boletos del menú cambiar el nombre por Consultar Boletas, la lógica de este botón es que cada comprador pueda verificar con el código el resultado del sorteo, también vamos a unifica un solo schema.sql completo, las rutas de los enlaces debe ser corregidos, la carpeta del servido donde se va alojar este proyecto se llama public_html, ayer desplegué y algunas rutas no funcionaron
+
+
+
+
+
+
+Ojo recomendación importante NO NEGOCIABLE: "Esta prohibido modificar o alterar lo que ya funciona en otras secciones o demás funcionalidades del sistema lo que ya funciona es INTOCABLE. En la sección crear rifa si selecciono la opción 2 cifras o 100 boletos, automáticamente se habilita en la opción total boletos 100 2 cifras, las demás opciones quedan deshabilitadas y en oportunidades solo se debe habilitar 1 oportunidades, las demás quedaran deshabilitadas, el modo de ganar solo se deben habilitar las opciones 2 ultimas y 2 primeras las demás opciones quedaran deshabilitadas
+
+Ojo recomendación importante NO NEGOCIABLE: "Esta prohibido modificar o alterar lo que ya funciona en otras secciones o demás funcionalidades del sistema lo que ya funciona es INTOCABLE. En la sección crear rifa si selecciono la opción 3 cifras o 1000 boletos, automáticamente se habilita en la opción total boletos 1000 3 cifras, las demás opciones quedan deshabilitadas y en oportunidades solo se debe habilitar 1,2, y 5 oportunidades, las demás quedaran deshabilitadas, el modo de ganar solo se deben habilitar las opciones 3 ultimas y 3 primeras las demás opciones quedaran deshabilitadas
+
+Ojo recomendación importante NO NEGOCIABLE: "Esta prohibido modificar o alterar lo que ya funciona en otras secciones o demás funcionalidades del sistema lo que ya funciona es INTOCABLE. En la sección crear rifa si selecciono la opción 4 cifras o 10000 boletos, automáticamente se habilita en la opción total boletos 10000 4 cifras, las demás opciones quedan deshabilitadas y en oportunidades solo se debe habilitar 1,2, y 5 oportunidades, las demás quedaran deshabilitadas, el modo de ganar solo se deben habilitar las opciones 4 ultimas las demás opciones quedaran deshabilitadas
+
+Ojo recomendación importante NO NEGOCIABLE: "Esta prohibido modificar o alterar lo que ya funciona en otras secciones o demás funcionalidades del sistema lo que ya funciona es INTOCABLE. En el dashboard de usuarios regulares no debe aparecer las secciones gestión de portadas, comisiones , campañas de email, y la en parte superior derecho de todos los dashboard donde aparece el icono de perfil el nombre del usuario de aparecer
+
+
+
+
+
+APLICAR UNICAS REGLAS DE JUEGO
+REGLA DEL JUEGO: EL NUMERO MAS ALTO GANA 
+REGLA DEL JUEGO: EL NUMERO MAS BAJO GANA 
+USAR EL SONIDO PARA EL EFECTO DE DESTAPADOR UBICADO EN LA SIGUIENTE DIRECCION
+C:\xampp\htdocs\MisRifas\sound\Botella.mp3.mp3
+EL TIEMPO DE DESTAPE DEBE SER DE 5 SEGUNDOS
+
+
+# Entorno (development, production)
+APP_ENV=development
+APP_DEBUG=true
+APP_URL=https://misrifas.online/
+APP_TIMEZONE=America/Bogota
+
+# Base de Datos
+DB_HOST=localhost
+DB_PORT=3306
+DB_NAME=u862006659_misrifas
+DB_USER=u862006659_misrifas
+DB_PASS=M@yte.2024*#
+DB_CHARSET=utf8mb4

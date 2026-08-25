@@ -1,0 +1,58 @@
+# ============================================
+# MisRifas .gitignore
+# ============================================
+
+# Dependencias
+/vendor/
+node_modules/
+
+# Entorno
+.env
+.env.*
+!.env.example
+
+# Logs
+/logs/
+*.log
+*.error_log
+
+# Uploads de usuarios (no versionar contenido)
+/public/assets/uploads/*
+/public/uploads/*
+/uploads/*
+!/public/assets/uploads/.gitkeep
+!/public/uploads/.gitkeep
+!/uploads/.gitkeep
+
+# Backups
+*.bak
+*.bak2
+*.bak3
+*.swp
+*.swo
+*~
+
+# IDE
+.idea/
+.vscode/
+*.sublime-*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Cache
+/cache/
+*.cache
+
+# Compiled CSS (se genera con npm run build:css)
+/public/css/tailwind.min.css
+
+# Tools / Scripts temporales
+/tools/
+
+# Composer
+composer-setup.php
+
+# Backups de proyecto completo (pesados, no son código fuente)
+/MisRifas*.zip

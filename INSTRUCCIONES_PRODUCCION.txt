@@ -1,0 +1,67 @@
+========================================
+INSTRUCCIONES PARA DESPLIEGUE EN PRODUCCIÓN
+========================================
+
+El error "Error de conexión" al crear tapazo ha sido corregido.
+
+PASOS PARA CONFIGURAR EN PRODUCCIÓN:
+------------------------------------
+
+1. CONFIGURAR EL ARCHIVO .env
+   - En el servidor de producción, edita el archivo .env
+   - Asegúrate de que tenga estas configuraciones:
+   
+   APP_ENV=production
+   APP_DEBUG=false
+   APP_URL=https://misrifas.online
+   BASE_PATH=
+
+   IMPORTANTE: BASE_PATH debe estar VACÍO (sin valor) en producción
+
+2. USAR EL ARCHIVO .env.production (ALTERNATIVA)
+   Si prefieres, puedes usar el archivo .env.production que ya está configurado:
+   
+   cp .env.production .env
+
+3. VERIFICAR LA CONFIGURACIÓN
+   Visita en tu navegador:
+   https://misrifas.online/public/diagnostico.php
+   
+   Esto te mostrará un JSON con toda la configuración del sistema.
+   Verifica que:
+   - BASE_PATH esté VACÍO
+   - La base de datos esté CONECTADA
+   - Todos los archivos EXISTAN
+
+4. ELIMINAR EL ARCHIVO DE DIAGNÓSTICO (IMPORTANTE)
+   Por seguridad, después de verificar, ELIMINA el archivo:
+   
+   rm public/diagnostico.php
+
+5. PROBAR LA CREACIÓN DE TAPAZO
+   - Ve a: https://misrifas.online/tapazo/index.php
+   - Abre la consola del navegador (F12)
+   - Intenta crear un tapazo
+   - Si hay un error, revisa la consola para ver los detalles
+
+MEJORAS REALIZADAS:
+-------------------
+✅ Agregado logging de BASE_PATH en consola de navegador
+✅ Mejorado manejo de errores con detalles específicos
+✅ Corregido redirect después de crear tapazo
+✅ Todas las rutas de API ahora usan BASE_PATH dinámicamente
+✅ Creado archivo de diagnóstico para debugging
+✅ Creado .env.production con configuración correcta
+
+ARCHIVOS MODIFICADOS:
+--------------------
+- config/paths.php (ahora carga .env correctamente)
+- tapazo/index.php (logging y rutas dinámicas)
+- api/tapazo/crear.php (mejor manejo de errores)
+- .env.production (configuración para producción)
+- public/diagnostico.php (nuevo - archivo de diagnóstico)
+
+Si el problema persiste después de estos pasos, revisa:
+1. Los logs del servidor web (Apache/Nginx)
+2. Los logs de PHP (error.log)
+3. La consola del navegador (F12)

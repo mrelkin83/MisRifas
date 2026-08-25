@@ -1,0 +1,13 @@
+{
+  "name": "misrifas",
+  "version": "2.0.0",
+  "description": "MisRifas - Plataforma de Rifas Digitales en Colombia",
+  "scripts": {
+    "build:css": "tailwindcss -i ./public/css/tailwind-input.css -o ./public/css/tailwind.min.css --minify",
+    "watch:css": "tailwindcss -i ./public/css/tailwind-input.css -o ./public/css/tailwind.min.css --watch"
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.0.0",
+    "tailwindcss": "^4.0.0"
+  }
+}

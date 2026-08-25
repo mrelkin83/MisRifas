@@ -1,0 +1,10 @@
+RewriteEngine On
+RewriteBase /tapazo/
+
+# If the request is for a real file, serve it
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+
+# Otherwise route everything to index.php with the codigo as query param
+RewriteRule ^([a-zA-Z0-9-]+)/?$ index.php?codigo=$1 [L,QSA]
+RewriteRule ^$ index.php [L,QSA]

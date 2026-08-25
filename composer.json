@@ -1,0 +1,15 @@
+{
+    "name": "misrifas/platform",
+    "description": "MisRifas Platform",
+    "type": "project",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Antigravity Team",
+            "email": "antigravity@example.com"
+        }
+    ],
+    "require": {
+        "getbrevo/brevo-php": "^4.0"
+    }
+}
