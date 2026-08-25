@@ -4,6 +4,13 @@
  * Redirige al usuario a Google para autenticación
  */
 
+session_set_cookie_params([
+    'lifetime' => 0,
+    'path' => '/',
+    'secure' => (getenv('APP_ENV') ?: 'development') === 'production',
+    'httponly' => true,
+    'samesite' => 'Lax',
+]);
 session_start();
 
 // Configuración de Google OAuth (DEBES CONFIGURAR ESTAS CREDENCIALES)

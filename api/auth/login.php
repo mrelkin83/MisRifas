@@ -1,4 +1,11 @@
 <?php
+session_set_cookie_params([
+    'lifetime' => 0,
+    'path' => '/',
+    'secure' => (getenv('APP_ENV') ?: 'development') === 'production',
+    'httponly' => true,
+    'samesite' => 'Lax',
+]);
 session_start();
 
 header('Content-Type: application/json; charset=utf-8');

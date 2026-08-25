@@ -4,6 +4,13 @@
  * Maneja la respuesta de Facebook después de la autenticación
  */
 
+session_set_cookie_params([
+    'lifetime' => 0,
+    'path' => '/',
+    'secure' => (getenv('APP_ENV') ?: 'development') === 'production',
+    'httponly' => true,
+    'samesite' => 'Lax',
+]);
 session_start();
 require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../utils/Response.php';
@@ -43,7 +50,6 @@ try {
 
     $ch = curl_init($tokenUrl . '?' . http_build_query($tokenParams));
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
     $response = curl_exec($ch);
     curl_close($ch);
 
@@ -62,7 +68,6 @@ try {
 
     $ch = curl_init($userInfoUrl . '?' . http_build_query($userInfoParams));
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
     $userInfoResponse = curl_exec($ch);
     curl_close($ch);
 
