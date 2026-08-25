@@ -11,14 +11,33 @@ require_once __DIR__ . '/../config/paths.php';
     <title><?= $page_title ?></title>
     <script>const BASE_PATH = "<?= BASE_PATH ?>";</script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: { DEFAULT: '#f59e0b', dark: '#b45309', light: '#fbbf24' }
+                    }
+                }
+            }
+        }
+    </script>
     <style>
-        body { background: #0f172a; color: white; }
+        @font-face {
+            font-family: 'Outfit';
+            font-style: normal;
+            font-weight: 800;
+            font-display: swap;
+            src: url('<?= BASE_PATH ?>/public/assets/fonts/outfit-800.woff2') format('woff2');
+        }
+        body { background: #0f172a; color: white; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+        h1, h3 { font-family: 'Outfit', 'Inter', sans-serif; }
         .glass-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 24px; }
         .form-input { background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(255, 255, 255, 0.1); color: white; padding: 12px 16px; border-radius: 12px; width: 100%; outline: none; transition: border-color 0.2s; }
-        .form-input:focus { border-color: #3b82f6; }
-        .btn-primary { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white; padding: 12px 24px; border-radius: 12px; font-weight: 700; transition: all 0.2s; width: 100%; }
+        .form-input:focus { border-color: #f59e0b; }
+        .btn-primary { background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); color: #1c1305; padding: 12px 24px; border-radius: 12px; font-weight: 700; transition: all 0.2s; width: 100%; }
         .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
-        
+
         @media (max-width: 640px) {
             .glass-card { padding: 1.5rem !important; }
             .profile-header { flex-direction: column; text-align: center; gap: 1rem !important; }
@@ -28,7 +47,10 @@ require_once __DIR__ . '/../config/paths.php';
 </head>
 <body>
     <header class="h-20 flex items-center justify-between px-6 border-b border-white/5 sticky top-0 bg-[#0f172a]/80 backdrop-blur-md z-50">
-        <a href="index.php" class="text-2xl font-black text-blue-400">🎟️ MisRifas</a>
+        <a href="index.php" class="text-2xl font-black text-primary flex items-center gap-2">
+            <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v1a2 2 0 0 0 0 4v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1a2 2 0 0 0 0-4Z"/><path d="M13 5v14" stroke-dasharray="2 3"/></svg>
+            MisRifas
+        </a>
         <div class="flex items-center gap-4">
             <a href="index.php" class="text-slate-400 hover:text-white text-sm hidden sm:block">Inicio</a>
             <button onclick="logout()" class="text-slate-400 hover:text-red-400 text-sm font-bold">Cerrar Sesión</button>
@@ -39,7 +61,7 @@ require_once __DIR__ . '/../config/paths.php';
         <div class="glass-card p-8">
             <div class="flex items-center gap-6 mb-10 profile-header">
                 <div class="relative group cursor-pointer" onclick="document.getElementById('p-image').click()">
-                    <div id="profile-avatar" class="w-24 h-24 bg-blue-600 rounded-full flex items-center justify-center text-4xl font-bold overflow-hidden border-4 border-white/10 group-hover:border-blue-500 transition-all">
+                    <div id="profile-avatar" class="w-24 h-24 bg-primary text-slate-950 rounded-full flex items-center justify-center text-4xl font-bold overflow-hidden border-4 border-white/10 group-hover:border-primary transition-all">
                         <span id="avatar-text">U</span>
                         <img id="avatar-img" class="w-full h-full object-cover hidden" alt="Profile">
                     </div>
@@ -85,15 +107,15 @@ require_once __DIR__ . '/../config/paths.php';
                 </div>
 
                 <div class="pt-8 border-t border-white/10 mt-10">
-                    <a href="mis-boletos.php" class="flex items-center justify-between p-4 md:p-6 bg-blue-600/10 border border-blue-500/20 rounded-3xl group hover:bg-blue-600/20 transition-all">
+                    <a href="mis-boletos.php" class="flex items-center justify-between p-4 md:p-6 bg-primary/10 border border-primary/20 rounded-3xl group hover:bg-primary/20 transition-all">
                         <div class="flex items-center gap-4">
-                            <span class="text-2xl md:text-3xl text-blue-400 group-hover:scale-125 transition-transform">🎫</span>
+                            <svg class="w-7 h-7 md:w-8 md:h-8 text-primary group-hover:scale-125 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v1a2 2 0 0 0 0 4v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1a2 2 0 0 0 0-4Z"/><path d="M13 5v14" stroke-dasharray="2 3"/></svg>
                             <div class="text-left">
                                 <h3 class="text-base md:text-lg font-black text-white leading-tight">Mis Boletas</h3>
                                 <p class="text-xs md:text-sm text-slate-400">Consulta tus números y estado.</p>
                             </div>
                         </div>
-                        <span class="text-blue-400 group-hover:translate-x-2 transition-transform">→</span>
+                        <svg class="w-5 h-5 text-primary group-hover:translate-x-2 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
                     </a>
                 </div>
 
