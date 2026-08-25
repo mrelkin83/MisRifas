@@ -10,6 +10,13 @@
         }
     ],
     "require": {
-        "getbrevo/brevo-php": "^4.0"
-    }
+        "getbrevo/brevo-php": "^4.0",
+        "elkinlinan/whatsapp-ai-engine": "dev-master"
+    },
+    "repositories": [
+        {
+            "type": "path",
+            "url": "packages/whatsapp-engine"
+        }
+    ]
 }

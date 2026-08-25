@@ -4,8 +4,40 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "0b5247c92e71a5a4439919f5350f9276",
+    "content-hash": "52c7e663ae5b52fc60478fada17ea44c",
     "packages": [
+        {
+            "name": "elkinlinan/whatsapp-ai-engine",
+            "version": "dev-master",
+            "dist": {
+                "type": "path",
+                "url": "packages/whatsapp-engine",
+                "reference": "50225e47614202154d55c2906e88a9dafd65c819"
+            },
+            "require": {
+                "ext-curl": "*",
+                "ext-json": "*",
+                "php": ">=8.0"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "ElkinLinan\\WhatsappAiEngine\\": "src/"
+                }
+            },
+            "license": [
+                "proprietary"
+            ],
+            "authors": [
+                {
+                    "name": "Elkin Liñán"
+                }
+            ],
+            "description": "Motor conversacional de WhatsApp con IA: pedidos, cobro, voz e imágenes. Independiente del negocio que lo use.",
+            "transport-options": {
+                "relative": true
+            }
+        },
         {
             "name": "getbrevo/brevo-php",
             "version": "v4.0.9",
@@ -670,7 +702,9 @@
     "packages-dev": [],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": {},
+    "stability-flags": {
+        "elkinlinan/whatsapp-ai-engine": 20
+    },
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": {},
