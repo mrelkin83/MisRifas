@@ -308,7 +308,7 @@ class TicketRepository extends BaseRepository
     /**
      * Obtener boletos de un usuario
      */
-    public function getUserTickets(int $userId, int $raffleId = null): array
+    public function getUserTickets(int $userId, int $raffleId = null, int $vendorId = null): array
     {
         $sql = "SELECT t.*, r.name as raffle_name, r.draw_date, r.image_url
                 FROM tickets t
@@ -320,6 +320,17 @@ class TicketRepository extends BaseRepository
         if ($raffleId) {
             $sql .= " AND t.raffle_id = ?";
             $params[] = $raffleId;
+        }
+
+        // $vendorId acota a "los pedidos de este comprador CON ESTE vendor" -
+        // sin esto, cualquier bot de WhatsApp de cualquier vendor devolvia el
+        // historial de compras del cliente en TODA la plataforma (nombre de
+        // rifa, numero, estado) con cualquier otro vendor. `users` es una
+        // identidad global por diseno (el mismo comprador compra en varios
+        // vendors), pero el bot de un vendor no debe poder listarlo todo.
+        if ($vendorId) {
+            $sql .= " AND r.vendor_id = ?";
+            $params[] = $vendorId;
         }
 
         $sql .= " ORDER BY t.created_at DESC";

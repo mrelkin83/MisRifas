@@ -64,7 +64,7 @@ class RaffleDomainAdapter implements
         // "pedidos_abiertos" se mapea a boletos reservados sin pagar aun.
         $reservados = 0;
         if ($user) {
-            foreach ($this->ticketRepo->getUserTickets((int)$user['id']) as $t) {
+            foreach ($this->ticketRepo->getUserTickets((int)$user['id'], null, $this->vendorId) as $t) {
                 if ($t['status'] === 'reserved') {
                     $reservados++;
                 }
@@ -244,7 +244,7 @@ class RaffleDomainAdapter implements
             return [];
         }
 
-        $tickets = $this->ticketRepo->getUserTickets((int)$user['id']);
+        $tickets = $this->ticketRepo->getUserTickets((int)$user['id'], null, $this->vendorId);
         $out = [];
         foreach ($tickets as $t) {
             $out[] = [

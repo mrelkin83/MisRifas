@@ -12,8 +12,12 @@ require_once __DIR__ . '/../../../api/services/MailService.php';
 require_once __DIR__ . '/../../../config/database.php';
 
 try {
-    $user = Auth::requireAdmin();
-    
+    // requireAdmin() es alias de requireVendor() y NO chequea rol - sin este
+    // requireRole(), cualquier vendor auto-registrado podia mandar un email
+    // masivo con asunto/cuerpo propios a TODA la plataforma (buyers +
+    // vendors), un vector de phishing/spam sin ninguna aprobacion.
+    $user = Auth::requireRole('super_admin');
+
     $data = json_decode(file_get_contents('php://input'), true);
     $subject = trim($data['subject'] ?? '');
     $body = trim($data['body'] ?? '');

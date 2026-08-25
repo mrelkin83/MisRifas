@@ -102,7 +102,19 @@ try {
             arrancarMotorPara((int)$adminUser['id']);
 
             $campos = [];
-            if (isset($input['evo_api_url']))  $campos['evolution_url'] = rtrim(trim($input['evo_api_url']), '/');
+            if (isset($input['evo_api_url'])) {
+                $evoUrl = rtrim(trim($input['evo_api_url']), '/');
+                // El motor ya trae este guard (Http::destinoPublicoSeguro) para
+                // exactamente este caso -URL que pone el vendor- pero nunca se
+                // llamaba desde aqui: un vendor podia apuntar su propia
+                // instancia a 169.254.169.254, localhost o la red interna de
+                // otro tenant, y la plataforma le haria requests salientes en
+                // cada mensaje que ese vendor reciba.
+                if ($evoUrl !== '' && !\ElkinLinan\WhatsappAiEngine\Core\Http::destinoPublicoSeguro($evoUrl)) {
+                    Response::error('La URL de EvolutionAPI debe ser una direccion publica valida (http/https, no una IP privada, loopback o de metadata)', null, 400);
+                }
+                $campos['evolution_url'] = $evoUrl;
+            }
             if (isset($input['evo_instance'])) $campos['evolution_instancia'] = trim($input['evo_instance']);
             // evolution_apikey esta en WaConfig::SECRETOS - un valor vacio no
             // pisa el ya guardado (mismo comportamiento que el codigo viejo).

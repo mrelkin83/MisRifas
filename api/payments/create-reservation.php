@@ -97,6 +97,28 @@ try {
         $expiresAt = date('Y-m-d H:i:s', strtotime('+10 minutes'));
         $amount = $raffle['ticket_price'] * count($numeros);
 
+        // 0. `tickets` (usada por api/tickets/reserve.php) y `numero_reservas`
+        // (usada por este endpoint) son dos sistemas de inventario que antes
+        // no se consultaban entre si: dos compradores podian terminar cada
+        // uno creyendo que tenia el mismo numero, uno por cada checkout.
+        // Se bloquea y reserva tambien la fila de `tickets` de cada numero,
+        // con el mismo candado (SELECT ... FOR UPDATE) que ya usa
+        // TicketRepository::reserveTicket() - `tickets` queda como la unica
+        // fuente de verdad de disponibilidad para ambos flujos.
+        $lockStmt = $db->prepare("SELECT id, status FROM tickets WHERE raffle_id = ? AND ticket_number = ? FOR UPDATE");
+        $updateTicketStmt = $db->prepare("
+            UPDATE tickets SET status = 'reserved', user_id = ?, reserved_at = NOW(), reserved_until = ?
+            WHERE id = ?
+        ");
+        foreach ($numeros as $numero) {
+            $lockStmt->execute([$raffleId, $numero]);
+            $ticketRow = $lockStmt->fetch(PDO::FETCH_ASSOC);
+            if (!$ticketRow || $ticketRow['status'] !== 'available') {
+                throw new Exception('El número ' . $numero . ' ya no está disponible. Selecciona otros números para continuar.');
+            }
+            $updateTicketStmt->execute([$_SESSION['user_id'] ?? null, $expiresAt, $ticketRow['id']]);
+        }
+
         // 1. Insertar en numero_reservas (cada número individualmente)
         $stmt = $db->prepare("
             INSERT INTO numero_reservas

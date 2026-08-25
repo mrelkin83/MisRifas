@@ -11,18 +11,24 @@ require_once __DIR__ . '/../../api/utils/Response.php';
 
 try {
     $user = Auth::requireLogin();
-    
+
+    // Auth::requireLogin() marca el actor en 'auth_type' ('vendor'|'buyer'),
+    // no en 'source' (esa clave nunca existio). 'vendors' y 'users' tienen
+    // columnas distintas para nombre/foto - full_name/username/profile_image
+    // eran de la vieja tabla admin_users, ninguna existe en 'vendors'.
+    $esVendor = ($user['auth_type'] ?? '') === 'vendor';
+
     // Devolvemos datos limpios
     Response::success([
         'id'            => $user['id'],
-        'name'          => $user['full_name'] ?? $user['username'],
+        'name'          => $esVendor ? $user['business_name'] : $user['name'],
         'email'         => $user['email'],
         'phone'         => $user['phone'] ?? '',
         'department'    => $user['department'] ?? '',
         'city'          => $user['city'] ?? '',
         'role'          => $user['role'],
-        'profile_image' => $user['profile_image'] ?? null,
-        'source'        => $user['source']
+        'profile_image' => $esVendor ? ($user['logo_url'] ?? null) : ($user['profile_image'] ?? null),
+        'source'        => $user['auth_type'] ?? null
     ]);
 
 } catch (Exception $e) {

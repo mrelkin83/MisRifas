@@ -26,23 +26,32 @@ try {
     }
 
     $db = Database::getInstance()->getConnection();
-    
+
+    // Auth::requireLogin() marca el actor en 'auth_type' ('vendor'|'buyer'),
+    // NUNCA en 'source' - ese chequeo era siempre falso, asi que TODO
+    // caller (vendor o buyer) actualizaba la fila de `users` con su propio
+    // id numerico. Como `vendors` y `users` tienen secuencias autoincrement
+    // independientes, un vendor con id=N sobreescribia silenciosamente al
+    // comprador con users.id=N (incluyendo su password_hash si mandaba uno).
+    $esVendor = ($user['auth_type'] ?? '') === 'vendor';
+    $oldImageField = $esVendor ? ($user['logo_url'] ?? null) : ($user['profile_image'] ?? null);
+
     // 1. Manejar carga de imagen si existe
     $profileImagePath = null;
     if (isset($_FILES['profile_image']) && $_FILES['profile_image']['error'] === UPLOAD_ERR_OK) {
         $profileImagePath = Uploader::upload($_FILES['profile_image'], 'assets/uploads/profiles', 'profile');
-        
+
         // Elimar foto anterior
-        if (!empty($user['profile_image'])) {
-            Uploader::delete($user['profile_image']);
+        if (!empty($oldImageField)) {
+            Uploader::delete($oldImageField);
         }
     }
 
-    // 2. Determinar tabla y campos segun el origen (admin_user o user)
-    if ($user['source'] === 'admin_user') {
-        $sql = "UPDATE admin_users SET full_name = ?, phone = ?, city = ?, updated_at = NOW()";
-        $params = [$name, $phone, $city];
-        if ($profileImagePath) { $sql .= ", profile_image = ?"; $params[] = $profileImagePath; }
+    // 2. Determinar tabla y campos segun el actor autenticado
+    if ($esVendor) {
+        $sql = "UPDATE vendors SET business_name = ?, phone = ?, city = ?, department = ?, updated_at = NOW()";
+        $params = [$name, $phone, $city, $dept];
+        if ($profileImagePath) { $sql .= ", logo_url = ?"; $params[] = $profileImagePath; }
         if (!empty($password)) { $sql .= ", password_hash = ?"; $params[] = password_hash($password, PASSWORD_DEFAULT); }
         $sql .= " WHERE id = ?";
         $params[] = $user['id'];
@@ -60,7 +69,7 @@ try {
 
     Response::success([
         'message' => 'Perfil actualizado con éxito',
-        'profile_image' => $profileImagePath ?: $user['profile_image']
+        'profile_image' => $profileImagePath ?: $oldImageField
     ]);
 
 } catch (Exception $e) {

@@ -12,6 +12,7 @@ require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../api/utils/Response.php';
 require_once __DIR__ . '/../../api/utils/Logger.php';
 require_once __DIR__ . '/../../api/repositories/UserRepository.php';
+require_once __DIR__ . '/../../api/utils/RateLimiter.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
     Response::error('Método no permitido', null, 405);
@@ -23,6 +24,16 @@ try {
 
     if (empty($phone) && empty($uniqueId)) {
         Response::error('Teléfono o código único requerido', null, 400);
+    }
+
+    // Consulta de invitado deliberada (sin cuenta), pero el telefono es de
+    // baja entropia y enumerable - sin limite, cualquiera puede recorrer
+    // numeros colombianos y cosechar nombre + historial de compras
+    // completo (cross-vendor, por diseno: "mis boletos" es global) de cada
+    // uno que exista. El limite no rompe el uso legitimo (una persona
+    // consultando sus propios boletos), solo la cosecha masiva.
+    if (!RateLimiter::check('lookup_tickets_' . ($_SERVER['REMOTE_ADDR'] ?? 'unknown'), 15, 10)) {
+        Response::rateLimitExceeded('Demasiadas consultas. Intenta de nuevo en unos minutos.');
     }
 
     $db = Database::getInstance()->getConnection();

@@ -11,7 +11,7 @@ require_once __DIR__ . '/../../../api/utils/Response.php';
 require_once __DIR__ . '/../../../config/database.php';
 
 try {
-    $user = Auth::requireAdmin();
+    $user = Auth::requireRole('super_admin');
     $db = Database::getInstance()->getConnection();
     
     $stmt = $db->query("SELECT * FROM email_campaigns ORDER BY created_at DESC");

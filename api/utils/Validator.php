@@ -390,6 +390,27 @@ class Validator
     }
 
     /**
+     * ¿Es una ruta local segura para usar como image_url? Whitelist de
+     * caracteres, no blocklist de simbolos peligrosos: una blocklist que
+     * bloquea "//", ".." y ":" pero olvida la barra invertida deja pasar
+     * "/\host\archivo", que Windows resuelve como una conexion SMB/UNC real
+     * (SSRF) cuando algo hace file_get_contents() sobre el valor guardado
+     * (ver api/og/generate.php). Sin esto, cualquier valor que empiece con
+     * "/" y no tenga esos 3 simbolos se aceptaba como "ruta local".
+     */
+    public static function esRutaLocalSegura(string $path): bool
+    {
+        if ($path === '' || $path[0] !== '/') return false;
+        // "//host/x" (protocol-relative) y "/\host\x" (UNC mixto) son
+        // ambos formas de decirle al navegador/SO "conectate a otro host",
+        // no una ruta local - y "//..." pasa la whitelist de caracteres de
+        // abajo sin problema porque "/" esta permitido.
+        if (strpos($path, '//') !== false) return false;
+        if (strpos($path, '..') !== false) return false;
+        return (bool)preg_match('#^/[A-Za-z0-9._/-]+$#', $path);
+    }
+
+    /**
      * Validar CSRF token
      */
     public static function validateCSRFToken(string $token): bool

@@ -197,7 +197,19 @@ try {
                 $paymentIntent['id']
             ]);
 
-            // 2. Cambiar números a DISPONIBLE
+            // 2. Liberar los tickets que create-reservation.php habia
+            // marcado 'reserved' (ver hallazgo H6) - antes de que el UPDATE
+            // de abajo nulee payment_intent_id en numero_reservas.
+            $stmt = $db->prepare("
+                UPDATE tickets t
+                INNER JOIN numero_reservas nr
+                    ON t.raffle_id = nr.raffle_id AND t.ticket_number = nr.numero
+                SET t.status = 'available', t.user_id = NULL, t.reserved_at = NULL, t.reserved_until = NULL
+                WHERE nr.payment_intent_id = ? AND nr.estado = 'RESERVADO'
+            ");
+            $stmt->execute([$paymentIntent['id']]);
+
+            // 3. Cambiar números a DISPONIBLE
             $stmt = $db->prepare("
                 UPDATE numero_reservas
                 SET estado = 'DISPONIBLE',

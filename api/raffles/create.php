@@ -100,9 +100,14 @@ try {
     // image_url solo puede ser una ruta local relativa (subida via
     // /api/upload/image.php). Una URL externa aqui permite SSRF: el
     // generador de OG (api/og/generate.php) hace file_get_contents()
-    // sobre este valor sin mas validacion.
+    // sobre este valor sin mas validacion. Whitelist de caracteres en vez
+    // de blocklist de simbolos peligrosos - la blocklist anterior
+    // (bloqueaba "//", "..", ":") no incluia la barra invertida: una ruta
+    // mixta "/\host\archivo" pasaba limpia y Windows la resolvia como una
+    // conexion SMB/UNC real hacia ese host (SSRF interno confirmado por
+    // auditoria via timing de conexion).
     $imageUrl = trim($input['image_url'] ?? '/assets/images/placeholder.jpg');
-    if ($imageUrl !== '' && (strpos($imageUrl, '//') !== false || strpos($imageUrl, '..') !== false || strpos($imageUrl, ':') !== false || $imageUrl[0] !== '/')) {
+    if ($imageUrl !== '' && !Validator::esRutaLocalSegura($imageUrl)) {
         Response::error('image_url invalida: solo se permiten rutas locales', null, 400);
     }
 
@@ -144,7 +149,7 @@ try {
     if (!empty($input['image_urls']) && is_array($input['image_urls'])) {
         $safeUrls = array_values(array_filter($input['image_urls'], function ($u) {
             $u = trim((string)$u);
-            return $u !== '' && strpos($u, '//') === false && strpos($u, '..') === false && strpos($u, ':') === false && $u[0] === '/';
+            return $u !== '' && Validator::esRutaLocalSegura($u);
         }));
         if ($safeUrls) {
             $raffleRepo->addRaffleImages($raffleId, $safeUrls);

@@ -32,6 +32,20 @@ try {
     $db->beginTransaction();
 
     try {
+        // Liberar tambien la fila de `tickets` que create-reservation.php
+        // marca 'reserved' (ver hallazgo H6 - dos sistemas de inventario
+        // que antes no se sincronizaban) - antes de que el UPDATE de abajo
+        // borre expires_at/numero_reservas y se pierda la referencia.
+        $stmt = $db->prepare("
+            UPDATE tickets t
+            INNER JOIN numero_reservas nr
+                ON t.raffle_id = nr.raffle_id AND t.ticket_number = nr.numero
+            SET t.status = 'available', t.user_id = NULL, t.reserved_at = NULL, t.reserved_until = NULL
+            WHERE nr.estado = 'RESERVADO' AND nr.expires_at IS NOT NULL AND nr.expires_at < NOW()
+        ");
+        $stmt->execute();
+        $ticketsReleased = $stmt->rowCount();
+
         // Buscar números RESERVADOS con expires_at vencido
         $stmt = $db->prepare("
             UPDATE numero_reservas
@@ -66,11 +80,12 @@ try {
 
         Logger::cron('expire_reservations', true, [
             'expired_reservations' => $expiredCount,
+            'tickets_released' => $ticketsReleased,
             'cancelled_payment_intents' => $cancelledPaymentIntents,
             'execution_time' => round(microtime(true) - $startTime, 2) . 's'
         ]);
 
-        echo "Reservas expiradas: {$expiredCount} | Payment intents cancelados: {$cancelledPaymentIntents}\n";
+        echo "Reservas expiradas: {$expiredCount} | Tickets liberados: {$ticketsReleased} | Payment intents cancelados: {$cancelledPaymentIntents}\n";
         echo "Tiempo: " . round(microtime(true) - $startTime, 2) . "s\n";
 
     } catch (Exception $e) {
