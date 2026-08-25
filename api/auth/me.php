@@ -9,6 +9,7 @@ header('Access-Control-Allow-Origin: *');
 
 require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../api/utils/Response.php';
+require_once __DIR__ . '/../../api/utils/Auth.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
     Response::error('Método no permitido', null, 405);
@@ -29,8 +30,9 @@ try {
     }
     
     $token = $matches[1];
+    $hashedToken = Auth::hashToken($token);
     $db = Database::getInstance()->getConnection();
-    
+
     // Try vendors (misma tabla y mismas condiciones de status/expiracion
     // que Auth::requireVendor(), para que una suspension sea efectiva aqui
     // tambien - antes se consultaba admin_users, una tabla espejo sin
@@ -41,7 +43,7 @@ try {
         WHERE auth_token = ? AND status = 'active'
         AND (auth_token_expires IS NULL OR auth_token_expires > NOW())
     ");
-    $stmt->execute([$token]);
+    $stmt->execute([$hashedToken]);
     $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if ($user) {
@@ -53,7 +55,7 @@ try {
     
     // Try users
     $stmt = $db->prepare("SELECT id, name, email, role, profile_image, phone_whatsapp as phone, department, city FROM users WHERE auth_token = ?");
-    $stmt->execute([$token]);
+    $stmt->execute([$hashedToken]);
     $user = $stmt->fetch(PDO::FETCH_ASSOC);
     
     if ($user) {

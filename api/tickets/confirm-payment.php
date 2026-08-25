@@ -13,16 +13,21 @@ require_once __DIR__ . '/../../config/constants.php';
 require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../api/utils/Response.php';
 require_once __DIR__ . '/../../api/utils/Logger.php';
-require_once __DIR__ . '/../../api/utils/Auth.php';
+require_once __DIR__ . '/../../api/utils/RateLimiter.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     Response::error('Metodo no permitido', null, 405);
 }
 
-// Este endpoint SOLO registra un comprobante para revision manual.
-// NUNCA marca el ticket como pagado directamente - eso requiere
-// aprobacion humana via POST /api/admin/payments.php (action=approve).
-$buyer = Auth::requireBuyer();
+// La compra es de invitado (reserve.php no exige login), por lo que este
+// endpoint tampoco puede exigirlo. La proteccion real contra el fraude
+// original (C1) es que YA NO marca el ticket como pagado directamente -
+// solo registra el comprobante como 'pending' para revision humana via
+// POST /api/admin/payments.php (action=approve). El rate limit evita
+// spam de reportes falsos sobre boletos ajenos.
+if (!RateLimiter::check('confirm_payment_' . ($_SERVER['REMOTE_ADDR'] ?? 'unknown'), 10, 5)) {
+    Response::rateLimitExceeded('Demasiados intentos. Intenta de nuevo en unos minutos.');
+}
 
 $db = null;
 
@@ -49,7 +54,7 @@ try {
     $db = Database::getInstance()->getConnection();
 
     $stmt = $db->prepare("
-        SELECT t.*, r.ticket_price, r.title as raffle_title
+        SELECT t.*, r.ticket_price, r.name as raffle_title
         FROM tickets t
         INNER JOIN raffles r ON t.raffle_id = r.id
         WHERE t.id = ?
@@ -59,10 +64,6 @@ try {
 
     if (!$ticket) {
         Response::error('Ticket no encontrado', null, 404);
-    }
-
-    if ((int)$ticket['user_id'] !== (int)$buyer['id']) {
-        Response::error('Este ticket no pertenece a tu cuenta', null, 403);
     }
 
     if ($ticket['status'] !== 'reserved') {

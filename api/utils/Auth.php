@@ -5,6 +5,17 @@ require_once __DIR__ . '/Response.php';
 
 class Auth
 {
+    /**
+     * Los auth_token se guardan hasheados en BD (ver hashToken()). El
+     * token en texto plano solo existe en el header Authorization del
+     * cliente y en la respuesta del login - una fuga de BD no entrega
+     * tokens de sesion utilizables directamente.
+     */
+    public static function hashToken(string $token): string
+    {
+        return hash('sha256', $token);
+    }
+
     public static function requireVendor(): array
     {
         $token = self::extractToken();
@@ -18,7 +29,7 @@ class Auth
             WHERE auth_token = ? AND status = 'active'
             AND (auth_token_expires IS NULL OR auth_token_expires > NOW())
         ");
-        $stmt->execute([$token]);
+        $stmt->execute([self::hashToken($token)]);
         $vendor = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if (!$vendor) {
@@ -50,7 +61,7 @@ class Auth
 
         $db = Database::getInstance()->getConnection();
         $stmt = $db->prepare("SELECT * FROM users WHERE auth_token = ?");
-        $stmt->execute([$token]);
+        $stmt->execute([self::hashToken($token)]);
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if (!$user) {
@@ -66,6 +77,7 @@ class Auth
         if (!$token) {
             Response::error('Token de autenticacion requerido', null, 401);
         }
+        $hashed = self::hashToken($token);
 
         $db = Database::getInstance()->getConnection();
 
@@ -74,12 +86,12 @@ class Auth
             WHERE auth_token = ? AND status = 'active'
             AND (auth_token_expires IS NULL OR auth_token_expires > NOW())
         ");
-        $stmt->execute([$token]);
+        $stmt->execute([$hashed]);
         $vendor = $stmt->fetch(PDO::FETCH_ASSOC);
         if ($vendor) return $vendor;
 
         $stmt = $db->prepare("SELECT *, 'buyer' as auth_type FROM users WHERE auth_token = ?");
-        $stmt->execute([$token]);
+        $stmt->execute([$hashed]);
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
         if ($user) return $user;
 

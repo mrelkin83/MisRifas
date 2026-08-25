@@ -37,8 +37,8 @@ try {
                 t.reserved_at,
                 r.name as raffle_name,
                 r.id as raffle_id,
-                u.full_name as buyer_name,
-                u.phone as buyer_phone
+                u.name as buyer_name,
+                u.phone_whatsapp as buyer_phone
             FROM payments p
             JOIN tickets t ON t.id = p.ticket_id
             JOIN raffles r ON t.raffle_id = r.id

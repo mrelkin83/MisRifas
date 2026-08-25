@@ -27,6 +27,15 @@ class Uploader {
             throw new Exception("Extensión de archivo no permitida (solo JPG, PNG, WEBP).");
         }
 
+        // 1.5. Validar el contenido real del archivo, no solo el nombre que
+        // manda el cliente - sin esto cualquier archivo renombrado a .jpg
+        // pasa la validacion anterior.
+        $imageInfo = @getimagesize($file['tmp_name']);
+        $allowedMimes = ['image/jpeg', 'image/png', 'image/webp'];
+        if ($imageInfo === false || !in_array($imageInfo['mime'], $allowedMimes)) {
+            throw new Exception("El archivo no es una imagen valida.");
+        }
+
         // 2. Validar tamaño
         $maxSize = ($type === 'banner') ? self::$maxSizeBanner : self::$maxSizeProfile;
         if ($file['size'] > $maxSize) {

@@ -19,8 +19,9 @@ require_once __DIR__ . '/../../api/utils/Response.php';
 require_once __DIR__ . '/../../api/utils/Uploader.php';
 
 try {
-    // Requerir login
-    $user = Auth::requireLogin();
+    // Este endpoint sube imagenes de rifas - solo los vendors las crean,
+    // no hay razon para que un comprador logueado pueda usarlo.
+    $user = Auth::requireVendor();
     error_log("User logged in for upload: " . $user['email']);
 
     if (!isset($_FILES['image'])) {

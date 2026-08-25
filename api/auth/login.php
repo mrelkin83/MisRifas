@@ -24,6 +24,7 @@ require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../api/utils/Response.php';
 require_once __DIR__ . '/../../api/utils/Logger.php';
 require_once __DIR__ . '/../../api/utils/RateLimiter.php';
+require_once __DIR__ . '/../../api/utils/Auth.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     Response::error('Metodo no permitido', null, 405);
@@ -63,7 +64,7 @@ try {
         $expires = date('Y-m-d H:i:s', strtotime('+30 days'));
 
         $stmt = $db->prepare("UPDATE vendors SET auth_token = ?, auth_token_expires = ?, last_login = NOW() WHERE id = ?");
-        $stmt->execute([$token, $expires, $vendor['id']]);
+        $stmt->execute([Auth::hashToken($token), $expires, $vendor['id']]);
 
         Logger::activity('vendor_login', $vendor['id'], ['email' => $vendor['email'], 'role' => $vendor['role']]);
 
@@ -97,7 +98,7 @@ try {
         $token = bin2hex(random_bytes(32));
 
         $stmt = $db->prepare("UPDATE users SET auth_token = ?, last_login = NOW() WHERE id = ?");
-        $stmt->execute([$token, $user['id']]);
+        $stmt->execute([Auth::hashToken($token), $user['id']]);
 
         Logger::activity('buyer_login', $user['id'], ['email' => $user['email']]);
 

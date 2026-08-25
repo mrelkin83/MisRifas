@@ -16,6 +16,7 @@ require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../api/utils/Response.php';
 require_once __DIR__ . '/../../api/utils/Logger.php';
 require_once __DIR__ . '/../../api/utils/RateLimiter.php';
+require_once __DIR__ . '/../../api/utils/Auth.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     Response::error('Metodo no permitido', null, 405);
@@ -87,7 +88,7 @@ try {
             INSERT INTO vendors (slug, business_name, document_id, email, password_hash, phone, city, department, auth_token, auth_token_expires, role, status, payment_config, created_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, DATE_ADD(NOW(), INTERVAL 30 DAY), 'vendor', 'active', '{\"mode\":\"manual\"}', NOW())
         ");
-        $stmt->execute([$slug, $name, $documentId ?: null, $email, $passwordHash, $phone, $city ?: null, $dept ?: null, $authToken]);
+        $stmt->execute([$slug, $name, $documentId ?: null, $email, $passwordHash, $phone, $city ?: null, $dept ?: null, Auth::hashToken($authToken)]);
         $userId = $db->lastInsertId();
         $finalRole = 'vendor';
 
@@ -99,7 +100,7 @@ try {
             INSERT INTO users (unique_id, name, phone_whatsapp, email, password_hash, auth_token, department, city, role, active, created_at, updated_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'buyer', 1, NOW(), NOW())
         ");
-        $stmt->execute([$uniqueId, $name, $phone, $email, $passwordHash, $authToken, $dept ?: null, $city ?: null]);
+        $stmt->execute([$uniqueId, $name, $phone, $email, $passwordHash, Auth::hashToken($authToken), $dept ?: null, $city ?: null]);
         $userId = $db->lastInsertId();
         $finalRole = 'buyer';
 
