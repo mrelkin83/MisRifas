@@ -1,6 +1,6 @@
 <?php
 require_once __DIR__ . '/../config/database.php';
-$page_title = "🏆 Ganadores - MisRifas";
+$page_title = "Ganadores - MisRifas";
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -29,7 +29,7 @@ $page_title = "🏆 Ganadores - MisRifas";
         }
         .winner-card:hover {
             transform: translateY(-5px);
-            border-color: rgba(59, 130, 246, 0.3);
+            border-color: rgba(245, 158, 11, 0.3);
             background: rgba(30, 41, 59, 0.8);
             box-shadow: 0 20px 40px -15px rgba(0,0,0,0.5);
         }
@@ -43,7 +43,7 @@ $page_title = "🏆 Ganadores - MisRifas";
         }
         .winning-number-box {
             background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-            border: 1px solid rgba(59, 130, 246, 0.2);
+            border: 1px solid rgba(245, 158, 11, 0.2);
             position: relative;
             overflow: hidden;
         }
@@ -54,20 +54,41 @@ $page_title = "🏆 Ganadores - MisRifas";
             left: -50%;
             width: 200%;
             height: 200%;
-            background: radial-gradient(circle, rgba(59, 130, 246, 0.1) 0%, transparent 70%);
+            background: radial-gradient(circle, rgba(245, 158, 11, 0.1) 0%, transparent 70%);
             animation: pulse 4s infinite;
         }
         @keyframes pulse {
             0%, 100% { transform: scale(1); opacity: 0.5; }
             50% { transform: scale(1.2); opacity: 0.8; }
         }
+
+        @media (max-width: 767px) {
+            #nav-menu {
+                position: fixed;
+                top: 80px;
+                left: 0;
+                right: 0;
+                background: #0f172a;
+                flex-direction: column;
+                align-items: flex-start;
+                padding: 1.5rem;
+                border-bottom: 1px solid rgba(255,255,255,0.08);
+                z-index: 100;
+                gap: 1rem;
+                display: none;
+                box-shadow: 0 10px 15px -3px rgba(0,0,0,0.4);
+            }
+            #nav-menu.active {
+                display: flex;
+            }
+        }
     </style>
 </head>
 <body class="bg-[#0f172a] text-slate-200">
     <header class="glass-nav sticky top-0 z-50">
         <nav class="container mx-auto px-4 h-20 flex items-center justify-between">
-            <a href="<?= BASE_PATH ?>/public/index.php" class="flex items-center gap-3 text-2xl font-black bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-emerald-400">
-                <span class="text-3xl">🎟️</span>
+            <a href="<?= BASE_PATH ?>/public/index.php" class="flex items-center gap-3 text-2xl font-black text-primary">
+                <svg class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v1a2 2 0 0 0 0 4v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1a2 2 0 0 0 0-4Z"/><path d="M13 5v14" stroke-dasharray="2 3"/></svg>
                 MisRifas
             </a>
 
@@ -80,7 +101,10 @@ $page_title = "🏆 Ganadores - MisRifas";
             <div class="hidden md:flex items-center gap-6" id="nav-menu">
                 <a href="<?= BASE_PATH ?>/public/index.php" class="text-slate-300 hover:text-white font-medium transition-colors">Inicio</a>
                 <a href="<?= BASE_PATH ?>/public/mis-boletos.php" class="text-slate-300 hover:text-white font-medium transition-colors">Consultar Boletas</a>
-                <a href="<?= BASE_PATH ?>/public/ganadores.php" class="text-white font-bold transition-colors border-b-2 border-blue-500 pb-1">🏆 Ganadores</a>
+                <a href="<?= BASE_PATH ?>/public/ganadores.php" class="text-white font-bold transition-colors border-b-2 border-primary pb-1 flex items-center gap-1.5">
+                    <svg class="w-4 h-4 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4Z"/><path d="M7 5H4a1 1 0 0 0-1 1 4 4 0 0 0 4 4M17 5h3a1 1 0 0 1 1 1 4 4 0 0 1-4 4"/></svg>
+                    Ganadores
+                </a>
                 <a href="<?= BASE_PATH ?>/public/admin/index.php?auth=login" class="px-5 py-2.5 bg-white/5 border border-white/10 text-white rounded-xl hover:bg-white/10 transition-all font-medium backdrop-blur-sm">Iniciar Sesión</a>
             </div>
         </nav>
@@ -105,7 +129,7 @@ $page_title = "🏆 Ganadores - MisRifas";
         </div>
     </main>
 
-    <footer class="bg-gray-900 text-white py-12 border-t border-white/5 mt-20">
+    <footer class="bg-black/30 text-white py-12 border-t border-white/5 mt-20">
         <div class="container mx-auto px-4 text-center">
             <p class="text-slate-500">&copy; 2026 MisRifas Colombia. Transparencia garantizada.</p>
         </div>
@@ -143,16 +167,18 @@ $page_title = "🏆 Ganadores - MisRifas";
                                     </div>
                                     
                                     <div class="flex items-center gap-6 pt-6 border-t border-white/5">
-                                        <div class="winning-number-box w-20 h-20 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-xl shadow-blue-500/10">
-                                            <span class="text-3xl font-black text-blue-400 relative z-10">${winner.winning_ticket_number}</span>
+                                        <div class="winning-number-box w-20 h-20 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-xl shadow-primary/10">
+                                            <span class="text-3xl font-black text-primary relative z-10">${winner.winning_ticket_number}</span>
                                         </div>
                                         <div>
                                             <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Ganador Feliz</p>
                                             <p class="text-xl font-bold text-white">${winner.winner_name || 'Anónimo'}</p>
-                                            <p class="text-sm text-blue-400 font-medium">
-                                                📍 ${winner.winner_city || 'Colombia'} 
+                                            <p class="text-sm text-slate-400 font-medium flex items-center gap-1">
+                                                <svg class="w-3.5 h-3.5 inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+                                                ${winner.winner_city || 'Colombia'}
                                                 <span class="mx-1 text-slate-600">•</span>
-                                                📞 ${maskPhone(winner.winner_phone)}
+                                                <svg class="w-3.5 h-3.5 inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92Z"/></svg>
+                                                ${maskPhone(winner.winner_phone)}
                                             </p>
                                         </div>
                                     </div>

@@ -13,7 +13,7 @@ try {
             rw.id,
             r.name as raffle_name,
             r.draw_date,
-            rw.winning_ticket_number,
+            rw.winning_number AS winning_ticket_number,
             r.image_url,
             r.ticket_price,
             l.name as lottery_name,
