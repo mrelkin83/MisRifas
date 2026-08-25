@@ -11,6 +11,11 @@ SetEnvIf Request_URI "^/MisRifas/" IS_DEV
     RewriteEngine On
     RewriteBase /MisRifas/
 
+    # Pasar el header Authorization a PHP (mod_fcgid/CGI lo descarta por
+    # defecto, rompiendo toda la autenticacion Bearer de vendors/admin/users)
+    RewriteCond %{HTTP:Authorization} ^(.*)
+    RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
     # Bloquear acceso directo a archivos/carpetas sensibles
     RewriteRule ^config/ - [F,L]
     RewriteRule ^vendor/ - [F,L]

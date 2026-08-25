@@ -23,26 +23,33 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
             theme: {
                 extend: {
                     colors: {
-                        primary: { DEFAULT: '#2563eb', dark: '#1e40af', light: '#3b82f6' }
+                        primary: { DEFAULT: '#f59e0b', dark: '#b45309', light: '#fbbf24' }
                     }
                 }
             }
         }
     </script>
     <style>
+        @font-face {
+            font-family: 'Outfit';
+            font-style: normal;
+            font-weight: 800;
+            font-display: swap;
+            src: url('<?= BASE_PATH ?>/public/assets/fonts/outfit-800.woff2') format('woff2');
+        }
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f3f4f6; }
+        body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f3f4f6; }
 
         .admin-layout { display: flex; min-height: 100vh; }
         .sidebar { width: 260px; background: #1e293b; color: white; display: flex; flex-direction: column; position: fixed; top: 0; left: 0; bottom: 0; z-index: 40; }
         .sidebar-header { padding: 20px; border-bottom: 1px solid #334155; }
-        .logo { display: flex; align-items: center; gap: 10px; font-size: 20px; font-weight: 700; }
-        .logo__icon { font-size: 28px; }
+        .logo { display: flex; align-items: center; gap: 10px; font-size: 20px; font-weight: 700; font-family: 'Outfit', 'Inter', sans-serif; }
+        .logo__icon { width: 26px; height: 26px; color: #f59e0b; flex-shrink: 0; }
         .sidebar-nav { flex: 1; padding: 12px 0; }
-        .nav-item { display: flex; align-items: center; gap: 12px; padding: 12px 20px; color: #94a3b8; text-decoration: none; transition: all 0.2s; cursor: pointer; }
+        .nav-item { display: flex; align-items: center; gap: 12px; padding: 12px 20px; padding-left: 17px; border-left: 3px solid transparent; color: #94a3b8; text-decoration: none; transition: all 0.2s; cursor: pointer; }
         .nav-item:hover { background: #334155; color: white; }
-        .nav-item--active { background: #2563eb; color: white; }
-        .nav-icon { font-size: 20px; }
+        .nav-item--active { background: rgba(245, 158, 11, 0.12); color: #fbbf24; border-left-color: #f59e0b; }
+        .nav-icon { width: 20px; height: 20px; flex-shrink: 0; }
         .nav-text { font-size: 14px; font-weight: 500; }
         .sidebar-footer { padding: 16px 20px; border-top: 1px solid #334155; }
         .logout-btn { display: flex; align-items: center; gap: 8px; width: 100%; padding: 10px; background: #dc2626; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500; transition: background 0.2s; }
@@ -50,10 +57,10 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
 
         .admin-main { flex: 1; margin-left: 260px; }
         .admin-header { background: white; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e5e7eb; position: sticky; top: 0; z-index: 30; }
-        .admin-header h1 { font-size: 24px; font-weight: 700; color: #111827; }
+        .admin-header h1 { font-size: 24px; font-weight: 700; color: #111827; font-family: 'Outfit', 'Inter', sans-serif; }
         .user-menu { display: flex; align-items: center; gap: 12px; }
         .user-name { font-size: 14px; color: #6b7280; }
-        .user-avatar { width: 36px; height: 36px; background: #e5e7eb; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+        .user-avatar { width: 36px; height: 36px; background: #fef3c7; color: #b45309; font-weight: 700; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 15px; }
 
         .admin-content { padding: 24px; }
         .admin-section { display: block; }
@@ -62,13 +69,14 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
 
         .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px; }
         .stat-card { background: white; border-radius: 12px; padding: 20px; display: flex; align-items: center; gap: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-        .stat-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0; }
-        .stat-value { font-size: 28px; font-weight: 700; color: #111827; }
+        .stat-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .stat-icon svg { width: 24px; height: 24px; color: white; }
+        .stat-value { font-size: 28px; font-weight: 700; color: #111827; font-family: 'Outfit', 'Inter', sans-serif; }
         .stat-label { font-size: 14px; color: #6b7280; }
 
         .section-card { background: white; border-radius: 12px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 24px; }
         .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-        .section-header h2 { font-size: 18px; font-weight: 700; color: #111827; }
+        .section-header h2 { font-size: 18px; font-weight: 700; color: #111827; font-family: 'Outfit', 'Inter', sans-serif; }
 
         .table-responsive { overflow-x: auto; }
         .data-table { width: 100%; border-collapse: collapse; }
@@ -83,11 +91,11 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
         .badge--pending { background: #fef3c7; color: #92400e; }
 
         .btn { display: inline-flex; align-items: center; justify-content: center; padding: 8px 16px; font-size: 14px; font-weight: 600; border-radius: 8px; cursor: pointer; border: none; transition: all 0.2s; }
-        .btn--primary { background: #2563eb; color: white; }
-        .btn--primary:hover { background: #1e40af; }
+        .btn--primary { background: #f59e0b; color: #1c1305; }
+        .btn--primary:hover { background: #d97706; }
         .btn--primary:disabled { opacity: 0.5; cursor: not-allowed; }
-        .btn--outline { background: white; color: #2563eb; border: 1px solid #2563eb; }
-        .btn--outline:hover { background: #eff6ff; }
+        .btn--outline { background: white; color: #b45309; border: 1px solid #f59e0b; }
+        .btn--outline:hover { background: #fffbeb; }
         .btn--sm { padding: 4px 12px; font-size: 12px; }
         .btn--lg { padding: 12px 24px; font-size: 16px; }
 
@@ -99,14 +107,14 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
             padding: 10px 14px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px;
             transition: border-color 0.2s; outline: none; width: 100%;
         }
-        .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: #2563eb; }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: #f59e0b; }
         .form-group select option:disabled { color: #9ca3af; background: #f3f4f6; }
         .form-group small { font-size: 12px; color: #6b7280; }
 
         .toggle-label { display: flex; align-items: center; gap: 12px; cursor: pointer; }
         .toggle-slider { position: relative; width: 48px; height: 24px; background: #e5e7eb; border-radius: 12px; transition: background 0.2s; }
         .toggle-slider::after { content: ''; position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; background: white; border-radius: 50%; transition: transform 0.2s; }
-        input[type="checkbox"]:checked + .toggle-slider { background: #2563eb; }
+        input[type="checkbox"]:checked + .toggle-slider { background: #f59e0b; }
         input[type="checkbox"]:checked + .toggle-slider::after { transform: translateX(24px); }
         input[type="checkbox"] { display: none; }
 
@@ -249,7 +257,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                     <input type="password" id="login-password" required class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-primary" placeholder="••••••••">
                 </div>
                 <div id="login-error" class="hidden text-red-500 text-sm text-center"></div>
-                <button type="submit" id="login-btn" class="w-full py-4 bg-primary text-white font-bold rounded-xl hover:bg-primary-dark disabled:opacity-50">
+                <button type="submit" id="login-btn" class="w-full py-4 bg-primary text-slate-950 font-bold rounded-xl hover:bg-primary-dark disabled:opacity-50">
                     Iniciar Sesión
                 </button>
             </form>
@@ -331,7 +339,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                     <input type="password" id="reg-password" required minlength="8" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-primary" placeholder="••••••••">
                 </div>
                 <div id="register-error" class="hidden text-red-500 text-sm text-center"></div>
-                <button type="submit" id="register-btn" class="w-full py-4 bg-primary text-white font-bold rounded-xl hover:bg-primary-dark disabled:opacity-50">
+                <button type="submit" id="register-btn" class="w-full py-4 bg-primary text-slate-950 font-bold rounded-xl hover:bg-primary-dark disabled:opacity-50">
                     Crear Cuenta
                 </button>
             </form>
@@ -403,7 +411,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                 if (user.role === 'buyer') {
                     setTimeout(() => window.location.href = BASE_PATH + '/public/dashboard.php', 500);
                 } else {
-                    setTimeout(() => window.location.href = BASE_PATH + '/public/admin/index.php', 500);
+                    setTimeout(() => window.location.href = BASE_PATH + '/public/vendor/index.php', 500);
                 }
             } else {
                 errorDiv.textContent = data.message || 'Credenciales incorrectas';
@@ -522,59 +530,59 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
         <aside class="sidebar">
             <div class="sidebar-header">
                 <div class="logo">
-                    <span class="logo__icon">🎟️</span>
+                    <svg class="logo__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v1a2 2 0 0 0 0 4v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1a2 2 0 0 0 0-4Z"/><path d="M13 5v14" stroke-dasharray="2 3"/></svg>
                     <span class="logo__text">MisRifas</span>
                 </div>
             </div>
             <nav class="sidebar-nav">
                 <a href="#dashboard" class="nav-item nav-item--active" data-section="dashboard" onclick="switchTo('dashboard')">
-                    <span class="nav-icon">📊</span>
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg>
                     <span class="nav-text">Dashboard</span>
                 </a>
                 <a href="#crear" class="nav-item" data-section="crear" onclick="switchTo('crear')">
-                    <span class="nav-icon">➕</span>
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>
                     <span class="nav-text">Crear Rifa</span>
                 </a>
                 <a href="#pagos" class="nav-item" data-section="pagos" onclick="switchTo('pagos')">
-                    <span class="nav-icon">💵</span>
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="3"/></svg>
                     <span class="nav-text">Pagos Recibidos</span>
                 </a>
                 <a href="#boletas-compradas" class="nav-item" data-section="boletas-compradas" onclick="switchTo('boletas-compradas')">
-                    <span class="nav-icon">🎫</span>
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v1a2 2 0 0 0 0 4v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1a2 2 0 0 0 0-4Z"/><path d="M9 8l6 8M15 8l-6 8" stroke-dasharray="1 2.5"/></svg>
                     <span class="nav-text">Boletas Compradas</span>
                 </a>
                 <a href="#mi-perfil" class="nav-item" data-section="mi-perfil" onclick="switchTo('mi-perfil')">
-                    <span class="nav-icon">👤</span>
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
                     <span class="nav-text">Mi Perfil (Integraciones)</span>
                 </a>
                 <a href="#comisiones" class="nav-item" data-section="comisiones" id="nav-comisiones" onclick="switchTo('comisiones')">
-                    <span class="nav-icon">💳</span>
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
                     <span class="nav-text">Comisiones</span>
                 </a>
                 <a href="#gestion-rifas" class="nav-item" data-section="gestion-rifas" id="nav-gestion-rifas" onclick="switchTo('gestion-rifas')">
-                    <span class="nav-icon">📋</span>
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 3h6v3H9zM8 10h8M8 14h8M8 18h5"/></svg>
                     <span class="nav-text">Gestión de Rifas</span>
                 </a>
                 <a href="#configuracion" class="nav-item" data-section="configuracion" onclick="switchTo('configuracion')">
-                    <span class="nav-icon">⚙️</span>
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>
                     <span class="nav-text">Configuración Generales</span>
                 </a>
                 <a href="#email-campaigns" class="nav-item" data-section="email-campaigns" id="nav-campaigns" onclick="switchTo('email-campaigns')">
-                    <span class="nav-icon">📧</span>
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 6-10 7L2 6"/></svg>
                     <span class="nav-text">Campañas de Email</span>
                 </a>
                 <a href="#banners" class="nav-item" data-section="banners" id="nav-banners" onclick="switchTo('banners')">
-                    <span class="nav-icon">🖼️</span>
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="14" rx="2"/><circle cx="8.5" cy="9.5" r="1.5"/><path d="m21 15-5-5-9 9"/></svg>
                     <span class="nav-text">Gestión de Portada</span>
                 </a>
                 <a href="#tapazo" class="nav-item" data-section="tapazo" onclick="switchTo('tapazo')">
-                    <span class="nav-icon">🍺</span>
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h11l-1 15a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 3Zm11 4h2.5a2 2 0 0 1 2 2.2l-.4 4A2 2 0 0 1 18.1 15H16"/></svg>
                     <span class="nav-text">El Tapazo</span>
                 </a>
             </nav>
             <div class="sidebar-footer">
                 <button class="logout-btn" onclick="logout()">
-                    <span>🚪</span>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/></svg>
                     <span>Salir</span>
                 </button>
             </div>
@@ -590,7 +598,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                 <h1>Dashboard</h1>
                 <div class="user-menu">
                     <span class="user-name" id="user-name">Usuario</span>
-                    <div class="user-avatar">👤</div>
+                    <div class="user-avatar"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg></div>
                 </div>
             </header>
 
@@ -600,28 +608,28 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                 <div id="section-dashboard" class="admin-section">
                     <div class="stats-grid">
                         <div class="stat-card">
-                            <div class="stat-icon" style="background: #3b82f6;">🎫</div>
+                            <div class="stat-icon" style="background: #3b82f6;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v1a2 2 0 0 0 0 4v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1a2 2 0 0 0 0-4Z"/></svg></div>
                             <div class="stat-content">
                                 <div class="stat-value" id="stat-active-raffles">0</div>
                                 <div class="stat-label">Rifas Activas</div>
                             </div>
                         </div>
                         <div class="stat-card">
-                            <div class="stat-icon" style="background: #10b981;">💰</div>
+                            <div class="stat-icon" style="background: #10b981;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="3"/></svg></div>
                             <div class="stat-content">
                                 <div class="stat-value" id="stat-total-sales">$0</div>
                                 <div class="stat-label">Ventas Totales</div>
                             </div>
                         </div>
                         <div class="stat-card">
-                            <div class="stat-icon" style="background: #f59e0b;">🎟️</div>
+                            <div class="stat-icon" style="background: #f59e0b;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v1a2 2 0 0 0 0 4v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1a2 2 0 0 0 0-4Z"/><path d="M13 5v14" stroke-dasharray="2 3"/></svg></div>
                             <div class="stat-content">
                                 <div class="stat-value" id="stat-tickets-sold">0</div>
                                 <div class="stat-label">Boletos Vendidos</div>
                             </div>
                         </div>
                         <div class="stat-card">
-                            <div class="stat-icon" style="background: #8b5cf6;">👥</div>
+                            <div class="stat-icon" style="background: #8b5cf6;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
                             <div class="stat-content">
                                 <div class="stat-value" id="stat-total-buyers">0</div>
                                 <div class="stat-label">Compradores</div>
@@ -632,28 +640,28 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                     <!-- Comisiones Globales -->
                     <div class="stats-grid" id="commission-stats" style="display:none;">
                         <div class="stat-card" style="border:2px solid #10b981;">
-                            <div class="stat-icon" style="background: #10b981;">💵</div>
+                            <div class="stat-icon" style="background: #10b981;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="3"/></svg></div>
                             <div class="stat-content">
                                 <div class="stat-value" id="stat-commission-total">$0</div>
                                 <div class="stat-label">Utilidad Total Comisiones</div>
                             </div>
                         </div>
                         <div class="stat-card" style="border:2px solid #f59e0b;">
-                            <div class="stat-icon" style="background: #f59e0b;">⏳</div>
+                            <div class="stat-icon" style="background: #f59e0b;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg></div>
                             <div class="stat-content">
                                 <div class="stat-value" id="stat-commission-pending">$0</div>
                                 <div class="stat-label">Comisiones Pendientes</div>
                             </div>
                         </div>
                         <div class="stat-card" style="border:2px solid #3b82f6;">
-                            <div class="stat-icon" style="background: #3b82f6;">✅</div>
+                            <div class="stat-icon" style="background: #3b82f6;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>
                             <div class="stat-content">
                                 <div class="stat-value" id="stat-commission-paid">$0</div>
                                 <div class="stat-label">Comisiones Cobradas</div>
                             </div>
                         </div>
                         <div class="stat-card" style="border:2px solid #ef4444;">
-                            <div class="stat-icon" style="background: #ef4444;">⚠️</div>
+                            <div class="stat-icon" style="background: #ef4444;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg></div>
                             <div class="stat-content">
                                 <div class="stat-value" id="stat-commission-overdue">0</div>
                                 <div class="stat-label">Comisiones Vencidas</div>
@@ -665,7 +673,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                     <div class="section-card" id="all-raffles-report" style="display:none;">
                         <div class="section-header">
                             <div>
-                                <h2>📊 Reporte General de Rifas</h2>
+                                <h2 class="flex items-center gap-2"><svg class="w-5 h-5 text-primary shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg>Reporte General de Rifas</h2>
                                 <p class="text-sm text-gray-500 mt-1">Todas las rifas de todos los usuarios organizadores</p>
                             </div>
                         </div>
@@ -719,7 +727,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                 <div id="section-boletas-compradas" class="admin-section hidden">
                     <div class="section-card">
                         <div class="section-header">
-                            <h2>🎫 Mis Boletas Compradas</h2>
+                            <h2 class="flex items-center gap-2"><svg class="w-5 h-5 text-primary shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v1a2 2 0 0 0 0 4v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1a2 2 0 0 0 0-4Z"/></svg>Mis Boletas Compradas</h2>
                         </div>
                         <div id="user-tickets-loading" class="text-center py-8">
                             <div class="spinner"></div>
@@ -776,7 +784,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                                 <label>Fotos de la Rifa (Máx 10)</label>
                                 <div id="image-drop-zone" style="border:2px dashed #cbd5e1;border-radius:12px;padding:24px;text-align:center;cursor:pointer;transition:all .2s;background:#f8fafc;display:flex;flex-direction:column;gap:16px;">
                                     <div id="image-placeholder">
-                                        <div style="font-size:32px;margin-bottom:4px;">📸</div>
+                                        <div style="margin-bottom:4px;"><svg class="w-8 h-8 text-primary mx-auto" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M12 4 7 9M12 4l5 5"/><path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg></div>
                                         <p style="color:#64748b;font-size:13px;">Arrastra las fotos aquí o <span style="color:#2563eb;font-weight:600;">haz clic para seleccionar</span></p>
                                         <p style="color:#94a3b8;font-size:11px;">Máx 10 fotos · JPG, PNG, WEBP · 5MB/u</p>
                                     </div>
@@ -927,13 +935,13 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                             </div>
 
                             <div class="flex justify-start">
-                                <button type="submit" class="btn btn--primary px-8 h-12" id="btn-save-p">💾 Guardar Mis Datos</button>
+                                <button type="submit" class="btn btn--primary px-8 h-12" id="btn-save-p">Guardar Mis Datos</button>
                             </div>
                         </form>
                     </div>
 
                     <div class="section-card mb-6">
-                        <h2 class="text-lg font-bold mb-4">&#128274; Cambiar Contraseña</h2>
+                        <h2 class="text-lg font-bold mb-4 flex items-center gap-2"><svg class="w-5 h-5 text-primary shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Cambiar Contraseña</h2>
                         <p class="text-sm text-gray-500 mb-4">Actualiza tu contraseña de acceso al panel.</p>
                         <form id="change-password-form" class="space-y-4">
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -950,7 +958,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                                 <label>Confirmar Nueva Contraseña</label>
                                 <input type="password" id="cp-confirm" class="w-full px-4 py-2 border rounded-lg" required placeholder="Repite la nueva contraseña" minlength="6">
                             </div>
-                            <button type="submit" class="btn btn--primary px-8 h-12" id="btn-save-cp">🔑 Cambiar Contraseña</button>
+                            <button type="submit" class="btn btn--primary px-8 h-12" id="btn-save-cp">Cambiar Contraseña</button>
                         </form>
                     </div>
 
@@ -1095,7 +1103,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                             </div>
                             <div class="flex justify-end gap-3 pt-4 border-t">
                                 <button type="button" onclick="closeEditModal()" class="btn btn--outline px-6">Cancelar</button>
-                                <button type="submit" class="btn btn--primary px-8 h-12">💾 Guardar Cambios</button>
+                                <button type="submit" class="btn btn--primary px-8 h-12">Guardar Cambios</button>
                             </div>
                         </form>
                     </div>
@@ -1137,7 +1145,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                             </div>
                             <div class="mt-6">
                                 <button type="button" onclick="saveCommissionSettings()" id="save-commission-btn" class="btn btn--primary px-8 h-12">
-                                    💾 Guardar Configuración de Comisiones
+                                    Guardar Configuración de Comisiones
                                 </button>
                             </div>
                         </div>
@@ -1175,7 +1183,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                             <div id="banners-container" class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4"></div>
                             <div class="flex justify-end pt-8 border-t mt-8">
                                 <button type="submit" class="btn btn--primary btn--lg px-12 h-14 text-lg shadow-xl shadow-blue-500/20">
-                                    💾 Guardar Configuración de Portada
+                                    Guardar Configuración de Portada
                                 </button>
                             </div>
                         </form>
@@ -1208,7 +1216,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                                 <label>Mensaje</label>
                                 <textarea id="c-body" rows="6" class="w-full px-4 py-2 border rounded-lg" placeholder="Escribe tu mensaje aquí..." required></textarea>
                             </div>
-                            <button type="submit" class="btn btn--primary" id="btn-send-campaign">📧 Enviar Campaña</button>
+                            <button type="submit" class="btn btn--primary" id="btn-send-campaign">Enviar Campaña</button>
                         </form>
                     </div>
                     <div class="section-card">
@@ -1241,7 +1249,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                                     <input type="text" id="smtp-from-name" class="w-full px-4 py-2 border rounded-lg" placeholder="MisRifas">
                                 </div>
                             </div>
-                            <button type="submit" class="btn btn--primary px-8 h-12">💾 Guardar Configuración SMTP</button>
+                            <button type="submit" class="btn btn--primary px-8 h-12">Guardar Configuración SMTP</button>
                         </form>
                     </div>
                     <div class="section-card">
@@ -1269,7 +1277,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                 <div id="section-tapazo" class="admin-section hidden">
                     <div class="section-card">
                         <div class="section-header">
-                            <h2>🍺 El Tapazo - Crear Nueva Rifa Rápida</h2>
+                            <h2 class="flex items-center gap-2"><svg class="w-5 h-5 text-primary shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h11l-1 15a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 3Zm11 4h2.5a2 2 0 0 1 2 2.2l-.4 4A2 2 0 0 1 18.1 15H16"/></svg>El Tapazo - Crear Nueva Rifa Rápida</h2>
                         </div>
                         <form id="tapazo-form" class="form-stack">
                             <div class="form-row">
@@ -1306,7 +1314,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                                 <small>Número de WhatsApp para coordinar la entrega del premio</small>
                             </div>
                             <button type="submit" class="btn btn--primary btn--lg">
-                                🍺 Crear Tapazo
+                                Crear Tapazo
                             </button>
                         </form>
                     </div>
@@ -1341,7 +1349,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
 
                     <!-- Wompi -->
                     <div class="section-card" style="margin-bottom:24px;">
-                        <h2 class="text-lg font-bold mb-2">&#128179; Configuraci&oacute;n Wompi</h2>
+                        <h2 class="text-lg font-bold mb-2 flex items-center gap-2"><svg class="w-5 h-5 text-primary shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>Configuración Wompi</h2>
                         <p style="color:#94a3b8;font-size:13px;margin-bottom:20px;">Configura tus credenciales de Wompi para recibir pagos directamente en tu cuenta.</p>
                         <form id="wompi-config-form" class="form-stack">
                             <div class="form-row">
@@ -1358,9 +1366,9 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                         </form>
                     </div>
 
-                    <!-- Configuración General -->
-                    <div class="section-card">
-                        <h2 class="text-lg font-bold mb-2">&#127758; Configuraci&oacute;n General de la Plataforma</h2>
+                    <!-- Configuración General (solo super_admin: la API no aplica cambios para vendedores) -->
+                    <div class="section-card" id="section-platform-settings">
+                        <h2 class="text-lg font-bold mb-2 flex items-center gap-2"><svg class="w-5 h-5 text-primary shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18 14 14 0 0 1 0-18Z"/></svg>Configuración General de la Plataforma</h2>
                         <p style="color:#94a3b8;font-size:13px;margin-bottom:20px;">Ajusta los par&aacute;metros globales de la plataforma.</p>
                         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px;">
                             <div class="form-group">
@@ -1453,13 +1461,13 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
 
     const token = localStorage.getItem('misrifas_token');
     if (!token) {
-        window.location.href = BASE_PATH + '/public/admin/index.php?auth=login';
+        window.location.href = BASE_PATH + '/public/vendor/index.php?auth=login';
     }
 
     function logout() {
         localStorage.removeItem('misrifas_token');
         localStorage.removeItem('misrifas_user');
-        window.location.href = BASE_PATH + '/public/admin/index.php?auth=login';
+        window.location.href = BASE_PATH + '/public/vendor/index.php?auth=login';
     }
 
     let currentSection = 'dashboard';
@@ -1859,7 +1867,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
         } catch (error) {
             Utils.showNotification(error.message || 'Error al crear tapazo', 'error');
         } finally {
-            btn.disabled = false; btn.textContent = '🍺 Crear Tapazo';
+            btn.disabled = false; btn.textContent = 'Crear Tapazo';
         }
     });
 
@@ -2321,7 +2329,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
             });
             Utils.showNotification('Configuración de comisiones guardada ✅', 'success');
         } catch (error) { Utils.showNotification('Error al guardar', 'error'); }
-        finally { btn.disabled = false; btn.textContent = '💾 Guardar Configuración de Comisiones'; }
+        finally { btn.disabled = false; btn.textContent = 'Guardar Configuración de Comisiones'; }
     }
 
     async function loadEmailSettings() {
@@ -2880,7 +2888,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
         }
         finally { 
             btn.disabled = false; 
-            btn.textContent = '💾 Guardar Configuración de Portada'; 
+            btn.textContent = 'Guardar Configuración de Portada'; 
         }
     });
 
@@ -2972,7 +2980,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
     document.addEventListener('DOMContentLoaded', function() {
         var token = localStorage.getItem('misrifas_token');
         if (!token) {
-            window.location.href = BASE_PATH + '/public/admin/index.php?auth=login';
+            window.location.href = BASE_PATH + '/public/vendor/index.php?auth=login';
             return;
         }
 
@@ -3005,6 +3013,12 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
             if (navCampaigns) navCampaigns.style.display = 'none';
             if (navBanners) navBanners.style.display = 'none';
             if (navGestionRifas) navGestionRifas.style.display = 'none';
+
+            // La API (api/admin/settings.php) solo aplica cambios de
+            // system_settings para super_admin; mostrarle este formulario a
+            // un vendedor lo dejaba "guardar" cambios que nunca se aplicaban.
+            var platformSettings = document.getElementById('section-platform-settings');
+            if (platformSettings) platformSettings.style.display = 'none';
         }
         var userName = user.full_name || user.name || user.email || 'Usuario';
         if (document.getElementById('user-name')) {
