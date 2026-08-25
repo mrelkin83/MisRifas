@@ -632,7 +632,7 @@ $page_description = "La plataforma más confiable para crear y participar en rif
                 headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest', ...options.headers },
                 ...options
             };
-            const response = await fetch('/api' + endpoint, config);
+            const response = await fetch(BASE_PATH + '/api' + endpoint, config);
             const data = await response.json();
             if (!response.ok) throw new Error(data.message || 'Error');
             return data;
@@ -734,7 +734,7 @@ $page_description = "La plataforma más confiable para crear y participar en rif
                                     <span class="text-[10px] font-black text-slate-500 uppercase tracking-widest">${r.sold_tickets} / ${r.total_tickets} Vendidos</span>
                                     <span class="text-[10px] font-black text-blue-500 uppercase tracking-widest">${Math.max(0, Math.floor((new Date(r.draw_date) - new Date()) / (1000 * 60 * 60 * 24)))} Días restantes</span>
                                 </div>
-                                <button class="btn btn--primary w-full mt-6 shadow-blue-500/20 group-hover:shadow-blue-500/40 group-hover:-translate-y-0.5 transition-all" onclick="window.location.href=' + BASE_PATH + '/public/raffle.php?id=${r.id}'">Participar Ahora &rarr;</button>
+                                <button class="btn btn--primary w-full mt-6 shadow-blue-500/20 group-hover:shadow-blue-500/40 group-hover:-translate-y-0.5 transition-all" onclick="window.location.href='${BASE_PATH}/public/raffle.php?id=${r.id}'">Participar Ahora &rarr;</button>
                             </div>
                         </div>
                     `).join('');
@@ -760,7 +760,7 @@ $page_description = "La plataforma más confiable para crear y participar en rif
     let colombiaData = [];
     async function loadGeography() {
         try {
-            const res = await fetch(' + BASE_PATH + '/public/assets/data/colombia.json');
+            const res = await fetch(`${BASE_PATH}/public/assets/data/colombia.json`);
             colombiaData = await res.json();
 
             const deptSelect = document.getElementById('filter-dept');

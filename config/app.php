@@ -42,6 +42,11 @@ if (!function_exists('loadEnv')) {
 // Cargar .env
 loadEnv();
 
+// paths.php configura la salida de errores (nunca al output de un endpoint
+// JSON, ver comentario ahi) ademas de BASE_PATH - lo necesitan tanto los
+// archivos que solo requieren app.php como los que solo requieren database.php.
+require_once __DIR__ . '/paths.php';
+
 // Configuración global
 return [
     'app' => [

@@ -164,7 +164,7 @@ require_once __DIR__ . '/../config/database.php';
                 headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest', ...options.headers },
                 ...options
             };
-            const response = await fetch('/api' + endpoint, config);
+            const response = await fetch(BASE_PATH + '/api' + endpoint, config);
             const data = await response.json();
             if (!response.ok) throw new Error(data.message || 'Error');
             return data;

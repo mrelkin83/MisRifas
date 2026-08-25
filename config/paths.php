@@ -4,6 +4,20 @@
  * Detecta automáticamente si está en subdirectorio o en raíz
  */
 
+// Los avisos "deprecated"/notice que PHP imprime por defecto (ej. parámetros
+// nullable implícitos, muy comunes en este código bajo PHP 8.1+) quedaban
+// mezclados con el JSON de cada respuesta de la API - el navegador nunca
+// podía parsear response.json() y el contenido dinámico (rifas, loterías,
+// etc.) simplemente no cargaba, en silencio. Los errores reales siguen
+// registrándose en el log de PHP; nunca deben imprimirse en el output de
+// un endpoint que promete JSON.
+if (!defined('MISRIFAS_ERROR_DISPLAY_CONFIGURED')) {
+    define('MISRIFAS_ERROR_DISPLAY_CONFIGURED', true);
+    ini_set('display_errors', '0');
+    ini_set('log_errors', '1');
+    error_reporting(E_ALL);
+}
+
 // Cargar .env si no está cargado
 if (!function_exists('loadEnvForPaths')) {
     function loadEnvForPaths() {

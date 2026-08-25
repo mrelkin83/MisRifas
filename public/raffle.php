@@ -85,6 +85,7 @@ header("Expires: 0");
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
+    <script>const BASE_PATH = "<?= BASE_PATH ?>";</script>
 
     <!-- SEO base -->
     <meta name="description" content="<?= htmlspecialchars($ogDescription) ?>">
@@ -725,7 +726,7 @@ header("Expires: 0");
                 headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest', ...options.headers },
                 ...options
             };
-            const response = await fetch('/api' + endpoint, config);
+            const response = await fetch(BASE_PATH + '/api' + endpoint, config);
             const data = await response.json();
             if (!response.ok) throw new Error(data.message || 'Error');
             return data;

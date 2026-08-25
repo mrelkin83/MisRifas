@@ -1,6 +1,7 @@
 <?php
 $page_title = "Mi Perfil - MisRifas";
 require_once __DIR__ . '/../config/app.php';
+require_once __DIR__ . '/../config/paths.php';
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -8,6 +9,7 @@ require_once __DIR__ . '/../config/app.php';
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= $page_title ?></title>
+    <script>const BASE_PATH = "<?= BASE_PATH ?>";</script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { background: #0f172a; color: white; }
@@ -104,13 +106,13 @@ require_once __DIR__ . '/../config/app.php';
         const fixUrl = (url) => {
             if (!url) return '';
             if (url.startsWith('http')) return url;
-            return '/public/' + url.replace(/^\//, '');
+            return BASE_PATH + '/public/' + url.replace(/^\//, '');
         };
 
         const API = {
             async get(endpoint) {
                 const token = localStorage.getItem('misrifas_token');
-                const res = await fetch('/api' + endpoint, { headers: { 'Authorization': 'Bearer ' + token } });
+                const res = await fetch(BASE_PATH + '/api' + endpoint, { headers: { 'Authorization': 'Bearer ' + token } });
                 return res.json();
             },
             async post(endpoint, data, isMultipart = false) {
@@ -118,7 +120,7 @@ require_once __DIR__ . '/../config/app.php';
                 const headers = { 'Authorization': 'Bearer ' + token };
                 if (!isMultipart) headers['Content-Type'] = 'application/json';
                 
-                const res = await fetch('/api' + endpoint, {
+                const res = await fetch(BASE_PATH + '/api' + endpoint, {
                     method: 'POST',
                     headers: headers,
                     body: isMultipart ? data : JSON.stringify(data)

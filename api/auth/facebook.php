@@ -4,6 +4,8 @@
  * Redirige al usuario a Facebook para autenticación
  */
 
+require_once __DIR__ . '/../../config/paths.php';
+
 session_set_cookie_params([
     'lifetime' => 0,
     'path' => '/',

@@ -16,7 +16,14 @@ set -euo pipefail
 
 DB_NAME="${DB_NAME:-misrifas}"
 MYSQL_USER="${MYSQL_USER:-root}"
-MYSQL_ARGS=(-u "$MYSQL_USER")
+# --default-character-set=utf8mb4 es obligatorio: el cliente mysql en
+# Windows arranca en cp850 (codepage de consola) por defecto, no utf8mb4.
+# Sin esto, cada archivo .sql (que SI esta en UTF-8 real) se reinterpreta
+# como cp850 al importarse y cada tilde/enie queda corrupta en la BD
+# ("Loter├¡a" en vez de "Lotería") - la conexion de la app (PDO, que si
+# fuerza utf8mb4) nunca ve el problema porque el dano ya esta hecho en los
+# bytes guardados.
+MYSQL_ARGS=(-u "$MYSQL_USER" --default-character-set=utf8mb4)
 if [ -n "${MYSQL_PWD:-}" ]; then
   MYSQL_ARGS+=(-p"$MYSQL_PWD")
 fi
