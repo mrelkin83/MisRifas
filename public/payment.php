@@ -21,7 +21,7 @@ $page_title = "Pago - MisRifas";
             theme: {
                 extend: {
                     colors: {
-                        primary: { DEFAULT: '#2563eb', dark: '#1e40af', light: '#3b82f6' }
+                        primary: { DEFAULT: '#f59e0b', dark: '#b45309', light: '#fbbf24' }
                     },
                     screens: {
                         'xs': '480px',
@@ -31,58 +31,67 @@ $page_title = "Pago - MisRifas";
         }
     </script>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f9fafb; }
-        .payment-method {
-            padding: 16px; border: 2px solid #e5e7eb; border-radius: 12px;
-            cursor: pointer; transition: all 0.2s; text-align: left;
-            width: 100%;
+        @font-face {
+            font-family: 'Outfit';
+            font-style: normal;
+            font-weight: 800;
+            font-display: swap;
+            src: url('<?= BASE_PATH ?>/public/assets/fonts/outfit-800.woff2') format('woff2');
         }
-        .payment-method:hover { border-color: #2563eb; background: #eff6ff; }
-        .payment-method--selected { border-color: #2563eb; background: #eff6ff; box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1); }
-        .notification { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); max-width: 450px; width: 90%; padding: 20px 30px; background: white; border-radius: 16px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.3); z-index: 9999; animation: fadeIn 0.3s ease; text-align: center; font-size: 16px; }
-        .notification--error { border: 2px solid #ef4444; color: #991b1b; }
-        .notification--success { border: 2px solid #10b981; color: #065f46; }
-        .notification--info { border: 2px solid #3b82f6; color: #1e40af; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f172a; color: #f8fafc; }
+        h1, h2, h3 { font-family: 'Outfit', 'Inter', sans-serif; }
+        .glass-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.05); }
+        .payment-method {
+            padding: 16px; border: 2px solid rgba(255,255,255,0.1); border-radius: 12px;
+            cursor: pointer; transition: all 0.2s; text-align: left;
+            width: 100%; background: rgba(15,23,42,0.5); color: #f8fafc;
+        }
+        .payment-method:hover { border-color: rgba(245,158,11,0.5); background: rgba(245,158,11,0.08); }
+        .payment-method--selected { border-color: #f59e0b; background: rgba(245,158,11,0.12); box-shadow: 0 0 0 4px rgba(245,158,11,0.15); }
+        .notification { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); max-width: 450px; width: 90%; padding: 20px 30px; background: #1e293b; color: #f8fafc; border-radius: 16px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); z-index: 9999; animation: fadeIn 0.3s ease; text-align: center; font-size: 16px; border: 1px solid rgba(255,255,255,0.1); }
+        .notification--error { border: 2px solid #ef4444; }
+        .notification--success { border: 2px solid #10b981; }
+        .notification--info { border: 2px solid #3b82f6; }
         @keyframes fadeIn { from { opacity: 0; transform: translate(-50%, -50%) scale(0.9); } to { opacity: 1; transform: translate(-50%, -50%) scale(1); } }
         .countdown-timer { font-variant-numeric: tabular-nums; }
-        
+
         @media (max-width: 640px) {
             .payment-methods-grid { grid-template-columns: 1fr !important; }
             .glass-card { padding: 1.5rem !important; }
         }
     </style>
 </head>
-<body class="bg-gray-50">
-    <header class="bg-white shadow-sm sticky top-0 z-50">
+<body class="bg-[#0f172a]">
+    <header class="glass-card shadow-sm sticky top-0 z-50 !rounded-none">
         <nav class="container mx-auto px-4 h-16 flex items-center justify-between">
-            <a href="/" class="flex items-center gap-2 text-xl font-bold text-primary">
-                <span class="text-2xl">🎟️</span>
+            <a href="<?= BASE_PATH ?>/public/index.php" class="flex items-center gap-2 text-xl font-bold text-primary">
+                <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v1a2 2 0 0 0 0 4v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1a2 2 0 0 0 0-4Z"/><path d="M13 5v14" stroke-dasharray="2 3"/></svg>
                 <span class="hidden xs:inline">MisRifas</span>
             </a>
             <div class="flex items-center gap-4">
-                <a href="/mis-boletos" class="text-gray-700 hover:text-primary font-medium text-xs sm:text-sm">Mis Boletas</a>
+                <a href="<?= BASE_PATH ?>/public/mis-boletos.php" class="text-slate-300 hover:text-primary font-medium text-xs sm:text-sm">Mis Boletas</a>
             </div>
         </nav>
     </header>
 
     <main class="py-6 sm:py-8">
         <div class="container mx-auto px-4 max-w-2xl">
-            <div class="bg-white rounded-2xl shadow-md p-5 sm:p-8">
+            <div class="glass-card rounded-2xl shadow-md p-5 sm:p-8">
                 <h1 class="text-2xl font-bold mb-6 text-center sm:text-left">Completar Pago</h1>
 
-                <div id="reservation-info" class="bg-blue-50 border border-blue-100 rounded-xl p-4 mb-6">
+                <div id="reservation-info" class="bg-primary/10 border border-primary/20 rounded-xl p-4 mb-6">
                     <div class="flex justify-between items-center mb-2">
-                        <span class="text-gray-600 text-sm">Boleto:</span>
+                        <span class="text-slate-300 text-sm">Boleto:</span>
                         <span id="ticket-number" class="text-xl font-black text-primary font-mono">--</span>
                     </div>
                     <div class="flex justify-between items-center mb-2">
-                        <span class="text-gray-600 text-sm">Precio:</span>
+                        <span class="text-slate-300 text-sm">Precio:</span>
                         <span id="ticket-price" class="text-xl font-black text-primary font-mono">$0</span>
                     </div>
-                    <div class="flex justify-between items-center pt-2 border-t border-blue-100">
-                        <span class="text-gray-600 text-sm">Expira en:</span>
-                        <span id="reservation-time" class="text-base font-bold text-red-600 countdown-timer">--:--</span>
+                    <div class="flex justify-between items-center pt-2 border-t border-primary/20">
+                        <span class="text-slate-300 text-sm">Expira en:</span>
+                        <span id="reservation-time" class="text-base font-bold text-red-400 countdown-timer">--:--</span>
                     </div>
                 </div>
 
@@ -91,72 +100,73 @@ $page_title = "Pago - MisRifas";
                     <div class="grid grid-cols-1 xs:grid-cols-2 gap-3 payment-methods-grid">
                         <button onclick="selectPaymentMethod('NEQUI')" class="payment-method" data-method="NEQUI">
                             <div class="font-bold flex items-center gap-2">
-                                <span class="w-2 h-2 rounded-full bg-purple-500"></span>
+                                <span class="w-2 h-2 rounded-full bg-purple-400"></span>
                                 Nequi
                             </div>
-                            <div class="text-xs text-gray-500 mt-1">Transferencia directa</div>
+                            <div class="text-xs text-slate-400 mt-1">Transferencia directa</div>
                         </button>
                         <button onclick="selectPaymentMethod('BANCOLOMBIA_TRANSFER')" class="payment-method" data-method="BANCOLOMBIA_TRANSFER">
                             <div class="font-bold flex items-center gap-2">
                                 <span class="w-2 h-2 rounded-full bg-yellow-400"></span>
                                 Bancolombia
                             </div>
-                            <div class="text-xs text-gray-500 mt-1">Ahorro a la mano/App</div>
+                            <div class="text-xs text-slate-400 mt-1">Ahorro a la mano/App</div>
                         </button>
                         <button onclick="selectPaymentMethod('DAVIPLATA')" class="payment-method" data-method="DAVIPLATA">
                             <div class="font-bold flex items-center gap-2">
-                                <span class="w-2 h-2 rounded-full bg-red-500"></span>
+                                <span class="w-2 h-2 rounded-full bg-red-400"></span>
                                 Daviplata
                             </div>
-                            <div class="text-xs text-gray-500 mt-1">Desde tu celular</div>
+                            <div class="text-xs text-slate-400 mt-1">Desde tu celular</div>
                         </button>
                         <button onclick="selectPaymentMethod('EFECTY')" class="payment-method" data-method="EFECTY">
                             <div class="font-bold flex items-center gap-2">
-                                <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+                                <span class="w-2 h-2 rounded-full bg-sky-400"></span>
                                 Efecty
                             </div>
-                            <div class="text-xs text-gray-500 mt-1">Pago en efectivo</div>
+                            <div class="text-xs text-slate-400 mt-1">Pago en efectivo</div>
                         </button>
                     </div>
                 </div>
 
                 <div id="payment-instructions" class="hidden mb-8 animate-in fade-in slide-in-from-top-2 duration-300">
                     <h3 class="font-bold mb-3 flex items-center gap-2 text-primary">
-                        <span>📝</span> Instrucciones:
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12h6M9 16h6M9 8h1"/><path d="M8 3h8a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z"/></svg>
+                        Instrucciones:
                     </h3>
-                    <div id="instructions-content" class="bg-gray-50 border border-gray-100 rounded-xl p-5 text-gray-700 text-sm leading-relaxed"></div>
+                    <div id="instructions-content" class="bg-black/20 border border-white/10 rounded-xl p-5 text-slate-300 text-sm leading-relaxed"></div>
                 </div>
 
                 <div class="mb-8">
                     <h3 class="font-bold mb-2">Comprobante de pago</h3>
-                    <p class="text-xs text-gray-500 mb-3 italic">Sube una captura de pantalla del pago para agilizar la verificación.</p>
-                    
+                    <p class="text-xs text-slate-400 mb-3 italic">Sube una captura de pantalla del pago para agilizar la verificación.</p>
+
                     <div class="relative">
                         <input type="file" id="payment-proof" accept="image/*" class="hidden">
-                        <label for="payment-proof" class="w-full flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-xl p-6 hover:border-primary hover:bg-blue-50 transition-all cursor-pointer">
-                            <span class="text-3xl mb-2">📸</span>
-                            <span class="text-sm font-medium text-gray-600">Click para subir comprobante</span>
+                        <label for="payment-proof" class="w-full flex flex-col items-center justify-center border-2 border-dashed border-white/15 rounded-xl p-6 hover:border-primary hover:bg-primary/5 transition-all cursor-pointer">
+                            <svg class="w-8 h-8 mb-2 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M12 4 7 9M12 4l5 5"/><path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
+                            <span class="text-sm font-medium text-slate-300">Click para subir comprobante</span>
                             <span id="file-name" class="text-xs text-primary mt-2 hidden font-bold"></span>
                         </label>
                     </div>
 
                     <div id="preview-container" class="hidden mt-4 text-center">
-                        <img id="preview-image" class="max-h-64 mx-auto rounded-xl border-4 border-white shadow-lg">
-                        <button onclick="removeImage()" class="text-red-500 text-xs font-bold mt-2 hover:underline">Eliminar imagen</button>
+                        <img id="preview-image" class="max-h-64 mx-auto rounded-xl border-4 border-white/10 shadow-lg">
+                        <button onclick="removeImage()" class="text-red-400 text-xs font-bold mt-2 hover:underline">Eliminar imagen</button>
                     </div>
                 </div>
 
-                <button id="confirm-payment-btn" class="w-full py-5 bg-primary text-white font-black rounded-2xl text-xl hover:bg-primary-dark disabled:opacity-50 disabled:grayscale transition-all shadow-xl hover:shadow-blue-500/20" disabled>
-                    Finalizar Compra 🚀
+                <button id="confirm-payment-btn" class="w-full py-5 bg-primary text-slate-950 font-black rounded-2xl text-xl hover:bg-primary-light disabled:opacity-50 disabled:grayscale transition-all shadow-xl hover:shadow-primary/30" disabled>
+                    Finalizar Compra
                 </button>
 
-                <p class="text-[10px] text-gray-400 text-center mt-6 uppercase tracking-widest">
+                <p class="text-[10px] text-slate-500 text-center mt-6 uppercase tracking-widest">
                     Seguridad cifrada SSL · Verificación humana
                 </p>
             </div>
 
             <div class="mt-8 text-center">
-                <p class="text-sm text-gray-500">
+                <p class="text-sm text-slate-400">
                     ¿Necesitas ayuda?
                     <a href="#" onclick="contactSupport()" class="text-primary font-bold hover:underline">Contactar soporte</a>
                 </p>
@@ -346,12 +356,12 @@ $page_title = "Pago - MisRifas";
             } else {
                 Utils.showNotification(response.message || 'Error', 'error');
                 btn.disabled = false;
-                btn.textContent = 'Finalizar Compra 🚀';
+                btn.textContent = 'Finalizar Compra';
             }
         } catch (error) {
             Utils.showNotification('Error de conexión', 'error');
             btn.disabled = false;
-            btn.textContent = 'Finalizar Compra 🚀';
+            btn.textContent = 'Finalizar Compra';
         }
     });
 
