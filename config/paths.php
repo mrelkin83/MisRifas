@@ -67,10 +67,15 @@ if ($basePath === false || $basePath === '') {
     $scriptName = $_SERVER['SCRIPT_NAME'];
     $basePath = '';
 
+    // Carpetas reales del proyecto en la raiz (no son un prefijo de
+    // subdirectorio de despliegue) - si SCRIPT_NAME empieza con una de
+    // estas, el sitio esta sirviendose desde la raiz del dominio.
+    $ownTopLevelDirs = ['/public', '/tapazo', '/api'];
+
     if (preg_match('#^(/[^/]+)/public/#', $scriptName, $matches)) {
         $basePath = $matches[1];
     } elseif (preg_match('#^(/[^/]+)/#', $scriptName, $matches)) {
-        if ($matches[1] !== '/public') {
+        if (!in_array($matches[1], $ownTopLevelDirs, true)) {
             $basePath = $matches[1];
         }
     }

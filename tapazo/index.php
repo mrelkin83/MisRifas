@@ -298,11 +298,11 @@ if ($codigo) {
                 <div>
                     <label class="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1.5">Imagen (opcional)</label>
                     <div class="flex flex-col sm:flex-row items-center gap-3">
-                        <label class="w-full sm:flex-1 cursor-pointer">
+                        <label class="w-full sm:flex-1 cursor-pointer focus-within:ring-2 focus-within:ring-amber-500 rounded-xl block">
                             <div id="image-preview" class="w-full h-24 border-2 border-dashed border-slate-700 rounded-xl flex items-center justify-center text-slate-500 hover:border-amber-500 transition-colors overflow-hidden">
                                 <span class="text-xs">Click para subir imagen</span>
                             </div>
-                            <input type="file" id="imagen" accept="image/*" class="hidden">
+                            <input type="file" id="imagen" accept="image/*" class="sr-only">
                         </label>
                         <input type="text" id="imagen_url" class="w-full sm:flex-1 px-4 py-3 md:px-5 md:py-4 rounded-xl bg-slate-800/50 border border-slate-700 text-white outline-none focus:border-amber-500 transition-colors text-sm" placeholder="O pega una URL de imagen">
                     </div>
@@ -318,7 +318,7 @@ if ($codigo) {
                         <option value="bajo_gana">🔽 El número más BAJO GANA</option>
                     </select>
                 </div>
-                <button type="submit" class="w-full py-4 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-600 text-white font-black text-lg uppercase tracking-wider shadow-xl shadow-amber-500/30 hover:shadow-amber-500/50 transition-all hover:-translate-y-0.5 mt-4">
+                <button type="submit" class="w-full py-4 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-600 text-white font-black text-lg uppercase tracking-wider shadow-xl shadow-amber-500/30 hover:shadow-amber-500/50 active:scale-[0.97] transition-all hover:-translate-y-0.5 mt-4">
                     🍺 Crear El Tapazo
                 </button>
             </form>
