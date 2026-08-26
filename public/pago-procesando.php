@@ -239,7 +239,7 @@ function checkPaymentStatus() {
         return;
     }
 
-    fetch('/api/payments/check-status.php?payment_intent_id=' + paymentIntentId)
+    fetch('<?= BASE_PATH ?>/api/payments/check-status.php?payment_intent_id=' + paymentIntentId)
         .then(response => response.json())
         .then(data => {
             pollCount++;

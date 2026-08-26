@@ -144,7 +144,7 @@ try {
         <script>
             localStorage.setItem('misrifas_token', '<?= htmlspecialchars($token) ?>');
             localStorage.setItem('misrifas_user', '<?= htmlspecialchars(json_encode($_SESSION['misrifas_user'])) ?>');
-            window.location.href = '/MisRifas/public/admin/index.php';
+            window.location.href = '<?= BASE_PATH ?>/public/admin/index.php';
         </script>
     </body>
     </html>
