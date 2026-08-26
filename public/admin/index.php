@@ -101,6 +101,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
         .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: #f59e0b; }
         .form-group select option:disabled { color: #9ca3af; background: #f3f4f6; }
         .form-group small { font-size: 12px; color: #6b7280; }
+        #image-drop-zone:focus-visible { outline: 3px solid #f59e0b; outline-offset: 2px; border-color: #f59e0b; }
 
         .toggle-label { display: flex; align-items: center; gap: 12px; cursor: pointer; }
         .toggle-slider { position: relative; width: 48px; height: 24px; background: #e5e7eb; border-radius: 12px; transition: background 0.2s; }
@@ -773,7 +774,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                             <!-- IMAGENES DE LA RIFA (MAX 10) -->
                             <div class="form-group">
                                 <label>Fotos de la Rifa (Máx 10)</label>
-                                <div id="image-drop-zone" style="border:2px dashed #cbd5e1;border-radius:12px;padding:24px;text-align:center;cursor:pointer;transition:all .2s;background:#f8fafc;display:flex;flex-direction:column;gap:16px;">
+                                <div id="image-drop-zone" tabindex="0" role="button" aria-label="Subir fotos de la rifa" style="border:2px dashed #cbd5e1;border-radius:12px;padding:24px;text-align:center;cursor:pointer;transition:all .2s;background:#f8fafc;display:flex;flex-direction:column;gap:16px;">
                                     <div id="image-placeholder">
                                         <div style="margin-bottom:4px;"><svg class="w-8 h-8 text-primary mx-auto" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M12 4 7 9M12 4l5 5"/><path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg></div>
                                         <p style="color:#64748b;font-size:13px;">Arrastra las fotos aquí o <span style="color:#2563eb;font-weight:600;">haz clic para seleccionar</span></p>
@@ -889,16 +890,16 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                         
                         <form id="admin-profile-form" class="space-y-6">
                             <div class="flex items-center gap-6 mb-8 p-4 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
-                                <div class="relative group cursor-pointer" onclick="document.getElementById('p-image-input').click()">
-                                    <div class="w-24 h-24 bg-blue-600 rounded-full flex items-center justify-center text-4xl font-bold overflow-hidden border-4 border-white shadow-lg">
+                                <label class="relative group cursor-pointer block w-fit" aria-label="Cambiar foto de perfil">
+                                    <input type="file" id="p-image-input" class="sr-only peer" accept="image/*">
+                                    <div class="w-24 h-24 bg-blue-600 rounded-full flex items-center justify-center text-4xl font-bold overflow-hidden border-4 border-white shadow-lg peer-focus-visible:ring-4 peer-focus-visible:ring-blue-400">
                                         <span id="p-avatar-text">A</span>
                                         <img id="p-avatar-img" class="w-full h-full object-cover hidden">
                                     </div>
-                                    <div class="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <div class="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 peer-focus-visible:opacity-100 transition-opacity">
                                         <span class="text-white text-[10px] font-bold uppercase">Subir</span>
                                     </div>
-                                    <input type="file" id="p-image-input" class="hidden" accept="image/*">
-                                </div>
+                                </label>
                                 <div>
                                     <h3 class="font-bold text-lg" id="p-display-name">Tu Nombre</h3>
                                     <p class="text-sm text-gray-500" id="p-display-role">Administrador</p>
@@ -2513,6 +2514,9 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
     };
 
     dropZone.addEventListener('click', () => fileInput.click());
+    dropZone.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileInput.click(); }
+    });
     dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.style.borderColor='#2563eb'; });
     dropZone.addEventListener('dragleave', () => { dropZone.style.borderColor='#cbd5e1'; });
     dropZone.addEventListener('drop', e => {
