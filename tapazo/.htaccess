@@ -1,5 +1,8 @@
+# RewriteBase seteado a /MisRifas/tapazo/ para desarrollo local, igual que
+# el .htaccess de la raiz - cambiar a /tapazo/ si el dominio de produccion
+# sirve el proyecto desde la raiz (ver DEPLOY.md).
 RewriteEngine On
-RewriteBase /tapazo/
+RewriteBase /MisRifas/tapazo/
 
 # If the request is for a real file, serve it
 RewriteCond %{REQUEST_FILENAME} !-f
