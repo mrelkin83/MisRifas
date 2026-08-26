@@ -53,9 +53,9 @@ $page_description = "La plataforma más confiable para crear y participar en rif
             transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
         .raffle-card:hover {
-            transform: translateY(-8px) scale(1.02);
-            box-shadow: 0 20px 40px -10px rgba(245,158,11,0.25);
-            border: 1px solid rgba(245,158,11,0.35);
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px -12px rgba(0,0,0,0.5);
+            border: 1px solid rgba(245,158,11,0.2);
         }
         /* Scroll-reveal: solo opacity (nunca junto a "transform" del hover
            de arriba, para que no compitan por la misma propiedad).
@@ -129,12 +129,12 @@ $page_description = "La plataforma más confiable para crear y participar en rif
         .hero-slide.is-active .hero-slide__bg { transform: scale(1); }
         .hero-slide__overlay {
             position: absolute; inset: 0;
-            background: linear-gradient(135deg, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.2) 60%, rgba(0,0,0,0.5) 100%);
+            background: linear-gradient(90deg, rgba(0,0,0,0.78) 0%, rgba(0,0,0,0.45) 55%, rgba(0,0,0,0.15) 100%);
         }
         .hero-slide__content {
             position: relative; z-index: 10; text-align: left;
-            max-width: 650px; padding: 0 40px;
-            opacity: 0; transform: translateY(40px);
+            max-width: 680px; padding: 0 56px;
+            opacity: 0; transform: translateY(24px);
             transition: opacity 0.7s 0.15s ease, transform 0.7s 0.15s ease;
         }
         @media (max-width: 640px) {
@@ -143,16 +143,14 @@ $page_description = "La plataforma más confiable para crear y participar en rif
         .hero-slide.is-active .hero-slide__content { opacity: 1; transform: translateY(0); }
 
         .hero-slide__tag {
-            display: inline-block; padding: 6px 16px; border-radius: 9999px;
-            font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
-            background: rgba(255,255,255,0.12); backdrop-filter: blur(6px);
-            border: 1px solid rgba(255,255,255,0.2); color: #e2e8f0;
-            margin-bottom: 20px;
+            display: block;
+            font-size: 13px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
+            color: #fbbf24;
+            margin-bottom: 16px;
         }
         .hero-slide__title {
-            font-size: clamp(1.75rem, 8vw, 3.5rem); font-weight: 900;
-            line-height: 1.1; color: #fff; margin-bottom: 18px;
-            text-shadow: 0 2px 20px rgba(0,0,0,0.4);
+            font-size: clamp(2.25rem, 6.5vw, 4.75rem); font-weight: 700;
+            line-height: 1.05; letter-spacing: -0.02em; color: #fff; margin-bottom: 20px;
         }
         @media (max-width: 640px) {
             .hero-slide__title { margin-bottom: 12px; }
@@ -164,8 +162,8 @@ $page_description = "La plataforma más confiable para crear y participar en rif
             -webkit-background-clip: text; -webkit-text-fill-color: transparent;
         }
         .hero-slide__desc {
-            font-size: 1.1rem; color: rgba(255,255,255,0.8);
-            margin-bottom: 32px; line-height: 1.6; max-width: 480px;
+            font-size: 1.2rem; color: rgba(255,255,255,0.75); font-weight: 400;
+            margin-bottom: 36px; line-height: 1.5; max-width: 480px; letter-spacing: -0.005em;
         }
         .hero-slide__actions { display: flex; gap: 14px; flex-wrap: wrap; }
         .hero-slide__btn {
@@ -230,19 +228,6 @@ $page_description = "La plataforma más confiable para crear y participar en rif
             box-shadow: 0 0 8px rgba(245,158,11,0.7);
         }
 
-        /* Thumbnails strip */
-        .hero-slider__thumbs {
-            position: absolute; bottom: 60px; right: 28px; z-index: 20;
-            display: flex; gap: 10px;
-        }
-        .hero-slider__thumb {
-            width: 72px; height: 48px; border-radius: 8px; overflow: hidden;
-            cursor: pointer; border: 2px solid rgba(255,255,255,0.15);
-            opacity: 0.5; transition: all 0.25s;
-        }
-        .hero-slider__thumb.is-active { opacity: 1; border-color: white; transform: scale(1.08); }
-        .hero-slider__thumb img { width: 100%; height: 100%; object-fit: cover; }
-        @media (max-width: 768px) { .hero-slider__thumbs { display: none; } }
         .premium-filter {
             background: rgba(15, 23, 42, 0.9);
             backdrop-filter: blur(24px);
@@ -408,14 +393,6 @@ $page_description = "La plataforma más confiable para crear y participar en rif
 
         <!-- Barra de progreso -->
         <div class="hero-slider__progress" id="sliderProgress"></div>
-
-        <!-- Miniaturas (desktop) -->
-        <div class="hero-slider__thumbs" id="sliderThumbs">
-            <div class="hero-slider__thumb is-active" data-slide="0"><img src="https://picsum.photos/seed/misrifas-premio-mayor/200/200" alt="Slide 1"></div>
-            <div class="hero-slider__thumb" data-slide="1"><img src="https://picsum.photos/seed/misrifas-pago-nequi/200/200" alt="Slide 2"></div>
-            <div class="hero-slider__thumb" data-slide="2"><img src="https://picsum.photos/seed/misrifas-carro-0km/200/200" alt="Slide 3"></div>
-            <div class="hero-slider__thumb" data-slide="3"><img src="https://picsum.photos/seed/misrifas-tecnologia/200/200" alt="Slide 4"></div>
-        </div>
 
     </section><!-- /hero-slider -->
 
@@ -599,44 +576,32 @@ $page_description = "La plataforma más confiable para crear y participar en rif
         </div>
     </section>
 
-    <section class="py-24 bg-slate-900 border-t border-slate-800">
+    <section class="py-32 bg-slate-900 border-t border-slate-800/60">
         <div class="container mx-auto px-4">
-            <div class="text-center mb-16">
-                <h2 class="text-4xl font-black mb-4"><span class="bg-clip-text text-transparent bg-gradient-to-r from-amber-300 to-amber-500">¿Cómo funciona?</span></h2>
+            <div class="text-center mb-20">
+                <h2 class="text-4xl md:text-5xl font-bold tracking-tight mb-4 text-white">¿Cómo funciona?</h2>
                 <p class="text-slate-400 text-lg">Un proceso transparente, conectado a tu WhatsApp.</p>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 max-w-6xl mx-auto">
-                <div class="relative group">
-                    <div class="absolute -inset-0.5 bg-gradient-to-r from-amber-500 to-amber-600 rounded-3xl blur opacity-25 group-hover:opacity-100 transition duration-1000 group-hover:duration-200"></div>
-                    <div class="relative bg-slate-800/80 backdrop-blur p-8 rounded-3xl border border-slate-700/50 text-center h-full">
-                        <div class="w-16 h-16 bg-amber-500/20 text-amber-400 rounded-2xl flex items-center justify-center text-3xl mb-6 mx-auto shadow-inner border border-amber-500/30">1</div>
-                        <h3 class="text-xl font-bold mb-3 text-white">Elige Rifa</h3>
-                        <p class="text-slate-400 font-medium">Encuentra una rifa verificada de nuestra red nacional.</p>
-                    </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-16 max-w-6xl mx-auto">
+                <div class="text-center">
+                    <div class="text-6xl font-bold text-amber-500/25 mb-4 tracking-tight">01</div>
+                    <h3 class="text-lg font-bold mb-2 text-white">Elige Rifa</h3>
+                    <p class="text-slate-400 text-sm leading-relaxed">Encuentra una rifa verificada de nuestra red nacional.</p>
                 </div>
-                <div class="relative group">
-                    <div class="absolute -inset-0.5 bg-gradient-to-r from-amber-500 to-amber-600 rounded-3xl blur opacity-25 group-hover:opacity-100 transition duration-1000 group-hover:duration-200"></div>
-                    <div class="relative bg-slate-800/80 backdrop-blur p-8 rounded-3xl border border-slate-700/50 text-center h-full">
-                        <div class="w-16 h-16 bg-amber-500/20 text-amber-400 rounded-2xl flex items-center justify-center text-3xl mb-6 mx-auto shadow-inner border border-amber-500/30">2</div>
-                        <h3 class="text-xl font-bold mb-3 text-white">Toma un Cupo</h3>
-                        <p class="text-slate-400 font-medium">Los tickets bloquean dobles compras gracias a nuestra concurrencia estricta.</p>
-                    </div>
+                <div class="text-center">
+                    <div class="text-6xl font-bold text-amber-500/25 mb-4 tracking-tight">02</div>
+                    <h3 class="text-lg font-bold mb-2 text-white">Toma un Cupo</h3>
+                    <p class="text-slate-400 text-sm leading-relaxed">Los tickets bloquean dobles compras gracias a nuestra concurrencia estricta.</p>
                 </div>
-                <div class="relative group">
-                    <div class="absolute -inset-0.5 bg-gradient-to-r from-amber-500 to-amber-600 rounded-3xl blur opacity-25 group-hover:opacity-100 transition duration-1000 group-hover:duration-200"></div>
-                    <div class="relative bg-slate-800/80 backdrop-blur p-8 rounded-3xl border border-slate-700/50 text-center h-full">
-                        <div class="w-16 h-16 bg-amber-500/20 text-amber-400 rounded-2xl flex items-center justify-center text-3xl mb-6 mx-auto shadow-inner border border-amber-500/30">3</div>
-                        <h3 class="text-xl font-bold mb-3 text-white">Pago Seguro</h3>
-                        <p class="text-slate-400 font-medium">Botonería de Wompi detecta pagos en segundos.</p>
-                    </div>
+                <div class="text-center">
+                    <div class="text-6xl font-bold text-amber-500/25 mb-4 tracking-tight">03</div>
+                    <h3 class="text-lg font-bold mb-2 text-white">Pago Seguro</h3>
+                    <p class="text-slate-400 text-sm leading-relaxed">Wompi detecta y confirma tu pago en segundos.</p>
                 </div>
-                <div class="relative group">
-                    <div class="absolute -inset-0.5 bg-gradient-to-r from-amber-500 to-amber-600 rounded-3xl blur opacity-25 group-hover:opacity-100 transition duration-1000 group-hover:duration-200"></div>
-                    <div class="relative bg-slate-800/80 backdrop-blur p-8 rounded-3xl border border-slate-700/50 text-center h-full">
-                        <div class="w-16 h-16 bg-amber-500/20 text-amber-400 rounded-2xl flex items-center justify-center text-3xl mb-6 mx-auto shadow-inner border border-amber-500/30">4</div>
-                        <h3 class="text-xl font-bold mb-3 text-white">Lotería en Vivo</h3>
-                        <p class="text-slate-400 font-medium">Te notificamos vía API directa si tu cartón ganò con la lotería.</p>
-                    </div>
+                <div class="text-center">
+                    <div class="text-6xl font-bold text-amber-500/25 mb-4 tracking-tight">04</div>
+                    <h3 class="text-lg font-bold mb-2 text-white">Lotería en Vivo</h3>
+                    <p class="text-slate-400 text-sm leading-relaxed">Te notificamos si tu número ganó apenas se conoce el resultado.</p>
                 </div>
             </div>
         </div>
