@@ -132,6 +132,7 @@ require_once __DIR__ . '/../config/database.php';
             <div id="no-results" class="hidden text-center py-8">
                 <p class="text-slate-300 text-lg">No se encontraron boletos</p>
                 <p class="text-slate-500 text-sm mt-2">Verifica los datos e intenta de nuevo</p>
+                <a href="<?= BASE_PATH ?>/public/index.php" class="inline-block mt-5 text-primary font-bold hover:underline text-sm">Explorar rifas activas &rarr;</a>
             </div>
 
             <div id="tickets-container" class="hidden">
@@ -198,10 +199,15 @@ require_once __DIR__ . '/../config/database.php';
         return t[status] || status;
     }
 
+    let ticketsById = {};
+
     function renderTickets(data) {
         const container = document.getElementById('tickets-list');
         document.getElementById('user-info').textContent = (data.user?.name || '') + ' - ' + (data.user?.phone || '');
         document.getElementById('unique-id-display').textContent = data.user?.unique_id || '';
+
+        ticketsById = {};
+        data.tickets.forEach(t => { ticketsById[t.id] = t; });
 
         container.innerHTML = data.tickets.map(ticket => {
             const opps = typeof ticket.opportunities === 'string' ? JSON.parse(ticket.opportunities) : (ticket.opportunities || []);
@@ -230,7 +236,7 @@ require_once __DIR__ . '/../config/database.php';
                     (ticket.draw_date ? '<div>Sorteo: ' + Utils.formatDate(ticket.draw_date) + '</div>' : '') +
                     reservedHtml +
                 '</div>' +
-                (ticket.status === 'reserved' ? '<a href="' + BASE_PATH + '/public/payment.php?id=' + ticket.id + '" class="mt-3 block w-full text-center py-2 bg-emerald-500 text-white rounded-lg font-bold text-sm hover:bg-emerald-600 transition-colors">Pagar Ahora</a>' : '') +
+                (ticket.status === 'reserved' ? '<button type="button" data-pay-ticket-id="' + ticket.id + '" class="mt-3 block w-full text-center py-2 bg-emerald-500 text-white rounded-lg font-bold text-sm hover:bg-emerald-600 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300">Pagar Ahora</button>' : '') +
             '</div>';
         }).join('');
     }
@@ -262,6 +268,23 @@ require_once __DIR__ . '/../config/database.php';
         } finally {
             document.getElementById('loading').classList.add('hidden');
         }
+    });
+
+    // Ir a pagar un boleto reservado: guarda sus datos reales para que
+    // payment.php no dependa de que ya existiera una reserva en localStorage.
+    document.getElementById('tickets-list').addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-pay-ticket-id]');
+        if (!btn) return;
+        const ticket = ticketsById[btn.dataset.payTicketId];
+        if (!ticket) return;
+
+        localStorage.setItem('current_reservation', JSON.stringify({
+            ticket_number: ticket.ticket_number,
+            ticket_price: ticket.ticket_price,
+            reserved_until: ticket.reserved_until,
+            raffle_name: ticket.raffle_name
+        }));
+        window.location.href = BASE_PATH + '/public/payment.php?id=' + ticket.id;
     });
 
     // Mobile Menu Toggle

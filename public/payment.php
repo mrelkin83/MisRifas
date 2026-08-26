@@ -36,6 +36,7 @@ $page_title = "Pago - MisRifas";
             width: 100%; background: rgba(15,23,42,0.5); color: #f8fafc;
         }
         .payment-method:hover { border-color: rgba(245,158,11,0.5); background: rgba(245,158,11,0.08); }
+        .payment-method:focus-visible { outline: none; border-color: #f59e0b; box-shadow: 0 0 0 3px rgba(245,158,11,0.4); }
         .payment-method--selected { border-color: #f59e0b; background: rgba(245,158,11,0.12); box-shadow: 0 0 0 4px rgba(245,158,11,0.15); }
         .notification { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); max-width: 450px; width: 90%; padding: 20px 30px; background: #1e293b; color: #f8fafc; border-radius: 16px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); z-index: 9999; animation: fadeIn 0.3s ease; text-align: center; font-size: 16px; border: 1px solid rgba(255,255,255,0.1); }
         .notification--error { border: 2px solid #ef4444; }
@@ -66,7 +67,8 @@ $page_title = "Pago - MisRifas";
     <main class="py-6 sm:py-8">
         <div class="container mx-auto px-4 max-w-2xl">
             <div class="glass-card rounded-2xl shadow-md p-5 sm:p-8">
-                <h1 class="text-2xl font-bold mb-6 text-center sm:text-left">Completar Pago</h1>
+                <h1 class="text-2xl font-bold mb-1 text-center sm:text-left">Completar Pago</h1>
+                <p id="raffle-name" class="hidden text-sm text-slate-400 mb-5 text-center sm:text-left"></p>
 
                 <div id="reservation-info" class="bg-primary/10 border border-primary/20 rounded-xl p-4 mb-6">
                     <div class="flex justify-between items-center mb-2">
@@ -79,7 +81,7 @@ $page_title = "Pago - MisRifas";
                     </div>
                     <div class="flex justify-between items-center pt-2 border-t border-primary/20">
                         <span class="text-slate-300 text-sm">Expira en:</span>
-                        <span id="reservation-time" class="text-base font-bold text-red-400 countdown-timer">--:--</span>
+                        <span id="reservation-time" class="text-base font-bold text-slate-200 countdown-timer">--:--</span>
                     </div>
                 </div>
 
@@ -130,8 +132,8 @@ $page_title = "Pago - MisRifas";
                     <p class="text-xs text-slate-400 mb-3 italic">Sube una captura de pantalla del pago para agilizar la verificación.</p>
 
                     <div class="relative">
-                        <input type="file" id="payment-proof" accept="image/*" class="hidden">
-                        <label for="payment-proof" class="w-full flex flex-col items-center justify-center border-2 border-dashed border-white/15 rounded-xl p-6 hover:border-primary hover:bg-primary/5 transition-all cursor-pointer">
+                        <input type="file" id="payment-proof" accept="image/*" class="sr-only peer">
+                        <label for="payment-proof" class="w-full flex flex-col items-center justify-center border-2 border-dashed border-white/15 rounded-xl p-6 hover:border-primary hover:bg-primary/5 peer-focus-visible:border-primary peer-focus-visible:ring-2 peer-focus-visible:ring-primary/50 transition-all cursor-pointer">
                             <svg class="w-8 h-8 mb-2 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M12 4 7 9M12 4l5 5"/><path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
                             <span class="text-sm font-medium text-slate-300">Click para subir comprobante</span>
                             <span id="file-name" class="text-xs text-primary mt-2 hidden font-bold"></span>
@@ -248,6 +250,11 @@ $page_title = "Pago - MisRifas";
                     document.getElementById('ticket-number').textContent = '#' + (data.ticket_number || '--');
                     document.getElementById('ticket-price').textContent = Utils.formatPrice(data.ticket_price || 0);
                 }
+                if (data.raffle_name) {
+                    const raffleNameEl = document.getElementById('raffle-name');
+                    raffleNameEl.textContent = data.raffle_name;
+                    raffleNameEl.classList.remove('hidden');
+                }
                 if (data.reserved_until) {
                     startExpirationCountdown(data.reserved_until);
                 }
@@ -279,7 +286,10 @@ $page_title = "Pago - MisRifas";
 
             const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
             const s = Math.floor((diff % (1000 * 60)) / 1000);
-            document.getElementById('reservation-time').textContent = m.toString().padStart(2, '0') + ':' + s.toString().padStart(2, '0');
+            const timeEl = document.getElementById('reservation-time');
+            timeEl.textContent = m.toString().padStart(2, '0') + ':' + s.toString().padStart(2, '0');
+            timeEl.classList.toggle('text-red-400', diff <= 5 * 60 * 1000);
+            timeEl.classList.toggle('text-slate-200', diff > 5 * 60 * 1000);
         }, 1000);
     }
 
