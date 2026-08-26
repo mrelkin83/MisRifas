@@ -120,11 +120,12 @@ header("Expires: 0");
         .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.05); }
         .ticket-btn {
             aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
-            font-weight: 800; border-radius: 12px; cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-weight: 800; border-radius: 12px; cursor: pointer; transition: transform 0.15s ease-out, box-shadow 0.2s ease-out, border-color 0.2s ease-out;
             border: 2px solid transparent; user-select: none; font-size: 1.1rem;
         }
         .ticket-btn--available { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; box-shadow: 0 4px 10px rgba(16,185,129,0.2); }
         .ticket-btn--available:hover { transform: translateY(-4px) scale(1.05); box-shadow: 0 10px 20px rgba(16,185,129,0.4); border-color: #34d399; }
+        .ticket-btn--available:active { transform: scale(0.95); }
         .ticket-btn--reserved { background: linear-gradient(135deg, #eab308 0%, #ca8a04 100%); color: white; opacity: 0.85; cursor: not-allowed; }
         .ticket-btn--paid    { background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%); color: white; cursor: not-allowed; box-shadow: 0 4px 10px rgba(239,68,68,0.25); }
         .ticket-btn--selected { transform: scale(1.15) translateY(-4px); box-shadow: 0 0 0 4px rgba(245,158,11,0.5), 0 10px 20px rgba(245,158,11,0.4); border-color: white; z-index: 10; animation: pulse 2s infinite; }
@@ -145,7 +146,7 @@ header("Expires: 0");
         }
         @media (min-width: 768px) { .modal-overlay__content { padding: 32px; } }
         .countdown-box { background: rgba(15,23,42,0.6); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 16px; text-align: center; }
-        input[type="text"], input[type="tel"], input[type="email"], select { background: rgba(15,23,42,0.6); border: 1px solid rgba(255,255,255,0.1); color: white; transition: all 0.3s; }
+        input[type="text"], input[type="tel"], input[type="email"], select { background: rgba(15,23,42,0.6); border: 1px solid rgba(255,255,255,0.1); color: white; transition: border-color 0.3s, box-shadow 0.3s; }
         input:focus, select:focus { border-color: #f59e0b; box-shadow: 0 0 0 4px rgba(245,158,11,0.2); outline: none; }
         /* WhatsApp share button */
         .wa-share-btn {
@@ -153,10 +154,11 @@ header("Expires: 0");
             background: linear-gradient(135deg, #25d366, #128c7e);
             color: white; font-weight: 700; font-size: 14px;
             padding: 10px 18px; border-radius: 12px; border: none; cursor: pointer;
-            text-decoration: none; transition: all 0.25s;
+            text-decoration: none; transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
             box-shadow: 0 4px 14px rgba(37,211,102,0.35);
         }
         .wa-share-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(37,211,102,0.5); }
+        .wa-share-btn:active { transform: scale(0.97); }
         
         @media (max-width: 640px) {
             .wa-share-btn span { display: none; }
@@ -409,7 +411,7 @@ header("Expires: 0");
                                     <input type="text" id="buyer-name" required placeholder="Tu nombre" class="w-full px-4 py-3 rounded-xl bg-black/30 border border-white/10 text-white placeholder:text-slate-500 focus:outline-none focus:border-amber-500">
                                     <input type="tel" id="buyer-phone" required placeholder="WhatsApp (3001234567)" pattern="[3][0-9]{9}" class="w-full px-4 py-3 rounded-xl bg-black/30 border border-white/10 text-white placeholder:text-slate-500 focus:outline-none focus:border-amber-500">
                                 </div>
-                                <button id="pay-selected-btn" class="w-full py-4 bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-black rounded-xl text-lg hover:brightness-110 disabled:opacity-50 disabled:grayscale transition-all shadow-[0_0_20px_rgba(245,158,11,0.3)] hover:shadow-[0_0_25px_rgba(245,158,11,0.5)]">
+                                <button id="pay-selected-btn" class="w-full py-4 bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-black rounded-xl text-lg hover:brightness-110 active:scale-[0.97] disabled:opacity-50 disabled:grayscale transition-all shadow-[0_0_20px_rgba(245,158,11,0.3)] hover:shadow-[0_0_25px_rgba(245,158,11,0.5)]">
                                     Pagar números seleccionados →
                                 </button>
                             </div>
