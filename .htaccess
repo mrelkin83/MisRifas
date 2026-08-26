@@ -17,6 +17,7 @@ SetEnvIf Request_URI "^/MisRifas/" IS_DEV
     RewriteCond %{HTTPS} off
     RewriteCond %{HTTP_HOST} !^localhost [NC]
     RewriteCond %{HTTP_HOST} !^127\.0\.0\.1
+    RewriteCond %{HTTP_HOST} !\.test$ [NC]
     RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 
     # Pasar el header Authorization a PHP (mod_fcgid/CGI lo descarta por
