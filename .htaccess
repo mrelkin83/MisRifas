@@ -32,6 +32,12 @@ SetEnvIf Request_URI "^/MisRifas/" IS_DEV
     RewriteRule ^logs/ - [F,L]
     RewriteRule ^api/config/ - [F,L]
     RewriteRule ^api/utils/ - [F,L]
+    # tools/ tiene scripts de migracion/seed sin autenticacion que
+    # ESCRIBEN en la base de datos (ej. seed_data.php marca rifas como
+    # completadas e inventa numeros ganadores) - nunca deben ser
+    # accesibles por HTTP, solo por CLI.
+    RewriteRule ^tools/ - [F,L]
+    RewriteRule ^composer-setup\.php$ - [F,L]
 
     # NO redireccionar si ya existe el archivo o directorio
     RewriteCond %{REQUEST_FILENAME} !-f
