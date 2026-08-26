@@ -32,8 +32,8 @@ require_once __DIR__ . '/../config/app.php';
     <!-- Header / Navbar Simplificado -->
     <nav class="border-b border-white/5 py-4 backdrop-blur-md sticky top-0 z-50">
         <div class="container mx-auto px-4 flex justify-between items-center">
-            <a href="index.php" class="text-2xl font-black tracking-tighter">MIS<span class="text-primary">RIFAS</span></a>
-            <a href="index.php" class="text-sm font-bold text-slate-400 hover:text-white transition-colors">← Volver al Inicio</a>
+            <a href="<?= BASE_PATH ?>/public/index.php" class="text-2xl font-black tracking-tighter">MIS<span class="text-primary">RIFAS</span></a>
+            <a href="<?= BASE_PATH ?>/public/index.php" class="text-sm font-bold text-slate-400 hover:text-white transition-colors">← Volver al Inicio</a>
         </div>
     </nav>
 
@@ -115,7 +115,7 @@ require_once __DIR__ . '/../config/app.php';
         <!-- CTA -->
         <footer class="text-center">
             <h2 class="text-3xl font-black mb-8 italic">¿Listo para lanzar tu primer gran sorteo?</h2>
-            <a href="admin/index.php?auth=register" class="inline-block px-12 py-6 bg-primary text-slate-950 rounded-3xl font-black text-xl hover:scale-105 transition-transform shadow-2xl shadow-primary/20">
+            <a href="<?= BASE_PATH ?>/public/vendor/index.php?auth=register" class="inline-block px-12 py-6 bg-primary text-slate-950 rounded-3xl font-black text-xl hover:scale-105 transition-transform shadow-2xl shadow-primary/20">
                 Empezar Ahora
             </a>
             <p class="mt-8 text-slate-500 text-sm font-medium">Únete a cientos de emprendedores que ya usan MisRifas.</p>

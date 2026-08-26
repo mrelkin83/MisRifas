@@ -426,6 +426,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
         const fullName = (firstName + ' ' + lastName).trim();
         
         const data = {
+            role: 'vendor',
             name: fullName,
             first_name: firstName,
             last_name: lastName,

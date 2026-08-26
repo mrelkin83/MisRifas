@@ -189,7 +189,10 @@ $page_title = "Ganadores - MisRifas";
                         </div>
                     `;}).join('');
                 } else {
-                    grid.innerHTML = '<p class="col-span-full text-center text-slate-500 py-20 font-medium tracking-wide">Aún no se han publicado ganadores. ¡Tú podrías ser el primero!</p>';
+                    grid.innerHTML = '<div class="col-span-full text-center py-20">' +
+                        '<p class="text-slate-500 font-medium tracking-wide">Aún no se han publicado ganadores. ¡Tú podrías ser el primero!</p>' +
+                        '<a href="<?= BASE_PATH ?>/public/index.php" class="inline-block mt-6 px-6 py-3 bg-primary text-slate-950 font-bold rounded-xl hover:bg-primary-light transition-colors">Ver rifas activas</a>' +
+                        '</div>';
                 }
             } catch (error) {
                 grid.innerHTML = '<p class="col-span-full text-center text-red-500 py-20">Error al conectar con el domo de la victoria.</p>';

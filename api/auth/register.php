@@ -86,7 +86,7 @@ try {
         }
 
         $stmt = $db->prepare("
-            INSERT INTO vendors (slug, business_name, document_id, email, password_hash, phone, city, department, auth_token, auth_token_expires, role, status, payment_config, created_at)
+            INSERT INTO vendors (slug, business_name, document_number, email, password_hash, phone, city, department, auth_token, auth_token_expires, role, status, payment_config, created_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, DATE_ADD(NOW(), INTERVAL 30 DAY), 'vendor', 'active', '{\"mode\":\"manual\"}', NOW())
         ");
         $stmt->execute([$slug, $name, $documentId ?: null, $email, $passwordHash, $phone, $city ?: null, $dept ?: null, Auth::hashToken($authToken)]);
