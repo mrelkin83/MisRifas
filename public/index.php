@@ -342,7 +342,7 @@ $page_description = "La plataforma más confiable para crear y participar en rif
                     <p class="hero-slide__desc">Boletos desde $5.000 COP. Sorteos verificados con lotería oficial.</p>
                     <div class="hero-slide__actions">
                         <a href="#rifas" class="hero-slide__btn hero-slide__btn--primary">Ver rifas activas</a>
-                        <a href="<?= BASE_PATH ?>/public/register.php" class="hero-slide__btn hero-slide__btn--ghost">Crear mi rifa</a>
+                        <a href="<?= BASE_PATH ?>/public/vendor/index.php?auth=register" class="hero-slide__btn hero-slide__btn--ghost">Crear mi rifa</a>
                     </div>
                 </div>
             </div>
@@ -374,7 +374,7 @@ $page_description = "La plataforma más confiable para crear y participar en rif
                     <p class="hero-slide__desc">Carros, motos y electrodomésticos con sorteo vinculado a la Lotería Nacional.</p>
                     <div class="hero-slide__actions">
                         <a href="#rifas" class="hero-slide__btn hero-slide__btn--primary">Explorar rifas</a>
-                        <a href="<?= BASE_PATH ?>/public/register.php" class="hero-slide__btn hero-slide__btn--ghost">Vendo mis rifas</a>
+                        <a href="<?= BASE_PATH ?>/public/vendor/index.php?auth=register" class="hero-slide__btn hero-slide__btn--ghost">Vendo mis rifas</a>
                     </div>
                 </div>
             </div>
@@ -666,7 +666,7 @@ $page_description = "La plataforma más confiable para crear y participar en rif
                     <ul class="space-y-2.5 text-sm">
                         <li><a href="<?= BASE_PATH ?>/public/register.php" class="text-slate-400 hover:text-amber-400 transition-colors">Crear cuenta</a></li>
                         <li><a href="<?= BASE_PATH ?>/public/admin/index.php?auth=login" class="text-slate-400 hover:text-amber-400 transition-colors">Iniciar sesión</a></li>
-                        <li><a href="<?= BASE_PATH ?>/public/register.php" class="text-slate-400 hover:text-amber-400 transition-colors">Vender mis rifas</a></li>
+                        <li><a href="<?= BASE_PATH ?>/public/vendor/index.php?auth=register" class="text-slate-400 hover:text-amber-400 transition-colors">Vender mis rifas</a></li>
                     </ul>
                 </div>
                 <div>
