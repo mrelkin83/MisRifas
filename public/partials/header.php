@@ -25,7 +25,7 @@ $basePath = defined('BASE_PATH') ? BASE_PATH : '';
         </a>
 
         <!-- Mobile hamburger button -->
-        <button id="mobile-menu-btn" class="md:hidden flex flex-col gap-1.5 p-2 z-50" aria-label="Menu">
+        <button id="mobile-menu-btn" class="md:hidden flex flex-col gap-1.5 p-2 z-50 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500" aria-label="Menu">
             <span class="block w-6 h-0.5 bg-white rounded-full transition-all duration-300"></span>
             <span class="block w-6 h-0.5 bg-white rounded-full transition-all duration-300"></span>
             <span class="block w-6 h-0.5 bg-white rounded-full transition-all duration-300"></span>
@@ -48,8 +48,8 @@ $basePath = defined('BASE_PATH') ? BASE_PATH : '';
             <a href="<?= $basePath ?>/public/que-es.php" class="text-slate-300 hover:text-white font-medium transition-colors">
                 ¿Qué es?
             </a>
-            <a href="<?= $basePath ?>/public/dashboard.php" class="ml-2 px-5 py-2.5 bg-white/5 border border-white/10 text-white rounded-xl hover:bg-white/10 transition-all font-medium backdrop-blur-sm text-sm">
-                Iniciar Sesion
+            <a href="<?= $basePath ?>/public/dashboard.php" class="ml-2 px-5 py-2.5 bg-white/5 border border-white/10 text-white rounded-xl hover:bg-white/10 active:scale-[0.97] transition-all font-medium backdrop-blur-sm text-sm">
+                Iniciar Sesión
             </a>
         </div>
     </nav>
@@ -62,7 +62,7 @@ $basePath = defined('BASE_PATH') ? BASE_PATH : '';
             <a href="<?= $basePath ?>/public/vendor/index.php" class="text-slate-300 hover:text-white font-medium py-3 px-3 rounded-lg hover:bg-white/5 transition-all">Panel Vendedor</a>
             <a href="<?= $basePath ?>/public/ganadores.php" class="text-slate-300 hover:text-white font-medium py-3 px-3 rounded-lg hover:bg-white/5 transition-all"><svg class="w-4 h-4 inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4Z"/><path d="M7 5H4a1 1 0 0 0-1 1 4 4 0 0 0 4 4M17 5h3a1 1 0 0 1 1 1 4 4 0 0 1-4 4"/></svg> Ganadores</a>
             <a href="<?= $basePath ?>/public/que-es.php" class="text-slate-300 hover:text-white font-medium py-3 px-3 rounded-lg hover:bg-white/5 transition-all">¿Qué es MisRifas?</a>
-            <a href="<?= $basePath ?>/public/dashboard.php" class="mt-2 px-5 py-3 bg-white/5 border border-white/10 text-white rounded-xl hover:bg-white/10 transition-all font-medium text-center">Iniciar Sesión</a>
+            <a href="<?= $basePath ?>/public/dashboard.php" class="mt-2 px-5 py-3 bg-white/5 border border-white/10 text-white rounded-xl hover:bg-white/10 active:scale-[0.97] transition-all font-medium text-center">Iniciar Sesión</a>
         </div>
     </div>
 </header>

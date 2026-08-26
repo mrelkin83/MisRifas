@@ -290,7 +290,7 @@ header("Expires: 0");
                         </div>
 
                         <div class="glass rounded-3xl p-8 mb-6">
-                            <h1 id="raffle-title" class="text-3xl md:text-4xl font-black mb-3 text-white leading-tight">Cargando...</h1>
+                            <h1 id="raffle-title" class="text-4xl md:text-5xl font-bold mb-3 text-white leading-[1.05] tracking-tight">Cargando...</h1>
                             <p id="raffle-city" class="text-slate-400 mb-8 font-medium flex items-center gap-1.5"><svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21s7-6.5 7-11.5a7 7 0 1 0-14 0C5 14.5 12 21 12 21Z"/><circle cx="12" cy="9.5" r="2.25"/></svg> Ciudad</p>
 
                             <div class="grid grid-cols-3 gap-4 mb-8 pb-8 border-b border-white/10">
