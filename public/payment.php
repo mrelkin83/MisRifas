@@ -24,7 +24,9 @@ $page_title = "Pago - MisRifas";
             font-display: swap;
             src: url('<?= BASE_PATH ?>/public/assets/fonts/outfit-800.woff2') format('woff2');
         }
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+        @layer base {
+            * { box-sizing: border-box; margin: 0; padding: 0; }
+        }
         body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f172a; color: #f8fafc; }
         h1, h2, h3 { font-family: 'Outfit', 'Inter', sans-serif; }
         .glass-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.05); }

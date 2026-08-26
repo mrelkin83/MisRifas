@@ -32,7 +32,9 @@ $page_description = "La plataforma más confiable para crear y participar en rif
             font-display: swap;
             src: url('<?= BASE_PATH ?>/public/assets/fonts/outfit-800.woff2') format('woff2');
         }
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+        @layer base {
+            * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+        }
         body { background: #0f172a; color: #f8fafc; }
         h1, h2, .hero-slide__title, .raffle-card__title { font-family: 'Outfit', 'Inter', sans-serif; }
         .glass-nav {
@@ -286,7 +288,7 @@ $page_description = "La plataforma más confiable para crear y participar en rif
                 MisRifas
             </a>
 
-            <button id="mobile-menu-btn" class="md:hidden text-white p-2 focus:outline-none" aria-label="Menu">
+            <button id="mobile-menu-btn" class="md:hidden text-white p-2 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500" aria-label="Menu">
                 <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path>
                 </svg>

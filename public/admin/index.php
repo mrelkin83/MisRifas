@@ -26,7 +26,9 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
             font-display: swap;
             src: url('<?= BASE_PATH ?>/public/assets/fonts/outfit-800.woff2') format('woff2');
         }
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+        @layer base {
+            * { box-sizing: border-box; margin: 0; padding: 0; }
+        }
         body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f3f4f6; }
 
         .admin-layout { display: flex; min-height: 100vh; }
@@ -233,7 +235,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
             <?php if (isset($_GET['auth']) && $_GET['auth'] === 'login'): ?>
             <div class="text-center mb-8">
                 <svg class="w-12 h-12 mx-auto text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v1a2 2 0 0 0 0 4v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1a2 2 0 0 0 0-4Z"/><path d="M13 5v14" stroke-dasharray="2 3"/></svg>
-                <h1 class="text-2xl font-bold mt-4 text-gray-900">MisRifas</h1>
+                <h1 class="text-2xl font-bold mt-4" style="color:#111827">MisRifas</h1>
                 <p class="text-gray-500">Inicia sesión en tu cuenta</p>
             </div>
             <form id="login-form" class="space-y-4">
@@ -283,7 +285,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
             <?php else: ?>
             <div class="text-center mb-8">
                 <svg class="w-12 h-12 mx-auto text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v1a2 2 0 0 0 0 4v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1a2 2 0 0 0 0-4Z"/><path d="M13 5v14" stroke-dasharray="2 3"/></svg>
-                <h1 class="text-2xl font-bold mt-4 text-gray-900">Crear Cuenta</h1>
+                <h1 class="text-2xl font-bold mt-4" style="color:#111827">Crear Cuenta</h1>
                 <p class="text-gray-500">Regístrate para crear tus rifas</p>
             </div>
             <form id="register-form" class="space-y-4">

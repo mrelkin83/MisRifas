@@ -11,7 +11,9 @@ $page_title = "Recuperar Contrasena - MisRifas";
     <title><?= $page_title ?></title>
     <link rel="stylesheet" href="<?= BASE_PATH ?>/public/css/tailwind.min.css">
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+        @layer base {
+            * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+        }
         body { background: #0f172a; color: #f8fafc; display: flex; align-items: center; justify-content: center; min-height: 100vh; overflow-x: hidden; }
         .bg-blob {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;

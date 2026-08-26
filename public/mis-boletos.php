@@ -24,7 +24,9 @@ require_once __DIR__ . '/../config/database.php';
             font-display: swap;
             src: url('<?= BASE_PATH ?>/public/assets/fonts/outfit-800.woff2') format('woff2');
         }
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+        @layer base {
+            * { box-sizing: border-box; margin: 0; padding: 0; }
+        }
         body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f172a; color: #f8fafc; }
         h1, h2, h3 { font-family: 'Outfit', 'Inter', sans-serif; }
         .glass-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.05); }
@@ -75,7 +77,7 @@ require_once __DIR__ . '/../config/database.php';
                 <span>MisRifas</span>
             </a>
 
-            <button id="mobile-menu-btn" class="md:hidden text-slate-300 p-2 focus:outline-none">
+            <button id="mobile-menu-btn" class="md:hidden text-slate-300 p-2 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500" aria-label="Menu">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path>
                 </svg>

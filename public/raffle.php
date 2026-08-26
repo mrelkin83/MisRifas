@@ -113,7 +113,9 @@ header("Expires: 0");
 
     <link rel="stylesheet" href="<?= BASE_PATH ?>/public/css/tailwind.min.css">
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif;}
+        @layer base {
+            * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif;}
+        }
         body { background: #0f172a; color: #f8fafc; }
         .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.05); }
         .ticket-btn {
@@ -147,7 +149,7 @@ header("Expires: 0");
         input:focus, select:focus { border-color: #f59e0b; box-shadow: 0 0 0 4px rgba(245,158,11,0.2); outline: none; }
         /* WhatsApp share button */
         .wa-share-btn {
-            display: inline-flex; align-items: center; gap: 8px;
+            display: inline-flex; align-items: center; gap: 8px; flex-shrink: 0; white-space: nowrap;
             background: linear-gradient(135deg, #25d366, #128c7e);
             color: white; font-weight: 700; font-size: 14px;
             padding: 10px 18px; border-radius: 12px; border: none; cursor: pointer;
@@ -167,6 +169,14 @@ header("Expires: 0");
             .ticket-btn { font-size: 0.9rem !important; }
             header .container { padding: 0 1rem; }
             header a span.text-xl { font-size: 1rem; }
+        }
+
+        /* El nav de escritorio (8 items: Inicio/El Tapazo/Consultar Boletas/
+           Ganadores/Que es/Iniciar Sesion/Crear Cuenta/Compartir WhatsApp) no
+           entra comodo antes de 1024px - el boton hamburguesa y este overlay
+           usan el mismo breakpoint (lg) para que no quede un rango donde
+           ninguno de los dos funciona. */
+        @media (max-width: 1023px) {
             #nav-menu {
                 position: fixed;
                 top: 80px;
@@ -190,36 +200,36 @@ header("Expires: 0");
 </head>
 <body class="bg-[#0f172a] text-slate-200">
     <header class="glass sticky top-0 z-50">
-        <nav class="container mx-auto px-4 h-20 flex items-center justify-between">
-            <a href="<?= BASE_PATH ?>/public/index.php" class="flex items-center gap-2 text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-amber-300 to-amber-500">
+        <nav class="container mx-auto px-4 h-20 flex items-center justify-between gap-6">
+            <a href="<?= BASE_PATH ?>/public/index.php" class="shrink-0 flex items-center gap-2 text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-amber-300 to-amber-500">
                 <svg class="w-6 h-6 md:w-7 md:h-7 text-amber-400 drop-shadow-lg shrink-0" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M3 8.5V6a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v2.5a1.5 1.5 0 0 0 0 3V14a1.5 1.5 0 0 0 0 3v2.5a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V17a1.5 1.5 0 0 0 0-3v-2.5a1.5 1.5 0 0 0 0-3Z"/>
                     <path stroke-linecap="round" d="M15 5v14" stroke-dasharray="2 3"/>
                 </svg>
                 <span class="hidden xs:inline">MisRifas</span>
             </a>
-            <button id="mobile-menu-btn" class="md:hidden text-white p-2 focus:outline-none" aria-label="Menu">
+            <button id="mobile-menu-btn" class="lg:hidden text-white p-2 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500" aria-label="Menu">
                 <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path>
                 </svg>
             </button>
 
-            <div class="hidden md:flex items-center gap-6" id="nav-menu">
-                <a href="<?= BASE_PATH ?>/public/index.php" class="text-slate-300 hover:text-white font-medium transition-colors">Inicio</a>
-                <a href="<?= BASE_PATH ?>/tapazo/index.php" class="flex items-center gap-1.5 text-slate-300 hover:text-white font-medium transition-colors">
+            <div class="hidden lg:flex items-center gap-2 xl:gap-4 shrink-0" id="nav-menu">
+                <a href="<?= BASE_PATH ?>/public/index.php" class="shrink-0 whitespace-nowrap text-slate-300 hover:text-white font-medium transition-colors">Inicio</a>
+                <a href="<?= BASE_PATH ?>/tapazo/index.php" class="shrink-0 whitespace-nowrap flex items-center gap-1.5 text-slate-300 hover:text-white font-medium transition-colors">
                     <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 3h11l-1 15a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 3Zm11 4h2.5a2 2 0 0 1 2 2.2l-.4 4A2 2 0 0 1 18.1 15H16"/></svg>
                     El Tapazo
                 </a>
-                <a href="<?= BASE_PATH ?>/public/mis-boletos.php" class="text-slate-300 hover:text-white font-medium transition-colors">Consultar Boletas</a>
-                <a href="<?= BASE_PATH ?>/public/ganadores.php" class="flex items-center gap-1.5 text-slate-300 hover:text-white font-medium transition-colors">
+                <a href="<?= BASE_PATH ?>/public/mis-boletos.php" class="shrink-0 whitespace-nowrap text-slate-300 hover:text-white font-medium transition-colors">Consultar Boletas</a>
+                <a href="<?= BASE_PATH ?>/public/ganadores.php" class="shrink-0 whitespace-nowrap flex items-center gap-1.5 text-slate-300 hover:text-white font-medium transition-colors">
                     <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 21h8M12 17v4M7 4h10v4a5 5 0 0 1-10 0V4Zm0 1H4.5a1.5 1.5 0 0 0 0 3H7M17 5h2.5a1.5 1.5 0 0 1 0 3H17"/></svg>
                     Ganadores
                 </a>
-                <a href="<?= BASE_PATH ?>/public/que-es.php" class="text-slate-300 hover:text-white font-medium transition-colors">¿Qué es MisRifas?</a>
+                <a href="<?= BASE_PATH ?>/public/que-es.php" class="shrink-0 whitespace-nowrap text-slate-300 hover:text-white font-medium transition-colors">¿Qué es MisRifas?</a>
 
-                <div id="auth-buttons" class="flex items-center gap-4">
-                    <a href="<?= BASE_PATH ?>/public/admin/index.php?auth=login" class="px-5 py-2.5 bg-white/5 border border-white/10 text-white rounded-xl hover:bg-white/10 transition-all font-medium backdrop-blur-sm shadow-lg shadow-black/20">Iniciar Sesión</a>
-                    <a href="<?= BASE_PATH ?>/public/register.php" class="px-5 py-2.5 bg-gradient-to-r from-amber-400 to-amber-600 text-slate-950 rounded-xl hover:from-amber-300 hover:to-amber-500 transition-all font-bold shadow-lg shadow-amber-500/30">Crear Cuenta</a>
+                <div id="auth-buttons" class="flex items-center gap-4 shrink-0">
+                    <a href="<?= BASE_PATH ?>/public/admin/index.php?auth=login" class="shrink-0 whitespace-nowrap px-4 py-2 bg-white/5 border border-white/10 text-white rounded-xl hover:bg-white/10 transition-all font-medium text-sm backdrop-blur-sm shadow-lg shadow-black/20">Iniciar Sesión</a>
+                    <a href="<?= BASE_PATH ?>/public/register.php" class="shrink-0 whitespace-nowrap px-4 py-2 bg-gradient-to-r from-amber-400 to-amber-600 text-slate-950 rounded-xl hover:from-amber-300 hover:to-amber-500 transition-all font-bold text-sm shadow-lg shadow-amber-500/30">Crear Cuenta</a>
                 </div>
 
                 <div id="user-menu" class="hidden flex items-center gap-4">
@@ -235,7 +245,7 @@ header("Expires: 0");
                 <?php if ($raffleId): ?>
                 <a id="wa-share-btn-nav" href="#" class="wa-share-btn" onclick="shareOnWhatsApp(event)">
                     <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M11.999 2C6.477 2 2 6.484 2 12.017c0 1.99.522 3.859 1.433 5.474L2.05 22l4.629-1.364A9.956 9.956 0 0 0 12 22.033C17.523 22.033 22 17.549 22 12.017 22 6.484 17.523 2 11.999 2zm0 18.06a8.079 8.079 0 0 1-4.298-1.232l-.308-.183-3.184.94.893-3.26-.202-.325A8.02 8.02 0 0 1 3.955 12c0-4.455 3.606-8.078 8.045-8.078 4.438 0 8.046 3.623 8.046 8.078 0 4.456-3.608 8.08-8.047 8.08z"/></svg>
-                <span class="hidden md:inline">Compartir en WhatsApp</span>
+                <span class="hidden md:inline lg:hidden xl:inline">Compartir en WhatsApp</span>
             </a>
             <?php endif; ?>
             </div>

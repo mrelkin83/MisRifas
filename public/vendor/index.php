@@ -26,7 +26,9 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
             font-display: swap;
             src: url('<?= BASE_PATH ?>/public/assets/fonts/outfit-800.woff2') format('woff2');
         }
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+        @layer base {
+            * { box-sizing: border-box; margin: 0; padding: 0; }
+        }
         body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f3f4f6; }
 
         .admin-layout { display: flex; min-height: 100vh; }
@@ -233,7 +235,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
             <?php if (isset($_GET['auth']) && $_GET['auth'] === 'login'): ?>
             <div class="text-center mb-8">
                 <span class="text-5xl">🎟️</span>
-                <h1 class="text-2xl font-bold mt-4 text-gray-900">MisRifas</h1>
+                <h1 class="text-2xl font-bold mt-4" style="color:#111827">MisRifas</h1>
                 <p class="text-gray-500">Inicia sesión en tu cuenta</p>
             </div>
             <form id="login-form" class="space-y-4">
@@ -283,7 +285,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
             <?php else: ?>
             <div class="text-center mb-8">
                 <span class="text-5xl">🎟️</span>
-                <h1 class="text-2xl font-bold mt-4 text-gray-900">Crear Cuenta</h1>
+                <h1 class="text-2xl font-bold mt-4" style="color:#111827">Crear Cuenta</h1>
                 <p class="text-gray-500">Regístrate para crear tus rifas</p>
             </div>
             <form id="register-form" class="space-y-4">

@@ -22,7 +22,9 @@ if ($codigo) {
     <title><?= $tapazo ? htmlspecialchars($tapazo['titulo']) : 'El Tapazo' ?> | MisRifas</title>
     <link rel="stylesheet" href="<?= BASE_PATH ?>/public/css/tailwind.min.css">
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+        @layer base {
+            * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+        }
         body { background: #0f172a; color: #f8fafc; min-height: 100vh; }
 
         .beer-bottle {

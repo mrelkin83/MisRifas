@@ -11,7 +11,9 @@ $page_title = "Ganadores - MisRifas";
     <title><?= $page_title ?></title>
     <link rel="stylesheet" href="<?= BASE_PATH ?>/public/css/tailwind.min.css">
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+        @layer base {
+            * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+        }
         body { background: #0f172a; color: #f8fafc; }
         .glass-nav {
             background: rgba(15, 23, 42, 0.7);
@@ -92,7 +94,7 @@ $page_title = "Ganadores - MisRifas";
                 MisRifas
             </a>
 
-            <button id="mobile-menu-btn" class="md:hidden text-white p-2 focus:outline-none">
+            <button id="mobile-menu-btn" class="md:hidden text-white p-2 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500" aria-label="Menu">
                 <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path>
                 </svg>
