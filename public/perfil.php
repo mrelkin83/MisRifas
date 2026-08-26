@@ -36,12 +36,12 @@ require_once __DIR__ . '/../config/paths.php';
 </head>
 <body>
     <header class="h-20 flex items-center justify-between px-6 border-b border-white/5 sticky top-0 bg-[#0f172a]/80 backdrop-blur-md z-50">
-        <a href="index.php" class="text-2xl font-black text-primary flex items-center gap-2">
+        <a href="<?= BASE_PATH ?>/public/index.php" class="text-2xl font-black text-primary flex items-center gap-2">
             <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v1a2 2 0 0 0 0 4v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1a2 2 0 0 0 0-4Z"/><path d="M13 5v14" stroke-dasharray="2 3"/></svg>
             MisRifas
         </a>
         <div class="flex items-center gap-4">
-            <a href="index.php" class="text-slate-400 hover:text-white text-sm hidden sm:block">Inicio</a>
+            <a href="<?= BASE_PATH ?>/public/index.php" class="text-slate-400 hover:text-white text-sm hidden sm:block">Inicio</a>
             <button onclick="logout()" class="text-slate-400 hover:text-red-400 text-sm font-bold">Cerrar Sesión</button>
         </div>
     </header>
@@ -49,15 +49,16 @@ require_once __DIR__ . '/../config/paths.php';
     <main class="container mx-auto px-4 py-8 md:py-12 max-w-2xl">
         <div class="glass-card p-8">
             <div class="flex items-center gap-6 mb-10 profile-header">
-                <div class="relative group cursor-pointer" onclick="document.getElementById('p-image').click()">
-                    <div id="profile-avatar" class="w-24 h-24 bg-primary text-slate-950 rounded-full flex items-center justify-center text-4xl font-bold overflow-hidden border-4 border-white/10 group-hover:border-primary transition-all">
+                <label class="relative group cursor-pointer block w-fit" aria-label="Cambiar foto de perfil">
+                    <input type="file" id="p-image" class="sr-only peer" accept="image/*">
+                    <div id="profile-avatar" class="w-24 h-24 bg-primary text-slate-950 rounded-full flex items-center justify-center text-4xl font-bold overflow-hidden border-4 border-white/10 group-hover:border-primary peer-focus-visible:border-primary peer-focus-visible:ring-4 peer-focus-visible:ring-amber-500/40 transition-all">
                         <span id="avatar-text">U</span>
                         <img id="avatar-img" class="w-full h-full object-cover hidden" alt="Profile">
                     </div>
-                    <div class="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div class="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 peer-focus-visible:opacity-100 transition-opacity">
                         <span class="text-white text-[10px] font-black uppercase">Cambiar</span>
                     </div>
-                </div>
+                </label>
                 <div>
                     <h1 class="text-3xl font-black" id="profile-name-display">Cargando...</h1>
                     <p class="text-slate-400" id="profile-email-display">email@ejemplo.com</p>
@@ -65,8 +66,6 @@ require_once __DIR__ . '/../config/paths.php';
             </div>
 
             <form id="profile-form" class="space-y-6">
-                <!-- Input oculto para la imagen -->
-                <input type="file" id="p-image" class="hidden" accept="image/*">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                         <label class="block text-sm font-bold text-slate-400 mb-2 uppercase tracking-widest">Nombre Completo</label>
@@ -92,11 +91,11 @@ require_once __DIR__ . '/../config/paths.php';
                 <div class="pt-4 border-t border-white/5">
                     <label class="block text-sm font-bold text-slate-400 mb-2 uppercase tracking-widest">Nueva Contraseña (Opcional)</label>
                     <input type="password" id="p-pass" class="form-input" placeholder="••••••••">
-                    <small class="text-slate-500 block mt-2">Desealo en blanco para mantener la actual.</small>
+                    <small class="text-slate-500 block mt-2">Déjalo en blanco para mantener la actual.</small>
                 </div>
 
                 <div class="pt-8 border-t border-white/10 mt-10">
-                    <a href="mis-boletos.php" class="flex items-center justify-between p-4 md:p-6 bg-primary/10 border border-primary/20 rounded-3xl group hover:bg-primary/20 transition-all">
+                    <a href="<?= BASE_PATH ?>/public/mis-boletos.php" class="flex items-center justify-between p-4 md:p-6 bg-primary/10 border border-primary/20 rounded-3xl group hover:bg-primary/20 transition-all">
                         <div class="flex items-center gap-4">
                             <svg class="w-7 h-7 md:w-8 md:h-8 text-primary group-hover:scale-125 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v1a2 2 0 0 0 0 4v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1a2 2 0 0 0 0-4Z"/><path d="M13 5v14" stroke-dasharray="2 3"/></svg>
                             <div class="text-left">
@@ -158,7 +157,7 @@ require_once __DIR__ . '/../config/paths.php';
         let colombiaData = [];
         async function loadGeo() {
             try {
-                const res = await fetch('assets/data/colombia.json');
+                const res = await fetch(BASE_PATH + '/public/assets/data/colombia.json');
                 colombiaData = await res.json();
                 const deptSelect = document.getElementById('p-dept');
                 deptSelect.innerHTML = '<option value="">Selecciona Depto</option>' + 
@@ -181,7 +180,7 @@ require_once __DIR__ . '/../config/paths.php';
         async function init() {
             const token = localStorage.getItem('misrifas_token');
             if (!token) {
-                window.location.href = 'admin/index.php?auth=login';
+                window.location.href = BASE_PATH + '/public/admin/index.php?auth=login';
                 return;
             }
 
@@ -247,7 +246,7 @@ require_once __DIR__ . '/../config/paths.php';
         function logout() {
             localStorage.removeItem('misrifas_token');
             localStorage.removeItem('misrifas_user');
-            window.location.href = 'index.php';
+            window.location.href = BASE_PATH + '/public/index.php';
         }
 
         init();
