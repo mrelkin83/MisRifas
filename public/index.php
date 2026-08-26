@@ -50,7 +50,7 @@ $page_description = "La plataforma más confiable para crear y participar en rif
             border-radius: 16px;
             overflow: hidden;
             box-shadow: 0 10px 30px -10px rgba(0,0,0,0.5);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
         .raffle-card:hover {
             transform: translateY(-8px) scale(1.02);
@@ -77,9 +77,10 @@ $page_description = "La plataforma más confiable para crear y participar en rif
         .raffle-card__date { font-size: 14px; color: #cbd5e1; text-align: right; }
         .progress-bar { width: 100%; height: 6px; background: rgba(255,255,255,0.1); border-radius: 9999px; overflow: hidden; margin-bottom: 8px; }
         .progress-bar__fill { height: 100%; background: linear-gradient(90deg, #f59e0b, #fbbf24); border-radius: 9999px; transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
-        .btn { display: inline-flex; align-items: center; justify-content: center; padding: 12px 24px; font-size: 16px; font-weight: 600; border-radius: 12px; cursor: pointer; border: none; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .btn { display: inline-flex; align-items: center; justify-content: center; padding: 12px 24px; font-size: 16px; font-weight: 600; border-radius: 12px; cursor: pointer; border: none; transition: transform 160ms ease-out, box-shadow 200ms ease-out; }
         .btn--primary { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #1c1305; box-shadow: 0 4px 15px rgba(217,119,6,0.35); }
         .btn--primary:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(217,119,6,0.5); }
+        .btn:active { transform: scale(0.97); }
     .notification { 
         position: fixed; 
         top: 50%; 
@@ -103,9 +104,9 @@ $page_description = "La plataforma más confiable para crear y participar en rif
         .notification--info { border: 2px solid #3b82f6; background: rgba(59, 130, 246, 0.95); }
         .notification--warning { border: 2px solid #f59e0b; background: rgba(245, 158, 11, 0.95); color: #111827; }
         .no-results { text-align: center; padding: 60px; color: #94a3b8; font-size: 18px; }
-        input[type="text"] { background: rgba(30,41,59,0.8); border: 1px solid rgba(255,255,255,0.1); color: white; transition: all 0.3s; }
+        input[type="text"] { background: rgba(30,41,59,0.8); border: 1px solid rgba(255,255,255,0.1); color: white; transition: border-color 0.3s, box-shadow 0.3s; }
         input[type="text"]:focus { border-color: #f59e0b; box-shadow: 0 0 0 4px rgba(245,158,11,0.2); }
-        .tab { background: rgba(30,41,59,0.6); color: #cbd5e1; border: 1px solid rgba(255,255,255,0.05); transition: all 0.3s; }
+        .tab { background: rgba(30,41,59,0.6); color: #cbd5e1; border: 1px solid rgba(255,255,255,0.05); transition: background-color 0.3s, color 0.3s; }
         .tab:hover { background: rgba(51,65,85,0.8); color: white; }
         .tab.active { background: linear-gradient(135deg, #f59e0b, #d97706); color: #1c1305; border-color: transparent; box-shadow: 0 4px 15px rgba(217,119,6,0.4); }
 
@@ -171,7 +172,7 @@ $page_description = "La plataforma más confiable para crear y participar en rif
             display: inline-flex; align-items: center; gap: 8px;
             padding: 14px 30px; border-radius: 14px; font-size: 16px; font-weight: 700;
             cursor: pointer; border: none; text-decoration: none;
-            transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+            transition: transform 160ms ease-out, box-shadow 200ms ease-out, background-color 200ms ease-out;
         }
         .hero-slide__btn--primary {
             background: linear-gradient(135deg, #f59e0b, #d97706);
@@ -186,6 +187,7 @@ $page_description = "La plataforma más confiable para crear y participar en rif
             border: 1.5px solid rgba(255,255,255,0.25); backdrop-filter: blur(6px);
         }
         .hero-slide__btn--ghost:hover { background: rgba(255,255,255,0.18); transform: translateY(-2px); }
+        .hero-slide__btn:active { transform: scale(0.97); }
 
         /* Arrows */
         .hero-slider__arrow {
@@ -309,8 +311,8 @@ $page_description = "La plataforma más confiable para crear y participar en rif
 
 
                 <div id="auth-buttons" class="flex items-center gap-4">
-                    <a href="<?= BASE_PATH ?>/public/admin/index.php?auth=login" class="px-5 py-2.5 bg-white/5 border border-white/10 text-white rounded-xl hover:bg-white/10 transition-all font-medium backdrop-blur-sm shadow-lg shadow-black/20">Iniciar Sesión</a>
-                    <a href="<?= BASE_PATH ?>/public/register.php" class="px-5 py-2.5 bg-gradient-to-r from-amber-400 to-amber-600 text-slate-950 rounded-xl hover:from-amber-300 hover:to-amber-500 transition-all font-bold shadow-lg shadow-amber-500/30">Crear Cuenta</a>
+                    <a href="<?= BASE_PATH ?>/public/admin/index.php?auth=login" class="px-5 py-2.5 bg-white/5 border border-white/10 text-white rounded-xl hover:bg-white/10 active:scale-[0.97] transition-all font-medium backdrop-blur-sm shadow-lg shadow-black/20">Iniciar Sesión</a>
+                    <a href="<?= BASE_PATH ?>/public/register.php" class="px-5 py-2.5 bg-gradient-to-r from-amber-400 to-amber-600 text-slate-950 rounded-xl hover:from-amber-300 hover:to-amber-500 active:scale-[0.97] transition-all font-bold shadow-lg shadow-amber-500/30">Crear Cuenta</a>
                 </div>
 
                 <div id="user-menu" class="hidden flex items-center gap-4">
