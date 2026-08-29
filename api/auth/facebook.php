@@ -23,7 +23,7 @@ $FACEBOOK_APP_SECRET = getenv('FACEBOOK_APP_SECRET') ?: 'TU_FACEBOOK_APP_SECRET_
 // Detectar el dominio actual
 $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
 $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
-$FACEBOOK_REDIRECT_URI = $protocol . '://' . $host . '/MisRifas/api/auth/facebook-callback.php';
+$FACEBOOK_REDIRECT_URI = $protocol . '://' . $host . BASE_PATH . '/api/auth/facebook-callback.php';
 
 // Generar estado único para seguridad (prevenir CSRF)
 $state = bin2hex(random_bytes(16));

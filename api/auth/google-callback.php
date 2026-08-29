@@ -23,17 +23,17 @@ $GOOGLE_CLIENT_SECRET = getenv('GOOGLE_CLIENT_SECRET') ?: 'TU_GOOGLE_CLIENT_SECR
 
 $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
 $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
-$GOOGLE_REDIRECT_URI = $protocol . '://' . $host . '/MisRifas/api/auth/google-callback.php';
+$GOOGLE_REDIRECT_URI = $protocol . '://' . $host . BASE_PATH . '/api/auth/google-callback.php';
 
 // Verificar estado (seguridad CSRF)
 if (!isset($_GET['state']) || $_GET['state'] !== ($_SESSION['oauth_state'] ?? '')) {
-    header('Location: /MisRifas/public/admin/index.php?auth=login&error=invalid_state');
+    header('Location: ' . BASE_PATH . '/public/admin/index.php?auth=login&error=invalid_state');
     exit;
 }
 
 // Verificar código de autorización
 if (!isset($_GET['code'])) {
-    header('Location: /MisRifas/public/admin/index.php?auth=login&error=no_code');
+    header('Location: ' . BASE_PATH . '/public/admin/index.php?auth=login&error=no_code');
     exit;
 }
 
@@ -75,6 +75,13 @@ try {
 
     if (!isset($userInfo['email'])) {
         throw new Exception('No se pudo obtener información del usuario');
+    }
+
+    // Solo aceptar correos verificados por Google: sin esto, alguien con una
+    // cuenta Google cuyo email (no verificado) coincida con el de un vendor
+    // existente podría entrar a esa cuenta al hacer login social.
+    if (isset($userInfo['verified_email']) && $userInfo['verified_email'] !== true) {
+        throw new Exception('El correo de Google no está verificado');
     }
 
     // Conectar a la base de datos. Se autentica contra `vendors` -
@@ -153,6 +160,6 @@ try {
 
 } catch (Exception $e) {
     error_log('Google OAuth Error: ' . $e->getMessage());
-    header('Location: /MisRifas/public/admin/index.php?auth=login&error=oauth_failed');
+    header('Location: ' . BASE_PATH . '/public/admin/index.php?auth=login&error=oauth_failed');
     exit;
 }

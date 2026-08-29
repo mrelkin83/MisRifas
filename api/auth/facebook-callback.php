@@ -23,17 +23,17 @@ $FACEBOOK_APP_SECRET = getenv('FACEBOOK_APP_SECRET') ?: 'TU_FACEBOOK_APP_SECRET_
 
 $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
 $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
-$FACEBOOK_REDIRECT_URI = $protocol . '://' . $host . '/MisRifas/api/auth/facebook-callback.php';
+$FACEBOOK_REDIRECT_URI = $protocol . '://' . $host . BASE_PATH . '/api/auth/facebook-callback.php';
 
 // Verificar estado (seguridad CSRF)
 if (!isset($_GET['state']) || $_GET['state'] !== ($_SESSION['oauth_state'] ?? '')) {
-    header('Location: /MisRifas/public/admin/index.php?auth=login&error=invalid_state');
+    header('Location: ' . BASE_PATH . '/public/admin/index.php?auth=login&error=invalid_state');
     exit;
 }
 
 // Verificar código de autorización
 if (!isset($_GET['code'])) {
-    header('Location: /MisRifas/public/admin/index.php?auth=login&error=no_code');
+    header('Location: ' . BASE_PATH . '/public/admin/index.php?auth=login&error=no_code');
     exit;
 }
 
@@ -149,6 +149,6 @@ try {
 
 } catch (Exception $e) {
     error_log('Facebook OAuth Error: ' . $e->getMessage());
-    header('Location: /MisRifas/public/admin/index.php?auth=login&error=oauth_failed');
+    header('Location: ' . BASE_PATH . '/public/admin/index.php?auth=login&error=oauth_failed');
     exit;
 }
