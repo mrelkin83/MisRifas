@@ -98,8 +98,8 @@ try {
         $uniqueId = bin2hex(random_bytes(16));
 
         $stmt = $db->prepare("
-            INSERT INTO users (unique_id, name, phone_whatsapp, email, password_hash, auth_token, department, city, role, active, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'buyer', 1, NOW(), NOW())
+            INSERT INTO users (unique_id, name, phone_whatsapp, email, password_hash, auth_token, auth_token_expires, department, city, role, active, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, DATE_ADD(NOW(), INTERVAL 30 DAY), ?, ?, 'buyer', 1, NOW(), NOW())
         ");
         $stmt->execute([$uniqueId, $name, $phone, $email, $passwordHash, Auth::hashToken($authToken), $dept ?: null, $city ?: null]);
         $userId = $db->lastInsertId();

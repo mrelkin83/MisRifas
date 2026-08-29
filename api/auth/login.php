@@ -96,9 +96,10 @@ try {
 
     if ($user && !empty($user['password_hash']) && password_verify($password, $user['password_hash'])) {
         $token = bin2hex(random_bytes(32));
+        $expires = date('Y-m-d H:i:s', strtotime('+30 days'));
 
-        $stmt = $db->prepare("UPDATE users SET auth_token = ?, last_login = NOW() WHERE id = ?");
-        $stmt->execute([Auth::hashToken($token), $user['id']]);
+        $stmt = $db->prepare("UPDATE users SET auth_token = ?, auth_token_expires = ?, last_login = NOW() WHERE id = ?");
+        $stmt->execute([Auth::hashToken($token), $expires, $user['id']]);
 
         Logger::activity('buyer_login', $user['id'], ['email' => $user['email']]);
 
@@ -109,6 +110,7 @@ try {
 
         Response::success([
             'token' => $token,
+            'expires_at' => $expires,
             'user' => [
                 'id' => $user['id'],
                 'username' => $user['name'],

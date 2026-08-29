@@ -60,7 +60,14 @@ class Auth
         }
 
         $db = Database::getInstance()->getConnection();
-        $stmt = $db->prepare("SELECT * FROM users WHERE auth_token = ?");
+        // Igual que requireVendor: exigir cuenta activa y token no expirado.
+        // Antes solo comparaba el token, asi que un token de comprador filtrado
+        // era valido para siempre y seguia sirviendo tras desactivar la cuenta.
+        $stmt = $db->prepare("
+            SELECT * FROM users
+            WHERE auth_token = ? AND active = 1
+            AND (auth_token_expires IS NULL OR auth_token_expires > NOW())
+        ");
         $stmt->execute([self::hashToken($token)]);
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -90,7 +97,11 @@ class Auth
         $vendor = $stmt->fetch(PDO::FETCH_ASSOC);
         if ($vendor) return $vendor;
 
-        $stmt = $db->prepare("SELECT *, 'buyer' as auth_type FROM users WHERE auth_token = ?");
+        $stmt = $db->prepare("
+            SELECT *, 'buyer' as auth_type FROM users
+            WHERE auth_token = ? AND active = 1
+            AND (auth_token_expires IS NULL OR auth_token_expires > NOW())
+        ");
         $stmt->execute([$hashed]);
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
         if ($user) return $user;
