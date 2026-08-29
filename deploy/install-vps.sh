@@ -190,13 +190,58 @@ CONF
 }
 
 # ── 7. HTTPS ────────────────────────────────────────────────────────────────
+# HTTPS autofirmado en el origin: sirve para Cloudflare en modo "Full" (que
+# acepta certificados autofirmados) y para tener 443 activo aunque el dominio
+# esté detrás de un proxy y certbot no pueda validar por HTTP-01.
+setup_https_selfsigned() {
+  log "Configurando HTTPS autofirmado en el origin (para Cloudflare Full)"
+  a2enmod ssl >/dev/null 2>&1
+  if [ ! -f /etc/ssl/certs/misrifas-origin.crt ]; then
+    openssl req -x509 -nodes -days 3650 -newkey rsa:2048 \
+      -keyout /etc/ssl/private/misrifas-origin.key \
+      -out /etc/ssl/certs/misrifas-origin.crt \
+      -subj "/CN=${DOMAIN}/O=MisRifas" >/dev/null 2>&1
+  fi
+  cat > "/etc/apache2/sites-available/${DOMAIN}-ssl.conf" <<CONF
+<VirtualHost *:443>
+    ServerName ${DOMAIN}
+    ServerAlias ${WWW_DOMAIN}
+    DocumentRoot ${APP_DIR}
+    <Directory ${APP_DIR}>
+        Options -Indexes +FollowSymLinks
+        AllowOverride All
+        Require all granted
+    </Directory>
+    SSLEngine on
+    SSLCertificateFile /etc/ssl/certs/misrifas-origin.crt
+    SSLCertificateKeyFile /etc/ssl/private/misrifas-origin.key
+    ErrorLog \${APACHE_LOG_DIR}/misrifas-ssl-error.log
+    CustomLog \${APACHE_LOG_DIR}/misrifas-ssl-access.log combined
+</VirtualHost>
+CONF
+  a2ensite "${DOMAIN}-ssl.conf" >/dev/null
+  apache2ctl configtest && systemctl reload apache2
+  warn "Cert autofirmado. Para 'Full (strict)' de Cloudflare, reemplázalo por un"
+  warn "Cloudflare Origin Certificate. Y abre el puerto 443 en el Security Group."
+  ok "HTTPS (autofirmado) activo en :443"
+}
+
 setup_https() {
-  $SKIP_CERTBOT && { warn "Saltando certbot (--skip-certbot)"; return; }
+  if $SKIP_CERTBOT; then
+    warn "Saltando certbot (--skip-certbot) — usando HTTPS autofirmado para Cloudflare"
+    setup_https_selfsigned
+    return
+  fi
   log "Emitiendo certificado TLS con certbot"
   apt-get install -y certbot python3-certbot-apache
-  certbot --apache --non-interactive --agree-tos -m "${CERTBOT_EMAIL}" \
-    -d "${DOMAIN}" -d "${WWW_DOMAIN}" || warn "certbot falló (¿DNS de ${DOMAIN} apuntando ya a este VPS?)"
-  ok "HTTPS configurado (o pendiente de DNS)"
+  if certbot --apache --non-interactive --agree-tos -m "${CERTBOT_EMAIL}" \
+       -d "${DOMAIN}" -d "${WWW_DOMAIN}"; then
+    ok "HTTPS con Let's Encrypt configurado"
+  else
+    warn "certbot falló (¿DNS de ${DOMAIN} apuntando a este VPS, o está tras un proxy?)"
+    warn "Cayendo a HTTPS autofirmado para el origin"
+    setup_https_selfsigned
+  fi
 }
 
 # ── 8. Cron jobs ────────────────────────────────────────────────────────────
