@@ -146,8 +146,8 @@ return [
 
     'logs' => [
         'level' => getenv('LOG_LEVEL') ?: 'error',
-        'app_log' => getenv('LOG_FILE_PATH') ?: __DIR__ . '/../../logs/app.log',
-        'error_log' => getenv('ERROR_LOG_FILE_PATH') ?: __DIR__ . '/../../logs/error.log',
+        'app_log' => getenv('LOG_FILE_PATH') ?: __DIR__ . '/../logs/app.log',
+        'error_log' => getenv('ERROR_LOG_FILE_PATH') ?: __DIR__ . '/../logs/error.log',
     ],
 
     'cache' => [

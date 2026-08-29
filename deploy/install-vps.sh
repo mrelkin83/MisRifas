@@ -120,7 +120,10 @@ setup_env() {
     sed -i "s|^DB_NAME=.*|DB_NAME=${DB_NAME}|" .env
     sed -i "s|^DB_USER=.*|DB_USER=${DB_USER}|" .env
     sed -i "s|^DB_PASS=.*|DB_PASS=${dbpass}|" .env
-    chmod 600 .env
+    # El servidor web (www-data) tiene que poder LEER el .env; con chmod 600
+    # y owner root, la app no obtiene las credenciales de BD -> DB_ERROR.
+    chown "${WEB_USER}:${WEB_USER}" .env
+    chmod 640 .env
     warn ".env creado (DB_PASS autogenerada). FALTA completar a mano: credenciales de pago (Wompi) y SMTP/SMS."
   else
     ok ".env ya existe, no se toca"
