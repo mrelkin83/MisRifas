@@ -132,6 +132,7 @@ header("Expires: 0");
             aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
             font-weight: 800; border-radius: 12px; cursor: pointer; transition: transform 0.15s ease-out, box-shadow 0.2s ease-out, border-color 0.2s ease-out;
             border: 2px solid transparent; user-select: none; font-size: 1.1rem;
+            overflow: hidden;
             /* Rifas de 4 cifras generan hasta 10.000 boletos: no pintar
                los que están fuera del viewport del grid scrolleable. */
             content-visibility: auto;
@@ -663,17 +664,16 @@ header("Expires: 0");
             else if (ticket.status === 'reserved')   statusClass = 'ticket-btn--reserved';
             else                                      statusClass = 'ticket-btn--paid';
 
-            div.className = 'ticket-btn ' + statusClass + ' p-4 rounded-xl text-center cursor-pointer transition-all border-2 relative';
+            div.className = 'ticket-btn ' + statusClass + ' p-1 rounded-xl text-center cursor-pointer transition-all border-2 relative';
             const opps = typeof ticket.opportunities === 'string' ? JSON.parse(ticket.opportunities) : (ticket.opportunities || []);
 
-            let htmlContent = '<div class="flex items-center justify-center gap-3">';
-            if (ticket.status === 'available') {
-                htmlContent += '<input type="checkbox" class="w-5 h-5 ticket-checkbox rounded cursor-pointer" aria-label="Seleccionar boleto ' + ticket.ticket_number + '" data-number="' + ticket.ticket_number + '" onclick="event.stopPropagation();">';
-            }
-            htmlContent += '<span class="text-2xl font-bold font-mono">' + ticket.ticket_number + '</span>';
-            htmlContent += '</div>';
-
-            div.innerHTML = htmlContent;
+            // El número se dimensiona según su longitud (2-5 cifras) para que
+            // NUNCA se desborde del botón cuadrado. Se quitó el checkbox: era
+            // redundante (el estado seleccionado ya se ve con el anillo ámbar)
+            // y robaba el ancho que hacía que se cortara la última cifra.
+            const n = String(ticket.ticket_number);
+            const sizeClass = n.length <= 3 ? 'text-xl' : (n.length === 4 ? 'text-base' : 'text-xs');
+            div.innerHTML = '<span class="ticket-num font-bold font-mono leading-none ' + sizeClass + '">' + n + '</span>';
             div.dataset.id = ticket.id;
             div.dataset.number = ticket.ticket_number;
             div.dataset.opportunities = typeof ticket.opportunities === 'string' ? ticket.opportunities : JSON.stringify(ticket.opportunities || []);
@@ -696,11 +696,9 @@ function toggleSelection(ticket) {
     if (index > -1) {
         selectedTickets.splice(index, 1);
         el.classList.remove('ticket-btn--selected');
-        el.querySelector('.ticket-checkbox').checked = false;
     } else {
         selectedTickets.push(ticket);
         el.classList.add('ticket-btn--selected');
-        el.querySelector('.ticket-checkbox').checked = true;
     }
 
     updateSelectionSummary();
