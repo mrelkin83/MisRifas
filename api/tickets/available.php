@@ -39,13 +39,22 @@ try {
     $stmt->execute([$raffleId]);
     $tickets = $stmt->fetchAll();
 
-    $formatted = array_map(function ($ticket) {
+    // Una reserva cuyo reserved_until ya pasó cuenta como disponible aunque el
+    // cron de liberación no haya corrido todavía: así la disponibilidad es
+    // auto-sanable y coincide con lo que permite create-reservation.php.
+    $now = time();
+    $formatted = array_map(function ($ticket) use ($now) {
+        $status = $ticket['status'];
+        if ($status === 'reserved' && !empty($ticket['reserved_until'])
+            && strtotime($ticket['reserved_until']) < $now) {
+            $status = 'available';
+        }
         return [
             'id'             => $ticket['id'],
             'ticket_number'  => $ticket['ticket_number'],
             'opportunities'  => json_decode($ticket['opportunities']),
-            'status'         => $ticket['status'],
-            'reserved_until' => $ticket['reserved_until'],
+            'status'         => $status,
+            'reserved_until' => $status === 'available' ? null : $ticket['reserved_until'],
         ];
     }, $tickets);
 

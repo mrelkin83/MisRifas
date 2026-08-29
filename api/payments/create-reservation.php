@@ -143,7 +143,12 @@ try {
         // con el mismo candado (SELECT ... FOR UPDATE) que ya usa
         // TicketRepository::reserveTicket() - `tickets` queda como la unica
         // fuente de verdad de disponibilidad para ambos flujos.
-        $lockStmt = $db->prepare("SELECT id, status FROM tickets WHERE raffle_id = ? AND ticket_number = ? FOR UPDATE");
+        // reserved_until en el lock para poder reutilizar reservas expiradas:
+        // un ticket 'reserved' cuyo tiempo ya venció es tomable de nuevo aunque
+        // el cron de liberación aún no lo haya marcado 'available'. Sin esto,
+        // los tickets quedaban bloqueados hasta que corriera el cron (que en
+        // hosting sin scheduler puede no correr nunca) → ventas perdidas.
+        $lockStmt = $db->prepare("SELECT id, status, reserved_until FROM tickets WHERE raffle_id = ? AND ticket_number = ? FOR UPDATE");
         $updateTicketStmt = $db->prepare("
             UPDATE tickets SET status = 'reserved', user_id = ?, reserved_at = NOW(), reserved_until = ?
             WHERE id = ?
@@ -151,7 +156,13 @@ try {
         foreach ($numeros as $numero) {
             $lockStmt->execute([$raffleId, $numero]);
             $ticketRow = $lockStmt->fetch(PDO::FETCH_ASSOC);
-            if (!$ticketRow || $ticketRow['status'] !== 'available') {
+            $reservable = $ticketRow && (
+                $ticketRow['status'] === 'available'
+                || ($ticketRow['status'] === 'reserved'
+                    && !empty($ticketRow['reserved_until'])
+                    && strtotime($ticketRow['reserved_until']) < time())
+            );
+            if (!$reservable) {
                 throw new Exception('El número ' . $numero . ' ya no está disponible. Selecciona otros números para continuar.');
             }
             $updateTicketStmt->execute([$user['id'], $expiresAt, $ticketRow['id']]);
