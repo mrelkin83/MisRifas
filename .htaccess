@@ -9,7 +9,11 @@ SetEnvIf Request_URI "^/MisRifas/" IS_DEV
 # Habilitar RewriteEngine
 <IfModule mod_rewrite.c>
     RewriteEngine On
-    RewriteBase /MisRifas/
+    # Sin RewriteBase: la sustitucion relativa "index.php" se resuelve contra
+    # el directorio de este .htaccess, asi que funciona igual bajo
+    # localhost/MisRifas/ que bajo un vhost en la raiz (misrifas.test).
+    # Con RewriteBase /MisRifas/ hardcodeado, cualquier URL inexistente en el
+    # vhost entraba en bucle de rewrites y terminaba en 500.
 
     # Forzar HTTPS en producción (se excluye localhost/127.0.0.1 para no
     # romper el entorno de desarrollo local sin TLS). Va primero, antes de
@@ -43,9 +47,10 @@ SetEnvIf Request_URI "^/MisRifas/" IS_DEV
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
     
-    # /api/ y /tapazo/ van directamente al filesystem
-    RewriteCond %{REQUEST_URI} !^/MisRifas/api/
-    RewriteCond %{REQUEST_URI} !^/MisRifas/tapazo/
+    # /api/ y /tapazo/ van directamente al filesystem (con o sin prefijo
+    # /MisRifas segun el entorno)
+    RewriteCond %{REQUEST_URI} !^(/MisRifas)?/api/
+    RewriteCond %{REQUEST_URI} !^(/MisRifas)?/tapazo/
     
     # Todo lo demas va al front controller (index.php)
     RewriteRule ^(.*)$ index.php [L,QSA]
