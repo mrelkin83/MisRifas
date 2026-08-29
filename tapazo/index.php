@@ -12,6 +12,26 @@ if ($codigo) {
         $tapazo = $stmt->fetch();
     } catch (Exception $e) {}
 }
+
+// URL absoluta del talonario para compartir. WhatsApp/Facebook necesitan la
+// URL completa (antes se compartía $_SERVER['REQUEST_URI'], una ruta relativa
+// que no abre nada fuera del sitio). Abrirla carga esta misma vista pública.
+$protocol   = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+$host       = $_SERVER['HTTP_HOST'] ?? 'localhost';
+$origin     = $protocol . '://' . $host;
+$shareUrl   = $tapazo
+    ? $origin . BASE_PATH . '/tapazo/index.php?codigo=' . urlencode($tapazo['codigo_unico'])
+    : '';
+// imagen_url se guarda como ruta del sitio (con BASE_PATH); para og:image
+// hace falta absoluta.
+$ogImage = ($tapazo && !empty($tapazo['imagen_url']))
+    ? (strpos($tapazo['imagen_url'], 'http') === 0 ? $tapazo['imagen_url'] : $origin . $tapazo['imagen_url'])
+    : '';
+$ogDesc = $tapazo
+    ? trim(($tapazo['descripcion'] ? $tapazo['descripcion'] . ' · ' : '')
+        . $tapazo['cantidad_jugadores'] . ' jugadores · '
+        . ($tapazo['regla'] === 'bajo_gana' ? 'gana el número más bajo' : 'gana el número más alto'))
+    : '';
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -20,6 +40,26 @@ if ($codigo) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= $tapazo ? htmlspecialchars($tapazo['titulo']) : 'El Tapazo' ?> | MisRifas</title>
+    <meta name="theme-color" content="#0f172a">
+    <?php if ($tapazo): ?>
+    <!-- Open Graph / Twitter: tarjeta de previsualización al compartir el talonario -->
+    <meta property="og:type"        content="website">
+    <meta property="og:site_name"   content="MisRifas · El Tapazo">
+    <meta property="og:title"       content="<?= htmlspecialchars($tapazo['titulo']) ?>">
+    <meta property="og:description" content="<?= htmlspecialchars($ogDesc) ?>">
+    <meta property="og:url"         content="<?= htmlspecialchars($shareUrl) ?>">
+    <?php if ($ogImage): ?>
+    <meta property="og:image"       content="<?= htmlspecialchars($ogImage) ?>">
+    <meta name="twitter:card"       content="summary_large_image">
+    <meta name="twitter:image"      content="<?= htmlspecialchars($ogImage) ?>">
+    <?php else: ?>
+    <meta name="twitter:card"       content="summary">
+    <?php endif; ?>
+    <meta name="twitter:title"       content="<?= htmlspecialchars($tapazo['titulo']) ?>">
+    <meta name="twitter:description" content="<?= htmlspecialchars($ogDesc) ?>">
+    <meta name="description"          content="<?= htmlspecialchars($ogDesc) ?>">
+    <link rel="canonical" href="<?= htmlspecialchars($shareUrl) ?>">
+    <?php endif; ?>
     <link rel="stylesheet" href="<?= BASE_PATH ?>/public/css/tailwind.min.css">
     <style>
         @layer base {
@@ -267,6 +307,12 @@ if ($codigo) {
     <?php if (!$tapazo): ?>
     <!-- ===== PANTALLA: CREAR TAPAZO ===== -->
     <div class="container mx-auto px-4 max-w-2xl py-6 md:py-10">
+        <div class="mb-4">
+            <a href="<?= BASE_PATH ?>/public/index.php" class="inline-flex items-center gap-1.5 text-slate-400 hover:text-white text-sm font-medium transition-colors">
+                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                Volver al inicio
+            </a>
+        </div>
         <div class="text-center mb-6 md:mb-10">
             <a href="<?= BASE_PATH ?>/public/index.php" class="inline-flex items-center gap-2 text-2xl md:text-3xl font-black mb-2">
                 <span>🍺</span>
@@ -406,6 +452,12 @@ if ($codigo) {
     <?php else: ?>
     <!-- ===== PANTALLA PÚBLICA DEL TAPAZO ===== -->
     <div class="container mx-auto px-4 max-w-4xl py-6">
+        <div class="mb-4">
+            <a href="<?= BASE_PATH ?>/public/index.php" class="inline-flex items-center gap-1.5 text-slate-400 hover:text-white text-sm font-medium transition-colors">
+                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                Volver al inicio
+            </a>
+        </div>
         <div class="text-center mb-6">
             <a href="<?= BASE_PATH ?>/tapazo/index.php" class="inline-flex items-center gap-2 text-2xl font-black mb-2">
                 <span>🍺</span>
@@ -434,10 +486,25 @@ if ($codigo) {
                     ?>
                 </span>
             </div>
-            <div class="mt-4 p-2 bg-slate-800/50 rounded-lg inline-flex flex-col sm:flex-row items-center gap-2 max-w-full overflow-hidden">
-                <span class="text-[10px] text-slate-500 uppercase font-bold">Compartir:</span>
-                <code class="text-amber-400 text-xs font-mono truncate max-w-[200px] sm:max-w-xs" id="share-link"><?= htmlspecialchars($_SERVER['REQUEST_URI'], ENT_QUOTES, 'UTF-8') ?></code>
-                <button onclick="copyLink()" class="text-blue-400 text-xs font-bold hover:underline">Copiar Link</button>
+            <div class="mt-4 flex flex-col items-center gap-3">
+                <div class="flex flex-wrap items-center justify-center gap-2">
+                    <span class="text-[10px] text-slate-500 uppercase font-bold w-full text-center sm:w-auto">Invita a tus amigos:</span>
+                    <a href="https://wa.me/?text=<?= rawurlencode('🍺 ¡Únete a este Tapazo! ' . $tapazo['titulo'] . "\n" . $shareUrl) ?>" target="_blank" rel="noopener"
+                       class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#25D366] text-white text-xs font-bold hover:brightness-110 transition-all">
+                        <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51l-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M11.999 2C6.477 2 2 6.484 2 12.017c0 1.99.522 3.859 1.433 5.474L2.05 22l4.629-1.364A9.956 9.956 0 0 0 12 22.033C17.523 22.033 22 17.549 22 12.017 22 6.484 17.523 2 11.999 2zm0 18.06a8.079 8.079 0 0 1-4.298-1.232l-.308-.183-3.184.94.893-3.26-.202-.325A8.02 8.02 0 0 1 3.955 12c0-4.455 3.606-8.078 8.045-8.078 4.438 0 8.046 3.623 8.046 8.078 0 4.456-3.608 8.08-8.047 8.08z"/></svg>
+                        WhatsApp
+                    </a>
+                    <a href="https://www.facebook.com/sharer/sharer.php?u=<?= rawurlencode($shareUrl) ?>" target="_blank" rel="noopener"
+                       class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#1877F2] text-white text-xs font-bold hover:brightness-110 transition-all">
+                        <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M22 12.06C22 6.505 17.523 2 12 2S2 6.505 2 12.06c0 5.02 3.657 9.184 8.438 9.94v-7.03H7.898v-2.91h2.54V9.845c0-2.507 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562v1.877h2.773l-.443 2.91h-2.33V22c4.78-.756 8.437-4.92 8.437-9.94z"/></svg>
+                        Facebook
+                    </a>
+                    <button type="button" onclick="copyLink()" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-700 text-white text-xs font-bold hover:bg-slate-600 transition-all">
+                        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
+                        Copiar Link
+                    </button>
+                </div>
+                <code class="text-amber-400/70 text-[11px] font-mono truncate max-w-[280px] sm:max-w-md" id="share-link"><?= htmlspecialchars($shareUrl, ENT_QUOTES, 'UTF-8') ?></code>
             </div>
         </div>
 
@@ -527,9 +594,12 @@ if ($codigo) {
             <div id="final-results" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <!-- Todos los resultados -->
             </div>
-            <div class="text-center mt-8">
+            <div class="text-center mt-8 flex flex-col sm:flex-row gap-3 justify-center">
                 <a href="<?= BASE_PATH ?>/tapazo/index.php" class="inline-block w-full sm:w-auto px-8 py-4 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 text-white font-black text-lg hover:shadow-lg transition-all">
                     🍺 Crear Nuevo Tapazo
+                </a>
+                <a href="<?= BASE_PATH ?>/public/index.php" class="inline-block w-full sm:w-auto px-8 py-4 rounded-xl bg-white/5 border border-white/10 text-white font-bold text-lg hover:bg-white/10 transition-all">
+                    Volver al inicio
                 </a>
             </div>
         </div>
@@ -563,9 +633,17 @@ if ($codigo) {
             } catch(e) { console.log('Sound error:', e); }
         }
 
+        const SHARE_URL = <?= json_encode($shareUrl) ?>;
         function copyLink() {
-            navigator.clipboard.writeText(window.location.href);
-            alert('¡Link copiado!');
+            const url = SHARE_URL || window.location.href;
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(url).then(
+                    () => alert('¡Link copiado! Compártelo con tus amigos.'),
+                    () => window.prompt('Copia el link:', url)
+                );
+            } else {
+                window.prompt('Copia el link:', url);
+            }
         }
 
         // ===== JOIN FORM =====
