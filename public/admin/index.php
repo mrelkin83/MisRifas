@@ -1372,12 +1372,12 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                             <table class="data-table">
                                 <thead>
                                     <tr>
-                                        <th>ID</th>
                                         <th>Nombre</th>
-                                        <th>Premio</th>
                                         <th>Participantes</th>
+                                        <th>Premio</th>
                                         <th>Modo</th>
                                         <th>Estado</th>
+                                        <th>Fecha</th>
                                         <th>Acciones</th>
                                     </tr>
                                 </thead>
