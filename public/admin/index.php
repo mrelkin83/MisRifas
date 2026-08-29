@@ -1771,7 +1771,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
     // ================================================================
     async function loadTapazos() {
         try {
-            const res = await API.get('/tapazos/index.php');
+            const res = await API.get('/tapazo/admin_list.php');
             const tbody = document.getElementById('tapazos-table');
             if (res.success && res.data && res.data.length > 0) {
                 const modeMap = { highest: '🔼 Más alto gana', lowest: '🔽 Más bajo gana' };
@@ -1802,7 +1802,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
         const btn = e.target.querySelector('button[type="submit"]');
         btn.disabled = true; btn.textContent = 'Creando…';
         try {
-            await API.post('/tapazos/index.php', {
+            await API.post('/tapazo/admin_list.php', {
                 name: document.getElementById('tapazo-name').value,
                 description: document.getElementById('tapazo-desc').value,
                 prize: document.getElementById('tapazo-prize').value,
@@ -1822,7 +1822,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
 
     window.viewTapazo = async (tapazoId) => {
         try {
-            const res = await API.get('/tapazos/participants.php', { tapazo_id: tapazoId });
+            const res = await API.get('/tapazo/admin_participants.php', { tapazo_id: tapazoId });
             if (res.success && res.data && res.data.length > 0) {
                 let msg = '🍺 Participantes del Tapazo:\n\n';
                 res.data.forEach((p, i) => {
@@ -1837,7 +1837,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
     window.completeTapazo = async (tapazoId) => {
         if (!confirm('¿Completar este tapazo y determinar el ganador?')) return;
         try {
-            const res = await API.post('/tapazos/participants.php', { action: 'complete', tapazo_id: tapazoId });
+            const res = await API.post('/tapazo/admin_participants.php', { action: 'complete', tapazo_id: tapazoId });
             if (res.success && res.data.winner) {
                 const w = res.data.winner;
                 Utils.showNotification('🏆 Ganador: ' + w.participant_name + ' con tapa #' + w.cap_number + ' - Premio: ' + (w.prize || ''), 'success');

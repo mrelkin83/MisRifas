@@ -1,8 +1,11 @@
 <?php
 /**
- * API: Tapazos — participantes y destape (panel admin/vendor)
- * GET  /api/tapazos/participants.php?tapazo_id=X  → listar participantes
- * POST /api/tapazos/participants.php              → join | reveal | complete
+ * API: Tapazos — participantes y cierre (panel admin/vendor)
+ * GET  /api/tapazo/admin_participants.php?tapazo_id=X  → listar participantes
+ * POST /api/tapazo/admin_participants.php              → join | complete
+ *
+ * Namespace unificado bajo api/tapazo/. Misma tabla/modelo que el flujo
+ * público; variante autenticada con ownership por created_by.
  *
  * Reescrito contra el esquema real (tabla tapazo_jugadores: nombre,
  * numero_tapa, orden_destape). El original usaba una tabla/columnas

@@ -1,8 +1,13 @@
 <?php
 /**
- * API: Tapazos (panel admin/vendor) — CRUD
- * GET  /api/tapazos/index.php  → listar tapazos
- * POST /api/tapazos/index.php  → crear tapazo
+ * API: Tapazos (panel admin/vendor) — listar y crear
+ * GET  /api/tapazo/admin_list.php  → listar tapazos (del vendor, o todos si super_admin)
+ * POST /api/tapazo/admin_list.php  → crear tapazo desde el panel
+ *
+ * Vive junto al resto de endpoints de Tapazo bajo api/tapazo/ (namespace
+ * unificado). Comparte tabla y modelo con el flujo público (api/tapazo/
+ * crear.php, unirse.php, etc.); estos endpoints son la variante autenticada
+ * para gestión desde el panel.
  *
  * IMPORTANTE: este endpoint estaba escrito contra un esquema que nunca
  * existió en la BD (tabla tapazo_participants y columnas name/prize/
