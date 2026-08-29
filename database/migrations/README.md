@@ -38,6 +38,7 @@ manualmente en este orden vía `mysql` CLI o phpMyAdmin:
 | 7 | `v3.4_fix_created_by_fk.sql` | Repunta `raffles.created_by` de `admin_users(id)` (legacy, casi vacía) a `vendors(id)` (la tabla que el código realmente usa) — sin esto, crear una rifa como cualquier vendor menos el admin sembrado original tira un error de foreign key. |
 | 8 | `v3.5_pago_modo_default.sql` | Da a `wa_config.pago_modo` un default real (`'manual'`) en vez de `NULL` — sin esto, el motor de WhatsApp resuelve el modo de cobro como `contra_entrega` para cualquier vendor (nadie lo configura) y confirma pagos de boletos sin haber cobrado nada. |
 | 9 | `v3.6_commission_recalc_on_update.sql` | Agrega `calculate_commission_before_update` (mismo cálculo que el trigger de INSERT) — sin esto, un vendor podía crear una rifa barata y subir el precio después sin que la comisión se recalculara. |
+| 10 | `v3.7_invalidate_legacy_tokens.sql` | Invalida (pone `auth_token = NULL`) los tokens de comprador/vendor emitidos sin `auth_token_expires` antes del fix de expiración — eran válidos para siempre. Idempotente; obliga a un nuevo login que ya emite token con expiración. |
 
 Resultado esperado: **27 tablas** (más 2 vistas). Verificar con:
 
