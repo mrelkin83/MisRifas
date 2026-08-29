@@ -108,9 +108,10 @@ setup_env() {
   cd "${APP_DIR}"
   if [ ! -f .env ]; then
     cp .env.example .env
-    local secret cron
+    local secret cron dbpass
     secret="$(openssl rand -hex 32)"
     cron="$(openssl rand -hex 32)"
+    dbpass="$(openssl rand -hex 20)"
     sed -i "s|^APP_ENV=.*|APP_ENV=production|" .env
     sed -i "s|^APP_DEBUG=.*|APP_DEBUG=false|" .env
     sed -i "s|^APP_URL=.*|APP_URL=https://${DOMAIN}|" .env
@@ -118,7 +119,9 @@ setup_env() {
     sed -i "s|^CRON_SECRET_KEY=.*|CRON_SECRET_KEY=${cron}|" .env
     sed -i "s|^DB_NAME=.*|DB_NAME=${DB_NAME}|" .env
     sed -i "s|^DB_USER=.*|DB_USER=${DB_USER}|" .env
-    warn ".env creado. FALTA completar a mano: DB_PASS, credenciales de pago (Wompi) y SMTP/SMS."
+    sed -i "s|^DB_PASS=.*|DB_PASS=${dbpass}|" .env
+    chmod 600 .env
+    warn ".env creado (DB_PASS autogenerada). FALTA completar a mano: credenciales de pago (Wompi) y SMTP/SMS."
   else
     ok ".env ya existe, no se toca"
   fi
