@@ -14,6 +14,7 @@ header('X-Accel-Buffering: no');
 require_once __DIR__ . '/../../config/app.php';
 require_once __DIR__ . '/../../config/constants.php';
 require_once __DIR__ . '/../../config/database.php';
+require_once __DIR__ . '/_destape_helper.php';
 
 try {
     $codigo = trim($_GET['codigo'] ?? '');
@@ -40,29 +41,14 @@ try {
         $tapazo['estado'] = 'esperando';
     }
 
-    // Si ya está en estado 'creado' o 'esperando' y hay suficientes jugadores y pasó el tiempo, iniciar automáticamente
+    // Si pasó la hora, iniciar el destape de forma ATÓMICA. Cada navegador abre
+    // este stream SSE; el helper con SELECT ... FOR UPDATE garantiza que la
+    // asignación de numero_tapa ocurra UNA sola vez (antes esto era una carrera:
+    // cada stream barajaba números distintos → un ganador por navegador).
     if (in_array($tapazo['estado'], ['creado', 'esperando']) && $now >= $destapeTime) {
-        $stmt = $db->prepare("SELECT id FROM tapazo_jugadores WHERE tapazo_id = ?");
-        $stmt->execute([$tapazoId]);
-        $jugadores = $stmt->fetchAll();
-        
-        if (!empty($jugadores)) {
-            $maxTapas = 999;
-            $numeros = range(1, $maxTapas);
-            shuffle($numeros);
-            
-            $ordenes = range(1, count($jugadores));
-            shuffle($ordenes);
-            
-            foreach ($jugadores as $idx => $jugador) {
-                $stmt = $db->prepare("UPDATE tapazo_jugadores SET numero_tapa = ?, orden_destape = ? WHERE id = ?");
-                $stmt->execute([$numeros[$idx], $ordenes[$idx], $jugador['id']]);
-            }
-            
-            $stmt = $db->prepare("UPDATE tapazos SET estado = 'destapando', ultimo_revelado = '' WHERE id = ?");
-            $stmt->execute([$tapazoId]);
+        $actualizado = iniciarDestapeAtomico($db, $codigo);
+        if ($actualizado && $actualizado['estado'] === 'destapando') {
             $tapazo['estado'] = 'destapando';
-            
             echo "data: " . json_encode([
                 'type' => 'init',
                 'estado' => 'destapando',
@@ -140,28 +126,10 @@ try {
         $now = time();
         $remaining = max(0, $destapeTime - $now);
         
-        // Si llegó la hora, iniciar destape automáticamente
+        // Si llegó la hora, iniciar destape (atómico e idempotente — ver helper).
         if ($remaining <= 0 && $currentEstado === 'esperando') {
-            $stmt = $db->prepare("SELECT id FROM tapazo_jugadores WHERE tapazo_id = ?");
-            $stmt->execute([$tapazoId]);
-            $jugadores = $stmt->fetchAll();
-            
-            if (!empty($jugadores)) {
-                $maxTapas = 999;
-                $numeros = range(1, $maxTapas);
-                shuffle($numeros);
-                
-                $ordenes = range(1, count($jugadores));
-                shuffle($ordenes);
-                
-                foreach ($jugadores as $idx => $jugador) {
-                    $stmt = $db->prepare("UPDATE tapazo_jugadores SET numero_tapa = ?, orden_destape = ? WHERE id = ?");
-                    $stmt->execute([$numeros[$idx], $ordenes[$idx], $jugador['id']]);
-                }
-                
-                $stmt = $db->prepare("UPDATE tapazos SET estado = 'destapando', ultimo_revelado = '' WHERE id = ?");
-                $stmt->execute([$tapazoId]);
-                
+            $actualizado = iniciarDestapeAtomico($db, $codigo);
+            if ($actualizado && $actualizado['estado'] === 'destapando') {
                 echo "data: " . json_encode([
                     'type' => 'init',
                     'estado' => 'destapando',
