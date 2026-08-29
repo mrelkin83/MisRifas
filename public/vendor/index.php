@@ -583,6 +583,10 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 3h6v3H9zM8 10h8M8 14h8M8 18h5"/></svg>
                     <span class="nav-text">Gestión de Rifas</span>
                 </a>
+                <a href="#usuarios" class="nav-item" data-section="usuarios" id="nav-usuarios" onclick="switchTo('usuarios')">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                    <span class="nav-text">Usuarios</span>
+                </a>
                 <a href="#configuracion" class="nav-item" data-section="configuracion" onclick="switchTo('configuracion')">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>
                     <span class="nav-text">Configuración Generales</span>
@@ -1129,6 +1133,97 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                     </div>
                 </div>
 
+                <!-- SECCIÓN: GESTIÓN DE USUARIOS -->
+                <div id="section-usuarios" class="admin-section hidden">
+                    <div class="section-card">
+                        <div class="section-header">
+                            <div>
+                                <h2 class="text-xl font-bold">Gestión de Usuarios</h2>
+                                <p class="text-sm text-gray-500 mt-1">Organizadores y compradores registrados. Editar, suspender, activar o eliminar cuentas.</p>
+                            </div>
+                        </div>
+                        <div class="flex gap-3 mb-6 flex-wrap">
+                            <select id="user-filter-type" class="px-4 py-2 border rounded-lg text-sm" onchange="filterUsersTable()">
+                                <option value="">Todos los tipos</option>
+                                <option value="vendor">Organizadores</option>
+                                <option value="buyer">Compradores</option>
+                            </select>
+                            <select id="user-filter-status" class="px-4 py-2 border rounded-lg text-sm" onchange="filterUsersTable()">
+                                <option value="">Todos los estados</option>
+                                <option value="active">Activos</option>
+                                <option value="suspended">Suspendidos</option>
+                            </select>
+                            <input type="text" id="user-filter-search" class="px-4 py-2 border rounded-lg text-sm flex-1 min-w-[200px]" placeholder="Buscar por nombre, email, teléfono..." oninput="filterUsersTable()">
+                        </div>
+                        <div class="table-responsive">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Tipo</th>
+                                        <th>Nombre</th>
+                                        <th>Email</th>
+                                        <th>Teléfono</th>
+                                        <th>Rol</th>
+                                        <th>Estado</th>
+                                        <th>Registro</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="users-table">
+                                    <tr><td colspan="8" class="text-center">Cargando…</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MODAL: Editar Usuario -->
+                <div id="edit-user-modal" role="dialog" aria-modal="true" aria-labelledby="edit-user-title" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+                    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto" style="overscroll-behavior: contain;">
+                        <div class="flex justify-between items-center p-6 border-b">
+                            <h3 id="edit-user-title" class="text-xl font-bold">Editar Usuario</h3>
+                            <button onclick="closeUserModal()" aria-label="Cerrar" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
+                        </div>
+                        <form id="edit-user-form" class="p-6 space-y-4">
+                            <input type="hidden" id="eu-type">
+                            <input type="hidden" id="eu-id">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div class="form-group">
+                                    <label>Nombre <span id="eu-name-hint" class="text-gray-400 text-xs"></span></label>
+                                    <input type="text" id="eu-name" class="w-full px-4 py-2 border rounded-lg" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Email</label>
+                                    <input type="email" id="eu-email" class="w-full px-4 py-2 border rounded-lg">
+                                </div>
+                                <div class="form-group">
+                                    <label>Teléfono</label>
+                                    <input type="tel" id="eu-phone" class="w-full px-4 py-2 border rounded-lg">
+                                </div>
+                                <div class="form-group" id="eu-role-group">
+                                    <label>Rol</label>
+                                    <select id="eu-role" class="w-full px-4 py-2 border rounded-lg">
+                                        <option value="vendor">Organizador (vendor)</option>
+                                        <option value="super_admin">Super Admin</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Ciudad</label>
+                                    <input type="text" id="eu-city" class="w-full px-4 py-2 border rounded-lg">
+                                </div>
+                                <div class="form-group">
+                                    <label>Departamento</label>
+                                    <input type="text" id="eu-department" class="w-full px-4 py-2 border rounded-lg">
+                                </div>
+                            </div>
+                            <div class="flex justify-end gap-3 pt-4 border-t">
+                                <button type="button" onclick="closeUserModal()" class="btn btn--outline px-6">Cancelar</button>
+                                <button type="submit" class="btn btn--primary px-8 h-12">Guardar Cambios</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
                 <!-- SECCIÓN: COMISIONES -->
                 <div id="section-comisiones" class="admin-section hidden">
                     <div class="section-card">
@@ -1537,6 +1632,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                 'mi-perfil': 'Mi Perfil (Integraciones)',
                 banners: 'Gestión de Portada',
                 'gestion-rifas': 'Gestión de Rifas',
+                usuarios: 'Gestión de Usuarios',
                 'email-campaigns': 'Campañas de Email',
                 tapazo: 'El Tapazo'
             };
@@ -1554,6 +1650,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
         if (section === 'mi-perfil') loadPerfilAPI();
         if (section === 'banners') loadBannersConfig();
         if (section === 'gestion-rifas') loadGestionRaffles();
+        if (section === 'usuarios') loadUsers();
         if (section === 'crear') {
             // Initialize form with user data
             var user = JSON.parse(localStorage.getItem('misrifas_user') || '{}');
@@ -1880,6 +1977,156 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
             container.innerHTML = '<p class="text-center text-red-500">Error al cargar tus boletos</p>';
         }
     }
+
+    // ================================================================
+    // GESTIÓN DE USUARIOS (solo super_admin)
+    // ================================================================
+    let allUsers = [];
+
+    function userEsc(s) {
+        return String(s ?? '').replace(/[&<>"']/g, c =>
+            ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+
+    async function loadUsers() {
+        const tbody = document.getElementById('users-table');
+        try {
+            const res = await API.get('/admin/users/list.php');
+            if (res.success) {
+                allUsers = res.data || [];
+                renderUsersTable(allUsers);
+            }
+        } catch (e) {
+            tbody.innerHTML = '<tr><td colspan="8" class="text-center text-red-500">Error al cargar usuarios</td></tr>';
+        }
+    }
+
+    function renderUsersTable(users) {
+        const tbody = document.getElementById('users-table');
+        if (!users || users.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="8" class="text-center text-gray-500 py-6">No hay usuarios</td></tr>';
+            return;
+        }
+        const typeLabel = { vendor: 'Organizador', buyer: 'Comprador' };
+        const roleLabel = { super_admin: 'Super Admin', vendor: 'Organizador', buyer: 'Comprador' };
+        tbody.innerHTML = users.map(u => {
+            const suspended = u.status !== 'active';
+            const statusBadge = suspended
+                ? '<span class="badge badge--cancelled">Suspendido</span>'
+                : '<span class="badge badge--active">Activo</span>';
+            const toggleBtn = suspended
+                ? '<button onclick="toggleUserStatus(\'' + u.type + '\',' + u.id + ',\'activate\')" class="btn btn--sm" style="background:#10b981;color:white;" title="Activar">Activar</button>'
+                : '<button onclick="toggleUserStatus(\'' + u.type + '\',' + u.id + ',\'suspend\')" class="btn btn--sm" style="background:#f59e0b;color:#1c1305;" title="Suspender">Suspender</button>';
+            return '<tr>' +
+                '<td><span class="badge badge--' + (u.type === 'vendor' ? 'completed' : 'pending') + '">' + typeLabel[u.type] + '</span></td>' +
+                '<td class="font-medium">' + userEsc(u.name) + (u.deps ? ' <span class="text-gray-400 text-xs">(' + u.deps + ')</span>' : '') + '</td>' +
+                '<td style="color:#64748b;font-size:13px;">' + userEsc(u.email || '—') + '</td>' +
+                '<td>' + userEsc(u.phone || '—') + '</td>' +
+                '<td>' + (roleLabel[u.role] || u.role) + '</td>' +
+                '<td>' + statusBadge + '</td>' +
+                '<td style="color:#94a3b8;font-size:12px;">' + (u.created_at ? new Date(u.created_at).toLocaleDateString('es-CO') : '—') + '</td>' +
+                '<td class="flex gap-2 flex-wrap">' +
+                    '<button onclick="openUserEdit(\'' + u.type + '\',' + u.id + ')" class="btn btn--sm" style="background:#3b82f6;color:white;" title="Editar">Editar</button>' +
+                    toggleBtn +
+                    '<button onclick="deleteUser(\'' + u.type + '\',' + u.id + ',\'' + userEsc(u.name).replace(/'/g, "\\'") + '\')" class="btn btn--sm" style="background:#ef4444;color:white;" title="Eliminar">Eliminar</button>' +
+                '</td>' +
+            '</tr>';
+        }).join('');
+    }
+
+    window.filterUsersTable = () => {
+        const type = document.getElementById('user-filter-type').value;
+        const status = document.getElementById('user-filter-status').value;
+        const search = document.getElementById('user-filter-search').value.toLowerCase();
+        let filtered = allUsers;
+        if (type) filtered = filtered.filter(u => u.type === type);
+        if (status) filtered = filtered.filter(u => (status === 'active' ? u.status === 'active' : u.status !== 'active'));
+        if (search) filtered = filtered.filter(u =>
+            (u.name || '').toLowerCase().includes(search) ||
+            (u.email || '').toLowerCase().includes(search) ||
+            (u.phone || '').toLowerCase().includes(search));
+        renderUsersTable(filtered);
+    };
+
+    window.openUserEdit = (type, id) => {
+        const u = allUsers.find(x => x.type === type && x.id === id);
+        if (!u) return;
+        document.getElementById('eu-type').value = u.type;
+        document.getElementById('eu-id').value = u.id;
+        document.getElementById('eu-name').value = u.name || '';
+        document.getElementById('eu-email').value = u.email || '';
+        document.getElementById('eu-phone').value = u.phone || '';
+        document.getElementById('eu-city').value = u.city || '';
+        document.getElementById('eu-department').value = u.department || '';
+        const roleGroup = document.getElementById('eu-role-group');
+        if (u.type === 'vendor') {
+            roleGroup.style.display = '';
+            document.getElementById('eu-role').value = u.role;
+        } else {
+            roleGroup.style.display = 'none';
+        }
+        document.getElementById('edit-user-title').textContent = 'Editar ' + (u.type === 'vendor' ? 'Organizador' : 'Comprador');
+        document.getElementById('edit-user-modal').classList.remove('hidden');
+    };
+
+    window.closeUserModal = () => document.getElementById('edit-user-modal').classList.add('hidden');
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            const m = document.getElementById('edit-user-modal');
+            if (m && !m.classList.contains('hidden')) closeUserModal();
+        }
+    });
+
+    document.getElementById('edit-user-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const btn = e.target.querySelector('button[type="submit"]');
+        btn.disabled = true; btn.textContent = 'Guardando…';
+        const type = document.getElementById('eu-type').value;
+        const payload = {
+            type,
+            id: parseInt(document.getElementById('eu-id').value),
+            name: document.getElementById('eu-name').value,
+            email: document.getElementById('eu-email').value,
+            phone: document.getElementById('eu-phone').value,
+            city: document.getElementById('eu-city').value,
+            department: document.getElementById('eu-department').value
+        };
+        if (type === 'vendor') payload.role = document.getElementById('eu-role').value;
+        try {
+            await API.post('/admin/users/update.php', payload);
+            Utils.showNotification('Usuario actualizado ✅', 'success');
+            closeUserModal();
+            loadUsers();
+        } catch (err) {
+            Utils.showNotification(err.message || 'Error al actualizar', 'error');
+        } finally {
+            btn.disabled = false; btn.textContent = 'Guardar Cambios';
+        }
+    });
+
+    window.toggleUserStatus = async (type, id, action) => {
+        const verb = action === 'suspend' ? 'suspender' : 'activar';
+        if (!confirm('¿Seguro que deseas ' + verb + ' este usuario?')) return;
+        try {
+            await API.post('/admin/users/status.php', { type, id, action });
+            Utils.showNotification('Usuario ' + (action === 'suspend' ? 'suspendido' : 'activado') + ' ✅', 'success');
+            loadUsers();
+        } catch (err) {
+            Utils.showNotification(err.message || 'Error al cambiar estado', 'error');
+        }
+    };
+
+    window.deleteUser = async (type, id, name) => {
+        if (!confirm('¿Eliminar definitivamente a "' + name + '"?\n\nSi tiene rifas o boletos asociados, no se podrá borrar (suspéndelo en su lugar).')) return;
+        try {
+            await API.post('/admin/users/delete.php', { type, id });
+            Utils.showNotification('Usuario eliminado ✅', 'success');
+            loadUsers();
+        } catch (err) {
+            Utils.showNotification(err.message || 'Error al eliminar', 'error');
+        }
+    };
 
     async function loadGestionRaffles() {
         try {
@@ -2925,6 +3172,8 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
             if (navCampaigns) navCampaigns.style.display = 'none';
             if (navBanners) navBanners.style.display = 'none';
             if (navGestionRifas) navGestionRifas.style.display = 'none';
+            var navUsuarios = document.getElementById('nav-usuarios');
+            if (navUsuarios) navUsuarios.style.display = 'none';
 
             // La API (api/admin/settings.php) solo aplica cambios de
             // system_settings para super_admin; mostrarle este formulario a
@@ -2963,6 +3212,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                     document.getElementById('nav-campaigns').style.display = 'none';
                     document.getElementById('nav-banners').style.display = 'none';
                     document.getElementById('nav-gestion-rifas').style.display = 'none';
+                    document.getElementById('nav-usuarios').style.display = 'none';
                 }
             }
         })
