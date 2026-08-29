@@ -45,6 +45,13 @@ if ($basePath) {
 }
 $requestUri = trim($requestUri, '/');
 
+// favicon.ico no existe: responder 404 corto en vez de dejar que caiga al
+// fallback del router (renderizaba la home entera y terminaba en 500).
+if ($requestUri === 'favicon.ico') {
+    http_response_code(404);
+    exit;
+}
+
 // Archivos estáticos en public/
 $staticPatterns = ['css/', 'js/', 'assets/', 'uploads/', 'images/'];
 foreach ($staticPatterns as $pattern) {

@@ -17,6 +17,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title><?= $page_title ?></title>
+    <meta name="theme-color" content="#f3f4f6">
     <link rel="stylesheet" href="<?= BASE_PATH ?>/public/css/tailwind.min.css">
     <style>
         @font-face {
@@ -37,7 +38,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
         .logo { display: flex; align-items: center; gap: 10px; font-size: 20px; font-weight: 700; font-family: 'Outfit', 'Inter', sans-serif; }
         .logo__icon { width: 26px; height: 26px; color: #f59e0b; flex-shrink: 0; }
         .sidebar-nav { flex: 1; padding: 12px 0; }
-        .nav-item { display: flex; align-items: center; gap: 12px; padding: 12px 20px; padding-left: 17px; border-left: 3px solid transparent; color: #94a3b8; text-decoration: none; transition: all 0.2s; cursor: pointer; }
+        .nav-item { display: flex; align-items: center; gap: 12px; padding: 12px 20px; padding-left: 17px; border-left: 3px solid transparent; color: #94a3b8; text-decoration: none; transition: background-color 0.2s, color 0.2s, border-color 0.2s; cursor: pointer; }
         .nav-item:hover { background: #334155; color: white; }
         .nav-item--active { background: rgba(245, 158, 11, 0.12); color: #fbbf24; border-left-color: #f59e0b; }
         .nav-icon { width: 20px; height: 20px; flex-shrink: 0; }
@@ -81,7 +82,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
         .badge--cancelled { background: #fee2e2; color: #991b1b; }
         .badge--pending { background: #fef3c7; color: #92400e; }
 
-        .btn { display: inline-flex; align-items: center; justify-content: center; padding: 8px 16px; font-size: 14px; font-weight: 600; border-radius: 8px; cursor: pointer; border: none; transition: all 0.2s; }
+        .btn { display: inline-flex; align-items: center; justify-content: center; padding: 8px 16px; font-size: 14px; font-weight: 600; border-radius: 8px; cursor: pointer; border: none; transition: background-color 0.2s, color 0.2s, box-shadow 0.2s; }
         .btn--primary { background: #f59e0b; color: #1c1305; }
         .btn--primary:hover { background: #d97706; }
         .btn--primary:disabled { opacity: 0.5; cursor: not-allowed; }
@@ -106,9 +107,14 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
         .toggle-label { display: flex; align-items: center; gap: 12px; cursor: pointer; }
         .toggle-slider { position: relative; width: 48px; height: 24px; background: #e5e7eb; border-radius: 12px; transition: background 0.2s; }
         .toggle-slider::after { content: ''; position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; background: white; border-radius: 50%; transition: transform 0.2s; }
+        /* Ocultar el checkbox de forma accesible y SOLO dentro de .toggle-label:
+           la regla global display:none escondía cualquier checkbox normal del
+           panel y sacaba los toggles del orden de tabulación. */
+        .toggle-label { position: relative; }
+        .toggle-label input[type="checkbox"] { position: absolute; opacity: 0; width: 1px; height: 1px; overflow: hidden; }
         input[type="checkbox"]:checked + .toggle-slider { background: #f59e0b; }
         input[type="checkbox"]:checked + .toggle-slider::after { transform: translateX(24px); }
-        input[type="checkbox"] { display: none; }
+        input[type="checkbox"]:focus-visible + .toggle-slider { outline: 2px solid #f59e0b; outline-offset: 2px; }
 
         .notification { 
             position: fixed; 
@@ -202,7 +208,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
             background: white;
             color: #374151;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: background-color 0.2s, border-color 0.2s, transform 0.2s, box-shadow 0.2s;
             margin-bottom: 12px;
         }
         .social-btn:hover {
@@ -241,12 +247,12 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
             </div>
             <form id="login-form" class="space-y-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                    <input type="email" id="login-email" required class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-primary" placeholder="tu@email.com">
+                    <label for="login-email" class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                    <input type="email" id="login-email" name="email" autocomplete="email" spellcheck="false" required class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-primary" placeholder="tu@email.com">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
-                    <input type="password" id="login-password" required class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-primary" placeholder="••••••••">
+                    <label for="login-password" class="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
+                    <input type="password" id="login-password" name="password" autocomplete="current-password" required class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-primary" placeholder="••••••••">
                 </div>
                 <div id="login-error" class="hidden text-red-500 text-sm text-center"></div>
                 <button type="submit" id="login-btn" class="w-full py-4 bg-primary text-slate-950 font-bold rounded-xl hover:bg-primary-dark disabled:opacity-50">
@@ -292,43 +298,43 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
             <form id="register-form" class="space-y-4">
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Nombres *</label>
-                        <input type="text" id="reg-first_name" required class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-primary" placeholder="Juan">
+                        <label for="reg-first_name" class="block text-sm font-medium text-gray-700 mb-1">Nombres *</label>
+                        <input type="text" id="reg-first_name" name="first_name" autocomplete="given-name" required class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-primary" placeholder="Juan">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Apellidos *</label>
-                        <input type="text" id="reg-last_name" required class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-primary" placeholder="Pérez">
+                        <label for="reg-last_name" class="block text-sm font-medium text-gray-700 mb-1">Apellidos *</label>
+                        <input type="text" id="reg-last_name" name="last_name" autocomplete="family-name" required class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-primary" placeholder="Pérez">
                     </div>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Documento de identidad *</label>
-                    <input type="text" id="reg-document_id" required class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-primary" placeholder="1234567890">
+                    <label for="reg-document_id" class="block text-sm font-medium text-gray-700 mb-1">Documento de identidad *</label>
+                    <input type="text" id="reg-document_id" name="document_id" inputmode="numeric" spellcheck="false" autocomplete="off" required class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-primary" placeholder="1234567890">
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Departamento *</label>
-                        <select id="reg-department" required onchange="loadCitiesForRegister()" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-primary">
+                        <label for="reg-department" class="block text-sm font-medium text-gray-700 mb-1">Departamento *</label>
+                        <select id="reg-department" name="department" required onchange="loadCitiesForRegister()" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-primary">
                             <option value="">Seleccionar</option>
                         </select>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Ciudad *</label>
-                        <select id="reg-city" required class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-primary">
+                        <label for="reg-city" class="block text-sm font-medium text-gray-700 mb-1">Ciudad *</label>
+                        <select id="reg-city" name="city" required class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-primary">
                             <option value="">Seleccionar</option>
                         </select>
                     </div>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">WhatsApp *</label>
-                    <input type="tel" id="reg-phone" required class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-primary" placeholder="3001234567">
+                    <label for="reg-phone" class="block text-sm font-medium text-gray-700 mb-1">WhatsApp *</label>
+                    <input type="tel" id="reg-phone" name="phone" autocomplete="tel" inputmode="numeric" required class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-primary" placeholder="3001234567">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Email *</label>
-                    <input type="email" id="reg-email" required class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-primary" placeholder="tu@email.com">
+                    <label for="reg-email" class="block text-sm font-medium text-gray-700 mb-1">Email *</label>
+                    <input type="email" id="reg-email" name="email" autocomplete="email" spellcheck="false" required class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-primary" placeholder="tu@email.com">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Contraseña * (mínimo 8 caracteres)</label>
-                    <input type="password" id="reg-password" required minlength="8" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-primary" placeholder="••••••••">
+                    <label for="reg-password" class="block text-sm font-medium text-gray-700 mb-1">Contraseña * (mínimo 8 caracteres)</label>
+                    <input type="password" id="reg-password" name="password" autocomplete="new-password" required minlength="8" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-primary" placeholder="••••••••">
                 </div>
                 <div id="register-error" class="hidden text-red-500 text-sm text-center"></div>
                 <button type="submit" id="register-btn" class="w-full py-4 bg-primary text-slate-950 font-bold rounded-xl hover:bg-primary-dark disabled:opacity-50">
@@ -370,7 +376,12 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
         existing.forEach(n => n.remove());
         const n = document.createElement('div');
         n.className = 'notification notification--' + type;
-        n.innerHTML = '<p class="font-medium">' + msg + '</p>';
+        n.setAttribute('role', 'status');
+        n.setAttribute('aria-live', 'polite');
+        const p = document.createElement('p');
+        p.className = 'font-medium';
+        p.textContent = msg;
+        n.appendChild(p);
         document.body.appendChild(n);
         setTimeout(() => n.remove(), 3000);
     }
@@ -383,7 +394,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
         const errorDiv = document.getElementById('login-error');
 
         btn.disabled = true;
-        btn.textContent = 'Iniciando sesión...';
+        btn.textContent = 'Iniciando sesión…';
         errorDiv.classList.add('hidden');
 
         try {
@@ -441,7 +452,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
         const errorDiv = document.getElementById('register-error');
 
         btn.disabled = true;
-        btn.textContent = 'Creando cuenta...';
+        btn.textContent = 'Creando cuenta…';
         errorDiv.classList.add('hidden');
 
         try {
@@ -582,8 +593,8 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
 
         <main class="admin-main">
             <header class="admin-header">
-                <button id="sidebar-toggle" class="mobile-toggle">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <button id="sidebar-toggle" class="mobile-toggle" aria-label="Abrir menú de navegación">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
                     </svg>
                 </button>
@@ -687,7 +698,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                                     </tr>
                                 </thead>
                                 <tbody id="all-raffles-table">
-                                    <tr><td colspan="11" class="text-center">Cargando...</td></tr>
+                                    <tr><td colspan="11" class="text-center">Cargando…</td></tr>
                                 </tbody>
                             </table>
                         </div>
@@ -709,7 +720,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                                     </tr>
                                 </thead>
                                 <tbody id="raffles-table">
-                                    <tr><td colspan="5" class="text-center">Cargando...</td></tr>
+                                    <tr><td colspan="5" class="text-center">Cargando…</td></tr>
                                 </tbody>
                             </table>
                         </div>
@@ -723,7 +734,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                         </div>
                         <div id="user-tickets-loading" class="text-center py-8">
                             <div class="spinner"></div>
-                            <p class="text-gray-500 mt-4">Buscando tus boletos...</p>
+                            <p class="text-gray-500 mt-4">Buscando tus boletos…</p>
                         </div>
                         <div id="user-tickets-container" class="space-y-4"></div>
                         <div id="no-user-tickets" class="hidden text-center py-8">
@@ -774,7 +785,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                             <!-- IMAGENES DE LA RIFA (MAX 10) -->
                             <div class="form-group">
                                 <label>Fotos de la Rifa (Máx 10)</label>
-                                <div id="image-drop-zone" tabindex="0" role="button" aria-label="Subir fotos de la rifa" style="border:2px dashed #cbd5e1;border-radius:12px;padding:24px;text-align:center;cursor:pointer;transition:all .2s;background:#f8fafc;display:flex;flex-direction:column;gap:16px;">
+                                <div id="image-drop-zone" tabindex="0" role="button" aria-label="Subir fotos de la rifa" style="border:2px dashed #cbd5e1;border-radius:12px;padding:24px;text-align:center;cursor:pointer;transition:border-color .2s, background-color .2s;background:#f8fafc;display:flex;flex-direction:column;gap:16px;">
                                     <div id="image-placeholder">
                                         <div style="margin-bottom:4px;"><svg class="w-8 h-8 text-primary mx-auto" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M12 4 7 9M12 4l5 5"/><path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg></div>
                                         <p style="color:#64748b;font-size:13px;">Arrastra las fotos aquí o <span style="color:#2563eb;font-weight:600;">haz clic para seleccionar</span></p>
@@ -830,7 +841,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                                 <div class="form-group">
                                     <label for="lottery-id">Lotería *</label>
                                     <select id="lottery-id" name="lottery_id" required>
-                                        <option value="">Seleccionar lotería...</option>
+                                        <option value="">Seleccionar lotería…</option>
                                     </select>
                                     <small id="lottery-day-hint" style="color:#64748b;font-size:12px;margin-top:4px;display:block;"></small>
                                 </div>
@@ -876,7 +887,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                                     </tr>
                                 </thead>
                                 <tbody id="payments-table">
-                                    <tr><td colspan="7" class="text-center">Cargando...</td></tr>
+                                    <tr><td colspan="7" class="text-center">Cargando…</td></tr>
                                 </tbody>
                             </table>
                         </div>
@@ -943,12 +954,12 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                                 </div>
                                 <div class="form-group">
                                     <label>Nueva Contraseña</label>
-                                    <input type="password" id="cp-new" class="w-full px-4 py-2 border rounded-lg" required placeholder="Mínimo 6 caracteres" minlength="6">
+                                    <input type="password" id="cp-new" autocomplete="new-password" class="w-full px-4 py-2 border rounded-lg" required placeholder="Mínimo 8 caracteres" minlength="8">
                                 </div>
                             </div>
                             <div class="form-group">
                                 <label>Confirmar Nueva Contraseña</label>
-                                <input type="password" id="cp-confirm" class="w-full px-4 py-2 border rounded-lg" required placeholder="Repite la nueva contraseña" minlength="6">
+                                <input type="password" id="cp-confirm" autocomplete="new-password" class="w-full px-4 py-2 border rounded-lg" required placeholder="Repite la nueva contraseña" minlength="8">
                             </div>
                             <button type="submit" class="btn btn--primary px-8 h-12" id="btn-save-cp">Cambiar Contraseña</button>
                         </form>
@@ -1075,7 +1086,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                                     </tr>
                                 </thead>
                                 <tbody id="gestion-raffles-table">
-                                    <tr><td colspan="8" class="text-center">Cargando...</td></tr>
+                                    <tr><td colspan="8" class="text-center">Cargando…</td></tr>
                                 </tbody>
                             </table>
                         </div>
@@ -1083,11 +1094,11 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                 </div>
 
                 <!-- MODAL: Editar Rifa -->
-                <div id="edit-raffle-modal" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
-                    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+                <div id="edit-raffle-modal" role="dialog" aria-modal="true" aria-labelledby="edit-raffle-title" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+                    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto" style="overscroll-behavior: contain;">
                         <div class="flex justify-between items-center p-6 border-b">
-                            <h3 class="text-xl font-bold">Editar Rifa</h3>
-                            <button onclick="closeEditModal()" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
+                            <h3 id="edit-raffle-title" class="text-xl font-bold">Editar Rifa</h3>
+                            <button onclick="closeEditModal()" aria-label="Cerrar" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
                         </div>
                         <form id="edit-raffle-form" class="p-6 space-y-4">
                             <input type="hidden" id="edit-raffle-id">
@@ -1201,7 +1212,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                                     </tr>
                                 </thead>
                                 <tbody id="commissions-table">
-                                    <tr><td colspan="6" class="text-center">Cargando...</td></tr>
+                                    <tr><td colspan="6" class="text-center">Cargando…</td></tr>
                                 </tbody>
                             </table>
                         </div>
@@ -1300,7 +1311,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                                     </tr>
                                 </thead>
                                 <tbody id="campaigns-table">
-                                    <tr><td colspan="5" class="text-center">Cargando...</td></tr>
+                                    <tr><td colspan="5" class="text-center">Cargando…</td></tr>
                                 </tbody>
                             </table>
                         </div>
@@ -1371,7 +1382,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                                     </tr>
                                 </thead>
                                 <tbody id="tapazos-table">
-                                    <tr><td colspan="7" class="text-center">Cargando...</td></tr>
+                                    <tr><td colspan="7" class="text-center">Cargando…</td></tr>
                                 </tbody>
                             </table>
                         </div>
@@ -1481,7 +1492,12 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
             existing.forEach(n => n.remove());
             const n = document.createElement('div');
             n.className = 'notification notification--' + type;
-            n.innerHTML = '<p class="font-medium">' + msg + '</p>';
+            n.setAttribute('role', 'status');
+            n.setAttribute('aria-live', 'polite');
+            const p = document.createElement('p');
+            p.className = 'font-medium';
+            p.textContent = msg;
+            n.appendChild(p);
             document.body.appendChild(n);
             setTimeout(() => n.remove(), 3000);
         }
@@ -1506,110 +1522,9 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
 
     let currentSection = 'dashboard';
 
-    // ================================================================
-    // LÓGICA DINÁMICA: Cifras, Oportunidades, Modo de Ganar
-    // ================================================================
-    function onDigitsChange() {
-        const digits = parseInt(document.getElementById('digits').value);
-        
-        const ticketsSelect = document.getElementById('total-tickets');
-        if (digits === 2) {
-            ticketsSelect.innerHTML = '<option value="100" selected>100</option>';
-        } else if (digits === 3) {
-            ticketsSelect.innerHTML = '<option value="1000" selected>1,000</option>';
-        } else {
-            ticketsSelect.innerHTML = '<option value="10000" selected>10,000</option>';
-        }
-        
-        ticketsSelect.querySelectorAll('option').forEach(opt => {
-            if (digits === 2) {
-                opt.disabled = opt.value !== '100';
-            } else if (digits === 3) {
-                opt.disabled = opt.value !== '1000';
-            } else {
-                opt.disabled = opt.value !== '10000';
-            }
-        });
-        
-        updateOpportunitiesOptions();
-        updateWinningModeOptions();
-    }
-
-    function onTotalTicketsChange() {
-        const totalTickets = parseInt(document.getElementById('total-tickets').value);
-        const digitsSelect = document.getElementById('digits');
-        
-        if (totalTickets === 100) {
-            digitsSelect.value = '2';
-        } else if (totalTickets === 1000) {
-            digitsSelect.value = '3';
-        } else if (totalTickets === 10000) {
-            digitsSelect.value = '4';
-        }
-        
-        digitsSelect.querySelectorAll('option').forEach(opt => {
-            if (totalTickets === 100) {
-                opt.disabled = opt.value !== '2';
-            } else if (totalTickets === 1000) {
-                opt.disabled = opt.value !== '3';
-            } else if (totalTickets === 10000) {
-                opt.disabled = opt.value !== '4';
-            }
-        });
-        
-        updateOpportunitiesOptions();
-        updateWinningModeOptions();
-    }
-
-    function onOpportunitiesChange() {
-        const opp = parseInt(document.getElementById('opportunities').value);
-        const digits = parseInt(document.getElementById('digits').value);
-        const maxNumbers = Math.pow(10, digits);
-        const actualTickets = Math.floor(maxNumbers / opp);
-        const hint = document.getElementById('opportunities-hint');
-        if (hint) {
-            hint.textContent = 'Se generarán ' + actualTickets + ' boletos con ' + opp + ' número(s) random únicos cada uno (de ' + maxNumbers + ' posibles).';
-        }
-    }
-
-    function updateOpportunitiesOptions() {
-        const digits = parseInt(document.getElementById('digits').value);
-        const oppSelect = document.getElementById('opportunities');
-        const hint = document.getElementById('opportunities-hint');
-        
-        if (digits === 2) {
-            oppSelect.innerHTML = '<option value="1" selected>1 oportunidad</option>';
-            oppSelect.value = '1';
-            hint.textContent = '100 boletos con 1 número random único cada uno (00-99).';
-        } else if (digits === 3) {
-            oppSelect.innerHTML = '<option value="1" selected>1 oportunidad</option><option value="2">2 oportunidades</option><option value="4">4 oportunidades</option><option value="5">5 oportunidades</option>';
-            hint.textContent = '1,000 boletos con 1 número random único cada uno (000-999).';
-        } else {
-            oppSelect.innerHTML = '<option value="1" selected>1 oportunidad</option><option value="2">2 oportunidades</option><option value="4">4 oportunidades</option><option value="5">5 oportunidades</option>';
-            hint.textContent = '10,000 boletos con 1 número random único cada uno (0000-9999).';
-        }
-        onOpportunitiesChange();
-    }
-
-    function updateWinningModeOptions() {
-        const digits = parseInt(document.getElementById('digits').value);
-        const modeSelect = document.getElementById('winning-mode');
-        const hint = document.getElementById('winning-mode-hint');
-        
-        if (digits === 2) {
-            modeSelect.innerHTML = '<option value="last_2">Últimas 2 cifras</option><option value="first_2">Primeras 2 cifras</option>';
-            modeSelect.disabled = false;
-            if (hint) hint.textContent = 'Gana con las 2 cifras del número sorteado.';
-        } else if (digits === 3) {
-            modeSelect.innerHTML = '<option value="last_3">Últimas 3 cifras</option><option value="first_3">Primeras 3 cifras</option>';
-            modeSelect.disabled = false;
-            if (hint) hint.textContent = 'Gana con las 3 cifras del número sorteado.';
-        } else {
-            modeSelect.innerHTML = '<option value="last_4">Últimas 4 cifras</option>';
-            modeSelect.disabled = false;
-            if (hint) hint.textContent = 'Gana con las 4 cifras del número sorteado.';
-        }
-    }
+    // Nota: onDigitsChange / onTotalTicketsChange / onOpportunitiesChange y
+    // updateOpportunitiesOptions / updateWinningModeOptions se definen mas
+    // abajo como window.* (aqui habia una copia duplicada completa).
 
     function switchTo(section) {
         // Remove active from all links
@@ -1885,7 +1800,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
     document.getElementById('tapazo-form').addEventListener('submit', async (e) => {
         e.preventDefault();
         const btn = e.target.querySelector('button[type="submit"]');
-        btn.disabled = true; btn.textContent = 'Creando...';
+        btn.disabled = true; btn.textContent = 'Creando…';
         try {
             await API.post('/tapazos/index.php', {
                 name: document.getElementById('tapazo-name').value,
@@ -2085,10 +2000,18 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
         document.getElementById('edit-raffle-modal').classList.add('hidden');
     };
 
+    // Cerrar el modal con Escape
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            const modal = document.getElementById('edit-raffle-modal');
+            if (modal && !modal.classList.contains('hidden')) closeEditModal();
+        }
+    });
+
     document.getElementById('edit-raffle-form').addEventListener('submit', async (e) => {
         e.preventDefault();
         const btn = e.target.querySelector('button[type="submit"]');
-        btn.disabled = true; btn.textContent = 'Guardando...';
+        btn.disabled = true; btn.textContent = 'Guardando…';
         
         try {
             await API.post('/admin/raffles/update.php', {
@@ -2109,7 +2032,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
         } catch (error) {
             Utils.showNotification(error.message || 'Error al actualizar rifa', 'error');
         } finally {
-            btn.disabled = false; btn.textContent = '💾 Guardar Cambios';
+            btn.disabled = false; btn.textContent = 'Guardar Cambios';
         }
     });
 
@@ -2132,7 +2055,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
             if (response.success) {
                 response.data.forEach(l => { LOTTERY_DAYS[l.id] = l; });
                 const select = document.getElementById('lottery-id');
-                select.innerHTML = '<option value="">Seleccionar lotería...</option>' +
+                select.innerHTML = '<option value="">Seleccionar lotería…</option>' +
                     response.data.map(l => '<option value="' + l.id + '">' + (l.name || '') + '</option>').join('');
             }
         } catch (error) { console.error('Error loading lotteries:', error); }
@@ -2221,15 +2144,6 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
     
     // Also make it globally accessible for inline event handlers
     onTotalTicketsChange = window.onTotalTicketsChange;
-
-    window.onOpportunitiesChange = function() {
-        const opp = parseInt(document.getElementById('opportunities').value);
-        const digits = parseInt(document.getElementById('digits').value);
-        const maxNumbers = Math.pow(10, digits);
-        const actualTickets = Math.floor(maxNumbers / opp);
-        const hint = document.getElementById('opportunities-hint');
-        hint.textContent = 'Se generarán ' + actualTickets + ' boletos con ' + opp + ' número(s) random únicos cada uno (de ' + maxNumbers + ' posibles).';
-    };
 
     function updateOpportunitiesOptions() {
         const digits = parseInt(document.getElementById('digits').value);
@@ -2355,7 +2269,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
         const enabled = document.getElementById('commission-enabled').checked;
         const percentage = document.getElementById('commission-percentage').value;
         const btn = document.getElementById('save-commission-btn');
-        btn.disabled = true; btn.textContent = 'Guardando...';
+        btn.disabled = true; btn.textContent = 'Guardando…';
         try {
             await API.post('/admin/settings.php', {
                 commission_enabled: enabled ? '1' : '0',
@@ -2466,7 +2380,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
             return;
         }
 
-        statusEl.textContent = `⏳ Subiendo ${files.length} imagen(es)...`;
+        statusEl.textContent = `⏳ Subiendo ${files.length} imagen(es)…`;
         const fd = new FormData();
         Array.from(files).forEach(f => fd.append('image[]', f));
 
@@ -2558,7 +2472,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
 
         const btn = document.getElementById('create-btn');
         btn.disabled = true;
-        btn.textContent = 'Creando...';
+        btn.textContent = 'Creando…';
 
         try {
             const response = await API.post('/raffles/create.php', data);
@@ -2570,7 +2484,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
             document.getElementById('create-date-error').classList.add('hidden');
             document.getElementById('lottery-day-hint').textContent = '';
             onDigitsChange();
-            setTimeout(() => switchSection('dashboard'), 1500);
+            setTimeout(() => switchTo('dashboard'), 1500);
         } catch (error) {
             Utils.showNotification(error.message || 'Error al crear rifa', 'error');
         } finally {
@@ -2723,7 +2637,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
     document.getElementById('admin-profile-form')?.addEventListener('submit', async (e) => {
         e.preventDefault();
         const btn = document.getElementById('btn-save-p');
-        btn.disabled = true; btn.textContent = 'Guardando...';
+        btn.disabled = true; btn.textContent = 'Guardando…';
 
         const formData = new FormData();
         formData.append('name', document.getElementById('p-name').value);
@@ -2738,7 +2652,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
             Utils.showNotification('¡Perfil actualizado con éxito! ✅', 'success');
             loadPerfilAPI();
         } catch (err) { Utils.showNotification('Error al actualizar datos', 'error'); }
-        finally { btn.disabled = false; btn.textContent = '💾 Guardar Mis Datos'; }
+        finally { btn.disabled = false; btn.textContent = 'Guardar Mis Datos'; }
     });
 
     document.getElementById('change-password-form')?.addEventListener('submit', async (e) => {
@@ -2752,12 +2666,12 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
             Utils.showNotification('Las contraseñas nuevas no coinciden', 'error');
             return;
         }
-        if (newPass.length < 6) {
-            Utils.showNotification('La contraseña debe tener al menos 6 caracteres', 'error');
+        if (newPass.length < 8) {
+            Utils.showNotification('La contraseña debe tener al menos 8 caracteres', 'error');
             return;
         }
 
-        btn.disabled = true; btn.textContent = 'Cambiando...';
+        btn.disabled = true; btn.textContent = 'Cambiando…';
         try {
             await API.post('/user/change_password.php', {
                 current_password: current,
@@ -2766,13 +2680,13 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
             Utils.showNotification('¡Contraseña cambiada exitosamente! ✅', 'success');
             document.getElementById('change-password-form').reset();
         } catch (err) { Utils.showNotification(err.message || 'Error al cambiar contraseña', 'error'); }
-        finally { btn.disabled = false; btn.textContent = '🔑 Cambiar Contraseña'; }
+        finally { btn.disabled = false; btn.textContent = 'Cambiar Contraseña'; }
     });
 
     document.getElementById('nequi-config-form').addEventListener('submit', async (e) => {
         e.preventDefault();
         const btn = document.getElementById('btn-save-nequi');
-        btn.disabled = true; btn.textContent = 'Guardando...';
+        btn.disabled = true; btn.textContent = 'Guardando…';
         try {
             await API.post('/admin/profile_api.php', {
                 type: 'nequi',
@@ -2788,7 +2702,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
     document.getElementById('wa-config-form').addEventListener('submit', async (e) => {
         e.preventDefault();
         const btn = document.getElementById('btn-save-wa');
-        btn.disabled = true; btn.textContent = 'Guardando...';
+        btn.disabled = true; btn.textContent = 'Guardando…';
         try {
             await API.post('/admin/profile_api.php', {
                 type: 'whatsapp',
@@ -2804,7 +2718,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
     document.getElementById('wa-llm-form').addEventListener('submit', async (e) => {
         e.preventDefault();
         const btn = document.getElementById('btn-save-llm');
-        btn.disabled = true; btn.textContent = 'Guardando...';
+        btn.disabled = true; btn.textContent = 'Guardando…';
         try {
             await API.post('/admin/profile_api.php', {
                 type: 'whatsapp_llm',
@@ -2953,7 +2867,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
         e.preventDefault();
         const btn = e.target.querySelector('button[type="submit"]');
         btn.disabled = true; 
-        btn.textContent = 'Guardando Portadas...';
+        btn.textContent = 'Guardando Portadas…';
 
         const formData = new FormData();
         document.querySelectorAll('.slide-block').forEach((card, i) => {
@@ -3011,24 +2925,10 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
         } catch (e) { console.error(e); }
     }
 
-    async function loadEmailSettings() {
-        try {
-            const keys = ['mailing_smtp_host', 'mailing_smtp_port', 'mailing_smtp_user', 'mailing_smtp_from', 'mailing_from_name'];
-            for (const key of keys) {
-                const res = await API.get('/settings/get.php?key=' + key);
-                if (res.success) {
-                    const id = key.replace('mailing_smtp_', 'smtp-').replace('mailing_from_name', 'smtp-from-name');
-                    const input = document.getElementById(id);
-                    if (input) input.value = res.data;
-                }
-            }
-        } catch (e) {}
-    }
-
     document.getElementById('campaign-form').addEventListener('submit', async (e) => {
         e.preventDefault();
         const btn = document.getElementById('btn-send-campaign');
-        btn.disabled = true; btn.textContent = 'Encolando...';
+        btn.disabled = true; btn.textContent = 'Encolando…';
         try {
             const res = await API.post('/admin/campaigns/create.php', {
                 subject: document.getElementById('c-subject').value,
@@ -3041,7 +2941,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                 e.target.reset();
             } else { alert('Error: ' + res.message); }
         } catch (err) { alert('Error al crear campaña.'); }
-        finally { btn.disabled = false; btn.textContent = '🚀 Iniciar Campaña y Encolar Correos'; }
+        finally { btn.disabled = false; btn.textContent = 'Enviar Campaña'; }
     });
 
     function viewRaffle(id) { window.location.href = BASE_PATH + '/public/raffle.php?id=' + id; }
@@ -3159,6 +3059,13 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
         loadLotteries();
         loadSettings();
         loadGeographyData();
+
+        // Deep-link: los nav-items ya escriben #seccion en la URL al hacer
+        // click; restaurarla al cargar para que el enlace sea compartible.
+        var initialSection = window.location.hash.replace('#', '');
+        if (initialSection && initialSection !== 'dashboard' && document.getElementById('section-' + initialSection)) {
+            switchTo(initialSection);
+        }
     });
     </script>
 </body>

@@ -10,6 +10,7 @@ require_once __DIR__ . '/../config/app.php';
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>¿Qué es MisRifas? - La plataforma #1 de Sorteos en Colombia</title>
+    <meta name="theme-color" content="#0f172a">
     <script>const BASE_PATH = "<?= BASE_PATH ?>";</script>
     <link rel="stylesheet" href="<?= BASE_PATH ?>/public/css/tailwind.min.css">
     <style>
@@ -20,6 +21,7 @@ require_once __DIR__ . '/../config/app.php';
             font-display: swap;
             src: url('<?= BASE_PATH ?>/public/assets/fonts/outfit-800.woff2') format('woff2');
         }
+        html { color-scheme: dark; }
         body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f172a; color: white; }
         h1, h2, h3, h4 { font-family: 'Outfit', 'Inter', sans-serif; }
         .premium-gradient { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); }

@@ -9,11 +9,13 @@ $page_title = "Ganadores - MisRifas";
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= $page_title ?></title>
+    <meta name="theme-color" content="#0f172a">
     <link rel="stylesheet" href="<?= BASE_PATH ?>/public/css/tailwind.min.css">
     <style>
         @layer base {
             * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
         }
+        html { color-scheme: dark; }
         body { background: #0f172a; color: #f8fafc; }
         .glass-nav {
             background: rgba(15, 23, 42, 0.7);
@@ -27,7 +29,7 @@ $page_title = "Ganadores - MisRifas";
             border: 1px solid rgba(255, 255, 255, 0.05);
             border-radius: 24px;
             overflow: hidden;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.4s, background-color 0.4s, box-shadow 0.4s;
         }
         .winner-card:hover {
             transform: translateY(-5px);
@@ -57,7 +59,9 @@ $page_title = "Ganadores - MisRifas";
             width: 200%;
             height: 200%;
             background: radial-gradient(circle, rgba(245, 158, 11, 0.1) 0%, transparent 70%);
-            animation: pulse 4s infinite;
+        }
+        @media (prefers-reduced-motion: no-preference) {
+            .winning-number-box::before { animation: pulse 4s infinite; }
         }
         @keyframes pulse {
             0%, 100% { transform: scale(1); opacity: 0.5; }
@@ -138,6 +142,21 @@ $page_title = "Ganadores - MisRifas";
     </footer>
 
     <script>
+        // Los nombres de rifas/ganadores los escriben usuarios: escapar
+        // siempre antes de inyectarlos con innerHTML.
+        function esc(s) {
+            return String(s ?? '').replace(/[&<>"']/g, c =>
+                ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        }
+
+        // image_url en BD puede venir con o sin slash inicial y sin "public/";
+        // normalizar igual que fixUrl() en el resto del sitio.
+        function fixImageUrl(url) {
+            if (!url) return '<?= BASE_PATH ?>/public/assets/images/placeholder.svg';
+            if (url.startsWith('http')) return url;
+            return '<?= BASE_PATH ?>/public/' + url.replace(/^\/?(public\/)?/, '');
+        }
+
         async function loadWinners() {
             const grid = document.getElementById('winners-grid');
             try {
@@ -155,7 +174,7 @@ $page_title = "Ganadores - MisRifas";
                         <div class="winner-card group">
                             <div class="flex flex-col sm:flex-row h-full">
                                 <div class="sm:w-2/5 relative h-48 sm:h-auto overflow-hidden">
-                                    <img src="<?= BASE_PATH ?>/public${winner.image_url}" alt="${winner.raffle_name}" class="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
+                                    <img src="${fixImageUrl(winner.image_url)}" alt="${esc(winner.raffle_name)}" width="400" height="300" loading="lazy" class="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
                                     <div class="absolute inset-0 bg-gradient-to-r from-slate-900/80 to-transparent sm:hidden"></div>
                                 </div>
                                 <div class="flex-1 p-8 flex flex-col justify-between">
@@ -164,23 +183,23 @@ $page_title = "Ganadores - MisRifas";
                                             <span class="gold-badge px-3 py-1 rounded-lg text-[10px]">PREMIO ENTREGADO</span>
                                             <span class="text-[10px] font-black text-slate-500 uppercase tracking-widest">${new Date(winner.draw_date).toLocaleDateString('es-CO')}</span>
                                         </div>
-                                        <h3 class="text-2xl font-black text-white mb-2">${winner.raffle_name}</h3>
-                                        <p class="text-slate-400 text-sm mb-6 uppercase tracking-wider font-bold">Lotería: ${winner.lottery_name}</p>
+                                        <h3 class="text-2xl font-black text-white mb-2">${esc(winner.raffle_name)}</h3>
+                                        <p class="text-slate-400 text-sm mb-6 uppercase tracking-wider font-bold">Lotería: ${esc(winner.lottery_name)}</p>
                                     </div>
                                     
                                     <div class="flex items-center gap-6 pt-6 border-t border-white/5">
                                         <div class="winning-number-box w-20 h-20 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-xl shadow-primary/10">
-                                            <span class="text-3xl font-black text-primary relative z-10">${winner.winning_ticket_number}</span>
+                                            <span class="text-3xl font-black text-primary relative z-10">${esc(winner.winning_ticket_number)}</span>
                                         </div>
                                         <div>
                                             <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Ganador Feliz</p>
-                                            <p class="text-xl font-bold text-white">${winner.winner_name || 'Anónimo'}</p>
+                                            <p class="text-xl font-bold text-white">${esc(winner.winner_name) || 'Anónimo'}</p>
                                             <p class="text-sm text-slate-400 font-medium flex items-center gap-1">
                                                 <svg class="w-3.5 h-3.5 inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
-                                                ${winner.winner_city || 'Colombia'}
+                                                ${esc(winner.winner_city) || 'Colombia'}
                                                 <span class="mx-1 text-slate-600">•</span>
                                                 <svg class="w-3.5 h-3.5 inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92Z"/></svg>
-                                                ${maskPhone(winner.winner_phone)}
+                                                ${esc(maskPhone(winner.winner_phone))}
                                             </p>
                                         </div>
                                     </div>

@@ -15,6 +15,7 @@ require_once __DIR__ . '/../config/database.php';
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title><?= $page_title ?></title>
+    <meta name="theme-color" content="#0f172a">
     <link rel="stylesheet" href="<?= BASE_PATH ?>/public/css/tailwind.min.css">
     <style>
         @font-face {
@@ -27,6 +28,7 @@ require_once __DIR__ . '/../config/database.php';
         @layer base {
             * { box-sizing: border-box; margin: 0; padding: 0; }
         }
+        html { color-scheme: dark; }
         body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f172a; color: #f8fafc; }
         h1, h2, h3 { font-family: 'Outfit', 'Inter', sans-serif; }
         .glass-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.05); }
@@ -101,8 +103,8 @@ require_once __DIR__ . '/../config/database.php';
 
                 <form id="lookup-form" class="space-y-4">
                     <div>
-                        <label class="block text-sm font-medium text-slate-300 mb-1">WhatsApp</label>
-                        <input type="tel" id="phone" name="phone" placeholder="3001234567" pattern="[3][0-9]{9}"
+                        <label for="phone" class="block text-sm font-medium text-slate-300 mb-1">WhatsApp</label>
+                        <input type="tel" id="phone" name="phone" autocomplete="tel" inputmode="numeric" placeholder="3001234567" pattern="[3][0-9]{9}"
                             class="w-full px-4 py-3 bg-black/20 border-2 border-white/10 rounded-lg text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-primary">
                     </div>
 
@@ -113,8 +115,8 @@ require_once __DIR__ . '/../config/database.php';
                     </div>
 
                     <div>
-                        <label class="block text-sm font-medium text-slate-300 mb-1">Código Único</label>
-                        <input type="text" id="unique-id" name="unique_id" placeholder="XXXXXXXX-XXXX-XXXX"
+                        <label for="unique-id" class="block text-sm font-medium text-slate-300 mb-1">Código Único</label>
+                        <input type="text" id="unique-id" name="unique_id" autocomplete="off" spellcheck="false" placeholder="XXXXXXXX-XXXX-XXXX"
                             class="w-full px-4 py-3 bg-black/20 border-2 border-white/10 rounded-lg text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-primary">
                     </div>
 
@@ -126,7 +128,7 @@ require_once __DIR__ . '/../config/database.php';
 
             <div id="loading" class="hidden text-center py-8">
                 <div class="spinner"></div>
-                <p class="text-slate-400 mt-4">Buscando tus boletos...</p>
+                <p class="text-slate-400 mt-4">Buscando tus boletos…</p>
             </div>
 
             <div id="no-results" class="hidden text-center py-8">
@@ -188,9 +190,18 @@ require_once __DIR__ . '/../config/database.php';
             existing.forEach(n => n.remove());
             const n = document.createElement('div');
             n.className = 'notification notification--' + type;
-            n.innerHTML = '<p class="font-medium">' + msg + '</p>';
+            n.setAttribute('role', 'status');
+            n.setAttribute('aria-live', 'polite');
+            const p = document.createElement('p');
+            p.className = 'font-medium';
+            p.textContent = msg;
+            n.appendChild(p);
             document.body.appendChild(n);
             setTimeout(() => n.remove(), 3000);
+        },
+        esc(s) {
+            return String(s ?? '').replace(/[&<>"']/g, c =>
+                ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
         }
     };
 
@@ -203,7 +214,7 @@ require_once __DIR__ . '/../config/database.php';
 
     function renderTickets(data) {
         const container = document.getElementById('tickets-list');
-        document.getElementById('user-info').textContent = (data.user?.name || '') + ' - ' + (data.user?.phone || '');
+        document.getElementById('user-info').textContent = (data.user?.name || '') + ' — ' + (data.user?.phone || '');
         document.getElementById('unique-id-display').textContent = data.user?.unique_id || '';
 
         ticketsById = {};
@@ -212,7 +223,7 @@ require_once __DIR__ . '/../config/database.php';
         container.innerHTML = data.tickets.map(ticket => {
             const opps = typeof ticket.opportunities === 'string' ? JSON.parse(ticket.opportunities) : (ticket.opportunities || []);
             const reservedHtml = (ticket.status === 'reserved' && ticket.reserved_until)
-                ? '<div class="text-amber-400 text-xs mt-1">Expira: ' + new Date(ticket.reserved_until).toLocaleString() + '</div>' : '';
+                ? '<div class="text-amber-400 text-xs mt-1">Expira: ' + new Date(ticket.reserved_until).toLocaleString('es-CO') + '</div>' : '';
 
             // Mostrar números de oportunidad con estilo
             const oppNumbersHtml = opps.length > 0
@@ -221,7 +232,7 @@ require_once __DIR__ . '/../config/database.php';
 
             return '<div class="ticket-card">' +
                 '<div class="flex justify-between items-start mb-2">' +
-                    '<h3 class="font-bold text-base sm:text-lg">' + (ticket.raffle_name || 'Rifa') + '</h3>' +
+                    '<h3 class="font-bold text-base sm:text-lg">' + Utils.esc(ticket.raffle_name || 'Rifa') + '</h3>' +
                     '<span class="badge badge--' + ticket.status + '">' + translateStatus(ticket.status) + '</span>' +
                 '</div>' +
                 '<div class="flex items-center gap-4 mb-2">' +

@@ -95,8 +95,10 @@ if ($user) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mi Panel - MisRifas</title>
+    <meta name="theme-color" content="#0f172a">
     <link rel="stylesheet" href="<?= $basePath ?>/public/css/tailwind.min.css">
     <style>
+        html { color-scheme: dark; }
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f172a; }
         .glass-nav { background: rgba(15,23,42,0.75); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-bottom: 1px solid rgba(255,255,255,0.08); }
     </style>
@@ -117,13 +119,13 @@ if ($user) {
 
             <form id="login-form" class="space-y-4 text-left">
                 <div>
-                    <label class="block text-sm font-medium text-slate-300 mb-1">Email o Telefono</label>
-                    <input type="text" id="login-identifier" required
+                    <label for="login-identifier" class="block text-sm font-medium text-slate-300 mb-1">Email o Teléfono</label>
+                    <input type="text" id="login-identifier" name="identifier" autocomplete="username" required
                            class="w-full px-4 py-3 bg-slate-700/50 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-slate-300 mb-1">Contraseña</label>
-                    <input type="password" id="login-password" required
+                    <label for="login-password" class="block text-sm font-medium text-slate-300 mb-1">Contraseña</label>
+                    <input type="password" id="login-password" name="password" autocomplete="current-password" required
                            class="w-full px-4 py-3 bg-slate-700/50 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500">
                 </div>
                 <button type="submit" id="login-btn"
@@ -132,7 +134,7 @@ if ($user) {
                 </button>
             </form>
 
-            <div id="login-msg" class="mt-4 text-sm hidden"></div>
+            <div id="login-msg" class="mt-4 text-sm hidden" role="status" aria-live="polite"></div>
 
             <p class="mt-4 text-slate-500 text-sm">
                 ¿No tienes cuenta?
@@ -237,8 +239,8 @@ if ($user) {
                     <div class="text-sm text-slate-400 mt-1 flex flex-wrap gap-3">
                         <span>Boleta: <strong class="text-white"><?= str_pad($t['ticket_number'], 4, '0', STR_PAD_LEFT) ?></strong></span>
                         <span>Lotería: <?= htmlspecialchars($t['lottery_name'] ?? 'N/A') ?></span>
-                        <?php if ($t['winning_number']): ?>
-                            <span>Ganador: <strong class="text-yellow-400"><?= $t['winning_number'] ?></strong></span>
+                        <?php if (!empty($t['winning_ticket_number'])): ?>
+                            <span>Ganador: <strong class="text-yellow-400"><?= htmlspecialchars($t['winning_ticket_number']) ?></strong></span>
                         <?php endif; ?>
                     </div>
                 </div>
@@ -274,7 +276,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const password = document.getElementById('login-password').value;
 
         btn.disabled = true;
-        btn.textContent = 'Ingresando...';
+        btn.textContent = 'Ingresando…';
         msg.classList.add('hidden');
 
         try {

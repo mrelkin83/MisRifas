@@ -20,6 +20,8 @@ $page_description = "La plataforma más confiable para crear y participar en rif
     <meta http-equiv="Expires" content="0">
     <meta name="description" content="<?= $page_description ?>">
     <title><?= $page_title ?></title>
+    <meta name="theme-color" content="#0f172a">
+    <link rel="preconnect" href="https://picsum.photos">
     <link rel="stylesheet" href="<?= BASE_PATH ?>/public/css/tailwind.min.css">
     <style>
         /* Fuente display para titulares - autohospedada (nunca <link> a
@@ -35,8 +37,16 @@ $page_description = "La plataforma más confiable para crear y participar en rif
         @layer base {
             * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
         }
+        html { color-scheme: dark; }
         body { background: #0f172a; color: #f8fafc; }
         h1, h2, .hero-slide__title, .raffle-card__title { font-family: 'Outfit', 'Inter', sans-serif; }
+        /* Skip link: invisible hasta recibir foco de teclado */
+        .skip-link {
+            position: absolute; left: -9999px; top: 0; z-index: 200;
+            padding: 10px 18px; background: #f59e0b; color: #1c1305;
+            font-weight: 700; border-radius: 0 0 12px 0; text-decoration: none;
+        }
+        .skip-link:focus { left: 0; }
         .glass-nav {
             background: rgba(15, 23, 42, 0.7);
             backdrop-filter: blur(12px);
@@ -77,7 +87,7 @@ $page_description = "La plataforma más confiable para crear y participar en rif
         .raffle-card__date { font-size: 14px; color: #cbd5e1; text-align: right; }
         .progress-bar { width: 100%; height: 6px; background: rgba(255,255,255,0.1); border-radius: 9999px; overflow: hidden; margin-bottom: 8px; }
         .progress-bar__fill { height: 100%; background: linear-gradient(90deg, #f59e0b, #fbbf24); border-radius: 9999px; transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
-        .btn { display: inline-flex; align-items: center; justify-content: center; padding: 12px 24px; font-size: 16px; font-weight: 600; border-radius: 12px; cursor: pointer; border: none; transition: transform 160ms ease-out, box-shadow 200ms ease-out; }
+        .btn { display: inline-flex; align-items: center; justify-content: center; padding: 12px 24px; font-size: 16px; font-weight: 600; border-radius: 12px; cursor: pointer; border: none; text-decoration: none; transition: transform 160ms ease-out, box-shadow 200ms ease-out; }
         .btn--primary { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #1c1305; box-shadow: 0 4px 15px rgba(217,119,6,0.35); }
         .btn--primary:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(217,119,6,0.5); }
         .btn:active { transform: scale(0.97); }
@@ -194,7 +204,7 @@ $page_description = "La plataforma más confiable para crear y participar en rif
             background: rgba(255,255,255,0.08); border: 1.5px solid rgba(255,255,255,0.15);
             backdrop-filter: blur(8px); color: white; font-size: 20px;
             cursor: pointer; display: flex; align-items: center; justify-content: center;
-            transition: all 0.2s; user-select: none;
+            transition: background-color 0.2s, transform 0.2s; user-select: none;
         }
         .hero-slider__arrow:hover { background: rgba(255,255,255,0.18); transform: translateY(-50%) scale(1.08); }
         .hero-slider__arrow--prev { left: 24px; }
@@ -213,7 +223,7 @@ $page_description = "La plataforma más confiable para crear y participar en rif
         .hero-slider__dot {
             width: 8px; height: 8px; border-radius: 9999px;
             background: rgba(255,255,255,0.35); border: none; cursor: pointer;
-            transition: all 0.35s; padding: 0;
+            transition: width 0.35s, background-color 0.35s, box-shadow 0.35s; padding: 0;
         }
         .hero-slider__dot.is-active {
             width: 30px; background: white;
@@ -265,6 +275,7 @@ $page_description = "La plataforma más confiable para crear y participar en rif
     </style>
 </head>
 <body class="bg-[#0f172a] text-slate-200">
+    <a href="#rifas" class="skip-link">Saltar a las rifas</a>
     <header class="glass-nav sticky top-0 z-50 transition-all duration-300">
         <nav class="container mx-auto px-4 h-20 flex items-center justify-between">
             <a href="<?= BASE_PATH ?>/public/index.php" class="flex items-center gap-2.5 text-2xl font-black bg-clip-text text-transparent bg-gradient-to-r from-amber-300 to-amber-500">
@@ -300,7 +311,7 @@ $page_description = "La plataforma más confiable para crear y participar en rif
                     <a href="<?= BASE_PATH ?>/public/register.php" class="px-5 py-2.5 bg-gradient-to-r from-amber-400 to-amber-600 text-slate-950 rounded-xl hover:from-amber-300 hover:to-amber-500 active:scale-[0.97] transition-all font-bold shadow-lg shadow-amber-500/30">Crear Cuenta</a>
                 </div>
 
-                <div id="user-menu" class="hidden flex items-center gap-4">
+                <div id="user-menu" class="hidden items-center gap-4">
                     <a href="<?= BASE_PATH ?>/public/perfil.php" class="flex items-center gap-2 group">
                         <div class="w-10 h-10 rounded-full bg-amber-500 text-slate-950 flex items-center justify-center text-lg font-bold group-hover:scale-110 transition-transform" id="user-avatar">U</div>
                         <span class="text-slate-200 font-bold group-hover:text-white" id="user-name">Usuario</span>
@@ -341,7 +352,7 @@ $page_description = "La plataforma más confiable para crear y participar en rif
                 <div class="hero-slide__overlay"></div>
                 <div class="hero-slide__content">
                     <span class="hero-slide__tag">Pagos instantáneos</span>
-                    <h1 class="hero-slide__title">Paga con <em>Nequi</em> y gana al instante</h1>
+                    <h2 class="hero-slide__title">Paga con <em>Nequi</em> y gana al instante</h2>
                     <p class="hero-slide__desc">Con Wompi tu pago se confirma en segundos y tu boleto queda asegurado.</p>
                     <div class="hero-slide__actions">
                         <a href="#rifas" class="hero-slide__btn hero-slide__btn--primary">Ver rifas</a>
@@ -357,7 +368,7 @@ $page_description = "La plataforma más confiable para crear y participar en rif
                 <div class="hero-slide__overlay"></div>
                 <div class="hero-slide__content">
                     <span class="hero-slide__tag">Rifa de carros</span>
-                    <h1 class="hero-slide__title">¿Y si hoy ganas un <em>carro 0km</em>?</h1>
+                    <h2 class="hero-slide__title">¿Y si hoy ganas un <em>carro 0km</em>?</h2>
                     <p class="hero-slide__desc">Carros, motos y electrodomésticos con sorteo vinculado a la Lotería Nacional.</p>
                     <div class="hero-slide__actions">
                         <a href="#rifas" class="hero-slide__btn hero-slide__btn--primary">Explorar rifas</a>
@@ -373,7 +384,7 @@ $page_description = "La plataforma más confiable para crear y participar en rif
                 <div class="hero-slide__overlay"></div>
                 <div class="hero-slide__content">
                     <span class="hero-slide__tag">Tecnología</span>
-                    <h1 class="hero-slide__title">iPhone, MacBook y más <em>gadgets</em></h1>
+                    <h2 class="hero-slide__title">iPhone, MacBook y más <em>gadgets</em></h2>
                     <p class="hero-slide__desc">Comparte tu rifa en WhatsApp y tus amigos pueden ganar contigo.</p>
                     <div class="hero-slide__actions">
                         <a href="#rifas" class="hero-slide__btn hero-slide__btn--primary">Ver electrónicos</a>
@@ -389,7 +400,7 @@ $page_description = "La plataforma más confiable para crear y participar en rif
         <button class="hero-slider__arrow hero-slider__arrow--next" id="sliderNext" aria-label="Siguiente">&#8594;</button>
 
         <!-- Dots -->
-        <div class="hero-slider__dots" id="sliderDots" role="tablist"></div>
+        <div class="hero-slider__dots" id="sliderDots"></div>
 
         <!-- Barra de progreso -->
         <div class="hero-slider__progress" id="sliderProgress"></div>
@@ -472,12 +483,20 @@ $page_description = "La plataforma más confiable para crear y participar en rif
         sl.addEventListener('mouseenter', function() { clearInterval(autoTimer); });
         sl.addEventListener('mouseleave', restart);
         document.addEventListener('keydown', function(e) {
+            // No secuestrar las flechas cuando el usuario escribe o navega
+            // dentro de un campo de formulario (buscador, selects de filtro).
+            var tag = (e.target.tagName || '').toLowerCase();
+            if (tag === 'input' || tag === 'select' || tag === 'textarea' || e.target.isContentEditable) return;
             if (e.key === 'ArrowLeft')  { goTo(current - 1); restart(); }
             if (e.key === 'ArrowRight') { goTo(current + 1); restart(); }
         });
 
         resetProgress();
-        start();
+        // Autoplay solo si el usuario no pidió movimiento reducido; las
+        // flechas, dots y swipe siguen funcionando en ambos casos.
+        var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        if (!reduceMotion) start();
+        else progressEl.style.display = 'none';
     })();
     </script>
 
@@ -488,14 +507,14 @@ $page_description = "La plataforma más confiable para crear y participar en rif
             <div class="premium-filter rounded-[40px] p-8 md:p-12">
                 <div class="flex flex-col lg:flex-row gap-6 mb-8">
                     <div class="flex-1 relative group">
-                        <input type="text" id="search-input" class="w-full pl-16 pr-8 py-5 bg-slate-950/40 border border-white/10 rounded-3xl text-xl outline-none focus:border-amber-500/50 transition-all placeholder-slate-500 text-white shadow-inner" placeholder="¿Qué quieres ganar hoy? (ej: Carro, Moto, iPhone...)">
+                        <input type="text" id="search-input" name="search" aria-label="Buscar rifas" autocomplete="off" class="w-full pl-16 pr-8 py-5 bg-slate-950/40 border border-white/10 rounded-3xl text-xl outline-none focus:border-amber-500/50 transition-all placeholder-slate-500 text-white shadow-inner" placeholder="¿Qué quieres ganar hoy? (ej: Carro, Moto, iPhone…)">
                         <svg class="absolute left-6 top-1/2 -translate-y-1/2 w-6 h-6 text-slate-400 group-focus-within:text-amber-400 group-focus-within:scale-110 transition-all" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path stroke-linecap="round" d="m20 20-3.5-3.5"/></svg>
                     </div>
                 </div>
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     <div class="space-y-2">
-                        <label class="text-[11px] font-black text-amber-400 uppercase tracking-[0.2em] ml-2">Departamento</label>
+                        <label for="filter-dept" class="text-[11px] font-black text-amber-400 uppercase tracking-[0.2em] ml-2">Departamento</label>
                         <div class="relative">
                             <select id="filter-dept" class="w-full bg-slate-950/60 border border-white/10 rounded-2xl px-5 py-4 text-slate-200 outline-none focus:border-amber-500/50 transition-all appearance-none cursor-pointer pr-10">
                                 <option value="">Selecciona Depto</option>
@@ -504,7 +523,7 @@ $page_description = "La plataforma más confiable para crear y participar en rif
                         </div>
                     </div>
                     <div class="space-y-2">
-                        <label class="text-[11px] font-black text-amber-400 uppercase tracking-[0.2em] ml-2">Municipio / Ciudad</label>
+                        <label for="filter-city" class="text-[11px] font-black text-amber-400 uppercase tracking-[0.2em] ml-2">Municipio / Ciudad</label>
                         <div class="relative">
                             <select id="filter-city" class="w-full bg-slate-950/60 border border-white/10 rounded-2xl px-5 py-4 text-slate-200 outline-none focus:border-amber-500/50 transition-all appearance-none cursor-pointer pr-10">
                                 <option value="">Selecciona Ciudad</option>
@@ -513,16 +532,16 @@ $page_description = "La plataforma más confiable para crear y participar en rif
                         </div>
                     </div>
                     <div class="space-y-2">
-                        <label class="text-[11px] font-black text-amber-400 uppercase tracking-[0.2em] ml-2">Precio Mín y Máx</label>
+                        <span id="price-range-label" class="text-[11px] font-black text-amber-400 uppercase tracking-[0.2em] ml-2 block">Precio Mín y Máx</span>
                         <div class="grid grid-cols-2 gap-2">
-                            <select id="filter-min-price" class="w-full bg-slate-950/60 border border-white/10 rounded-2xl px-3 py-4 text-slate-200 text-xs outline-none focus:border-amber-500/50 transition-all appearance-none cursor-pointer">
+                            <select id="filter-min-price" aria-label="Precio mínimo" class="w-full bg-slate-950/60 border border-white/10 rounded-2xl px-3 py-4 text-slate-200 text-xs outline-none focus:border-amber-500/50 transition-all appearance-none cursor-pointer">
                                 <option value="">Min</option>
                                 <option value="1000">$1.000</option>
                                 <option value="5000">$5.000</option>
                                 <option value="10000">$10.000</option>
                                 <option value="50000">$50.000</option>
                             </select>
-                            <select id="filter-max-price" class="w-full bg-slate-950/60 border border-white/10 rounded-2xl px-3 py-4 text-slate-200 text-xs outline-none focus:border-amber-500/50 transition-all appearance-none cursor-pointer">
+                            <select id="filter-max-price" aria-label="Precio máximo" class="w-full bg-slate-950/60 border border-white/10 rounded-2xl px-3 py-4 text-slate-200 text-xs outline-none focus:border-amber-500/50 transition-all appearance-none cursor-pointer">
                                 <option value="">Max</option>
                                 <option value="5000">$5.000</option>
                                 <option value="10000">$10.000</option>
@@ -534,7 +553,7 @@ $page_description = "La plataforma más confiable para crear y participar en rif
                         </div>
                     </div>
                     <div class="space-y-2">
-                        <label class="text-[11px] font-black text-amber-400 uppercase tracking-[0.2em] ml-2">Lotería</label>
+                        <label for="filter-lottery" class="text-[11px] font-black text-amber-400 uppercase tracking-[0.2em] ml-2">Lotería</label>
                         <div class="relative">
                             <select id="filter-lottery" class="w-full bg-slate-950/60 border border-white/10 rounded-2xl px-5 py-4 text-slate-200 outline-none focus:border-amber-500/50 transition-all appearance-none cursor-pointer pr-10">
                                 <option value="">Selecciona Lotería</option>
@@ -568,7 +587,7 @@ $page_description = "La plataforma más confiable para crear y participar en rif
         </div>
     </section>
 
-    <section class="py-12 min-h-[500px]">
+    <section id="rifas" class="py-12 min-h-[500px]">
         <div class="container mx-auto px-4 max-w-7xl">
             <div id="raffles-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
                 <!-- Skeletons go here while loading -->
@@ -681,9 +700,15 @@ $page_description = "La plataforma más confiable para crear y participar en rif
         showNotification(msg, type = 'info') {
             const n = document.createElement('div');
             n.className = 'notification notification--' + type;
+            n.setAttribute('role', 'status');
+            n.setAttribute('aria-live', 'polite');
             n.textContent = msg;
             document.body.appendChild(n);
             setTimeout(() => n.remove(), 3000);
+        },
+        esc(s) {
+            return String(s ?? '').replace(/[&<>"']/g, c =>
+                ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
         },
         fixUrl(url) {
             // image_url es relativa a public/ (subida real via Uploader::upload()
@@ -719,8 +744,10 @@ $page_description = "La plataforma más confiable para crear y participar en rif
             const response = await API.get('/lotteries/index.php');
             if (response.success) {
                 const select = document.getElementById('filter-lottery');
-                const options = response.data.map(l => `<option value="${l.id}">${l.name}</option>`).join('');
+                const options = response.data.map(l => `<option value="${l.id}">${Utils.esc(l.name)}</option>`).join('');
                 select.innerHTML = '<option value="">Selecciona Lotería</option>' + options;
+                const preLottery = new URLSearchParams(location.search).get('lottery_id');
+                if (preLottery) select.value = preLottery;
             }
         } catch (e) {
             console.error('Error loading lotteries:', e);
@@ -751,15 +778,15 @@ $page_description = "La plataforma más confiable para crear y participar en rif
                     container.innerHTML = raffles.map(r => `
                         <div class="raffle-card group" data-id="${r.id}">
                             <div class="raffle-card__image">
-                                <img src="${Utils.fixUrl(r.image_url)}" alt="${r.name}" loading="lazy" class="group-hover:scale-110 transition-transform duration-500">
+                                <img src="${Utils.fixUrl(r.image_url)}" alt="${Utils.esc(r.name)}" width="400" height="220" loading="lazy" class="group-hover:scale-110 transition-transform duration-500">
                                 <span class="raffle-card__badge">${r.sold_percentage || 0}% vendido</span>
                                 <div class="absolute bottom-0 left-0 right-0 h-1/2 bg-gradient-to-t from-slate-900 to-transparent"></div>
                             </div>
                             <div class="raffle-card__content">
-                                <h3 class="raffle-card__title group-hover:text-amber-400 transition-colors">${r.name}</h3>
+                                <h3 class="raffle-card__title group-hover:text-amber-400 transition-colors">${Utils.esc(r.name)}</h3>
                                 <p class="raffle-card__city flex items-center gap-1.5">
                                     <svg class="w-3.5 h-3.5 shrink-0 text-slate-500" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21s7-6.5 7-11.5a7 7 0 1 0-14 0C5 14.5 12 21 12 21Z"/><circle cx="12" cy="9.5" r="2.25"/></svg>
-                                    ${r.city}${r.department ? ', ' + r.department : ''}
+                                    ${Utils.esc(r.city)}${r.department ? ', ' + Utils.esc(r.department) : ''}
                                 </p>
                                 <div class="raffle-card__info">
                                     <div class="raffle-card__price">${Utils.formatPrice(r.ticket_price)}<span>por boleto</span></div>
@@ -770,7 +797,7 @@ $page_description = "La plataforma más confiable para crear y participar en rif
                                     <span class="text-[10px] font-black text-slate-500 uppercase tracking-widest">${r.sold_tickets} / ${r.total_tickets} Vendidos</span>
                                     <span class="text-[10px] font-black text-amber-500 uppercase tracking-widest">${Math.max(0, Math.floor((new Date(r.draw_date) - new Date()) / (1000 * 60 * 60 * 24)))} Días restantes</span>
                                 </div>
-                                <button class="btn btn--primary w-full mt-6 shadow-amber-500/20 group-hover:shadow-amber-500/40 group-hover:-translate-y-0.5 transition-all" onclick="window.location.href='${BASE_PATH}/public/raffle.php?id=${r.id}'">Participar Ahora &rarr;</button>
+                                <a href="${BASE_PATH}/public/raffle.php?id=${r.id}" class="btn btn--primary w-full mt-6 shadow-amber-500/20 group-hover:shadow-amber-500/40 group-hover:-translate-y-0.5 transition-all">Participar Ahora &rarr;</a>
                             </div>
                         </div>
                     `).join('');
@@ -804,15 +831,35 @@ $page_description = "La plataforma más confiable para crear y participar en rif
         cards.forEach(c => io.observe(c));
     }
 
+    const TAB_ORDER_MAP = {
+        populares: 'sold_percentage',
+        proximas: 'draw_date',
+        nuevas: 'created_at',
+        destacadas: 'views'
+    };
+
     function getActiveFilters() {
+        const activeTab = document.querySelector('.tab.active');
         return {
             search: document.getElementById('search-input')?.value || '',
             department: document.getElementById('filter-dept')?.value || '',
             city: document.getElementById('filter-city')?.value || '',
             min_price: document.getElementById('filter-min-price')?.value || '',
             max_price: document.getElementById('filter-max-price')?.value || '',
-            lottery_id: document.getElementById('filter-lottery')?.value || ''
+            lottery_id: document.getElementById('filter-lottery')?.value || '',
+            order_by: TAB_ORDER_MAP[activeTab?.dataset.tab] || 'views'
         };
+    }
+
+    // Refleja filtros y tab en la URL para que el estado sea compartible
+    // y sobreviva un refresh. replaceState para no ensuciar el historial.
+    function syncUrlWithFilters(filters) {
+        const params = new URLSearchParams();
+        Object.entries(filters).forEach(([k, v]) => {
+            if (v && !(k === 'order_by' && v === 'views')) params.set(k, v);
+        });
+        const qs = params.toString();
+        history.replaceState(null, '', qs ? '?' + qs : window.location.pathname);
     }
 
     let colombiaData = [];
@@ -839,6 +886,22 @@ $page_description = "La plataforma más confiable para crear y participar en rif
                     citySelect.disabled = true;
                 }
             });
+
+            // Restaurar depto/ciudad desde la URL (deep-link de filtros)
+            const params = new URLSearchParams(location.search);
+            const preDept = params.get('department');
+            if (preDept) {
+                deptSelect.value = preDept;
+                const dept = colombiaData.find(d => d.departamento === preDept);
+                const citySelect = document.getElementById('filter-city');
+                if (dept && citySelect) {
+                    citySelect.innerHTML = '<option value="">Selecciona Ciudad</option>' +
+                        dept.ciudades.map(c => `<option value="${c}">${c}</option>`).join('');
+                    citySelect.disabled = false;
+                    const preCity = params.get('city');
+                    if (preCity) citySelect.value = preCity;
+                }
+            }
         } catch (e) {
             console.error('Error loading geography:', e);
         }
@@ -849,7 +912,9 @@ $page_description = "La plataforma más confiable para crear y participar en rif
     function handleFilter() {
         clearTimeout(debounceTimer);
         debounceTimer = setTimeout(() => {
-            Raffles.loadRaffles(getActiveFilters());
+            const filters = getActiveFilters();
+            syncUrlWithFilters(filters);
+            Raffles.loadRaffles(filters);
         }, 400);
     }
 
@@ -863,6 +928,7 @@ $page_description = "La plataforma más confiable para crear y participar en rif
         const citySelect = document.getElementById('filter-city');
         citySelect.innerHTML = '<option value="">Primero selecciona un departamento</option>';
         citySelect.disabled = true;
+        syncUrlWithFilters({});
         Raffles.loadRaffles();
     }
 
@@ -879,6 +945,7 @@ $page_description = "La plataforma más confiable para crear y participar en rif
                 const user = JSON.parse(userStr);
                 document.getElementById('auth-buttons').classList.add('hidden');
                 document.getElementById('user-menu').classList.remove('hidden');
+                document.getElementById('user-menu').classList.add('flex');
                 document.getElementById('user-name').textContent = user.full_name;
                 document.getElementById('user-avatar').textContent = user.full_name.charAt(0).toUpperCase();
             } catch (e) {
@@ -890,9 +957,25 @@ $page_description = "La plataforma más confiable para crear y participar en rif
     // Inicialización
     document.addEventListener('DOMContentLoaded', () => {
         checkAuth();
+
+        // Restaurar filtros y tab desde la URL antes de la primera carga
+        const initialParams = new URLSearchParams(location.search);
+        ['search-input:search', 'filter-min-price:min_price', 'filter-max-price:max_price'].forEach(pair => {
+            const [id, key] = pair.split(':');
+            const el = document.getElementById(id);
+            if (el && initialParams.get(key)) el.value = initialParams.get(key);
+        });
+        const preOrder = initialParams.get('order_by');
+        if (preOrder) {
+            const tabKey = Object.keys(TAB_ORDER_MAP).find(k => TAB_ORDER_MAP[k] === preOrder);
+            if (tabKey) {
+                document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tabKey));
+            }
+        }
+
         loadLotteries();
         loadGeography();
-        Raffles.loadRaffles();
+        Raffles.loadRaffles(initialParams.size ? Object.fromEntries(initialParams) : {});
 
         // Mobile Menu Toggle
         const mobileMenuBtn = document.getElementById('mobile-menu-btn');
@@ -926,14 +1009,8 @@ $page_description = "La plataforma más confiable para crear y participar en rif
             tab.addEventListener('click', () => {
                 document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
                 tab.classList.add('active');
-                const orderMap = {
-                    populares: 'sold_percentage',
-                    proximas: 'draw_date',
-                    nuevas: 'created_at',
-                    destacadas: 'views'
-                };
                 const filters = getActiveFilters();
-                filters.order_by = orderMap[tab.dataset.tab] || 'views';
+                syncUrlWithFilters(filters);
                 Raffles.loadRaffles(filters);
             });
         });

@@ -9,8 +9,10 @@ require_once __DIR__ . '/../config/database.php';
 // Detectar dominio
 $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
 $host     = $_SERVER['HTTP_HOST'] ?? 'localhost';
-$baseUrl  = $protocol . '://' . $host . '/public';
-$apiBase  = $protocol . '://' . $host . '/api';
+// BASE_PATH (definido en config) es obligatorio aquí: sin él, og:url y
+// canonical apuntan a la raíz del dominio en deploys bajo subcarpeta.
+$baseUrl  = $protocol . '://' . $host . BASE_PATH . '/public';
+$apiBase  = $protocol . '://' . $host . BASE_PATH . '/api';
 
 $raffleId = (int)($_GET['id'] ?? 0);
 
@@ -61,7 +63,7 @@ if ($raffleId) {
             $ogUrl         = $baseUrl . '/raffle.php?id=' . $raffleId;
 
             // Imagen OG dinámica generada por PHP GD
-            $ogImage = $protocol . '://' . $host . '/api/og/generate.php?raffle_id=' . $raffleId;
+            $ogImage = $apiBase . '/og/generate.php?raffle_id=' . $raffleId;
 
             $page_title = "{$name} — \${$price} COP | MisRifas";
             $ogPrice    = $price;
@@ -111,24 +113,39 @@ header("Expires: 0");
     <!-- WhatsApp fuerza el refresh si la imagen cambia -->
     <link rel="canonical" href="<?= htmlspecialchars($ogUrl) ?>">
 
+    <meta name="theme-color" content="#0f172a">
     <link rel="stylesheet" href="<?= BASE_PATH ?>/public/css/tailwind.min.css">
     <style>
         @layer base {
             * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif;}
         }
+        html { color-scheme: dark; }
         body { background: #0f172a; color: #f8fafc; }
+        .skip-link {
+            position: absolute; left: -9999px; top: 0; z-index: 200;
+            padding: 10px 18px; background: #f59e0b; color: #1c1305;
+            font-weight: 700; border-radius: 0 0 12px 0; text-decoration: none;
+        }
+        .skip-link:focus { left: 0; }
         .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.05); }
         .ticket-btn {
             aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
             font-weight: 800; border-radius: 12px; cursor: pointer; transition: transform 0.15s ease-out, box-shadow 0.2s ease-out, border-color 0.2s ease-out;
             border: 2px solid transparent; user-select: none; font-size: 1.1rem;
+            /* Rifas de 4 cifras generan hasta 10.000 boletos: no pintar
+               los que están fuera del viewport del grid scrolleable. */
+            content-visibility: auto;
+            contain-intrinsic-size: 64px 64px;
         }
         .ticket-btn--available { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; box-shadow: 0 4px 10px rgba(16,185,129,0.2); }
         .ticket-btn--available:hover { transform: translateY(-4px) scale(1.05); box-shadow: 0 10px 20px rgba(16,185,129,0.4); border-color: #34d399; }
         .ticket-btn--available:active { transform: scale(0.95); }
         .ticket-btn--reserved { background: linear-gradient(135deg, #eab308 0%, #ca8a04 100%); color: white; opacity: 0.85; cursor: not-allowed; }
         .ticket-btn--paid    { background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%); color: white; cursor: not-allowed; box-shadow: 0 4px 10px rgba(239,68,68,0.25); }
-        .ticket-btn--selected { transform: scale(1.15) translateY(-4px); box-shadow: 0 0 0 4px rgba(245,158,11,0.5), 0 10px 20px rgba(245,158,11,0.4); border-color: white; z-index: 10; animation: pulse 2s infinite; }
+        .ticket-btn--selected { transform: scale(1.15) translateY(-4px); box-shadow: 0 0 0 4px rgba(245,158,11,0.5), 0 10px 20px rgba(245,158,11,0.4); border-color: white; z-index: 10; }
+        @media (prefers-reduced-motion: no-preference) {
+            .ticket-btn--selected { animation: pulse 2s infinite; }
+        }
         @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(245,158,11,0.7); } 70% { box-shadow: 0 0 0 10px rgba(245,158,11,0); } 100% { box-shadow: 0 0 0 0 rgba(245,158,11,0); } }
         .notification { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); max-width: 450px; width: 90%; padding: 20px 30px; background: #1e293b; border-radius: 16px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); z-index: 9999; animation: fadeIn 0.3s ease; border: 1px solid rgba(255,255,255,0.1); color: white; text-align: center; font-size: 16px;}
         .notification--error { border: 2px solid #ef4444; }
@@ -146,6 +163,13 @@ header("Expires: 0");
         }
         @media (min-width: 768px) { .modal-overlay__content { padding: 32px; } }
         .countdown-box { background: rgba(15,23,42,0.6); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 16px; text-align: center; }
+        .countdown-box > div:first-child { font-variant-numeric: tabular-nums; }
+        /* Flechas de galería: en pantallas táctiles no hay hover, y con
+           teclado deben aparecer al recibir foco. */
+        #gallery-prev:focus-visible, #gallery-next:focus-visible { opacity: 1; }
+        @media (hover: none) {
+            #gallery-prev, #gallery-next { opacity: 1; }
+        }
         input[type="text"], input[type="tel"], input[type="email"], select { background: rgba(15,23,42,0.6); border: 1px solid rgba(255,255,255,0.1); color: white; transition: border-color 0.3s, box-shadow 0.3s; }
         input:focus, select:focus { border-color: #f59e0b; box-shadow: 0 0 0 4px rgba(245,158,11,0.2); outline: none; }
         /* WhatsApp share button */
@@ -201,6 +225,7 @@ header("Expires: 0");
     </style>
 </head>
 <body class="bg-[#0f172a] text-slate-200">
+    <a href="#raffle-content" class="skip-link">Saltar al contenido</a>
     <header class="glass sticky top-0 z-50">
         <nav class="container mx-auto px-4 h-20 flex items-center justify-between gap-6">
             <a href="<?= BASE_PATH ?>/public/index.php" class="shrink-0 flex items-center gap-2 text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-amber-300 to-amber-500">
@@ -234,7 +259,7 @@ header("Expires: 0");
                     <a href="<?= BASE_PATH ?>/public/register.php" class="shrink-0 whitespace-nowrap px-4 py-2 bg-gradient-to-r from-amber-400 to-amber-600 text-slate-950 rounded-xl hover:from-amber-300 hover:to-amber-500 transition-all font-bold text-sm shadow-lg shadow-amber-500/30">Crear Cuenta</a>
                 </div>
 
-                <div id="user-menu" class="hidden flex items-center gap-4">
+                <div id="user-menu" class="hidden items-center gap-4">
                     <a href="<?= BASE_PATH ?>/public/perfil.php" class="flex items-center gap-2 group">
                         <div class="w-10 h-10 rounded-full bg-amber-500 text-slate-950 flex items-center justify-center text-lg font-bold group-hover:scale-110 transition-transform" id="user-avatar">U</div>
                         <span class="text-slate-200 font-bold group-hover:text-white" id="user-name">Usuario</span>
@@ -262,7 +287,7 @@ header("Expires: 0");
 
             <div id="error-msg" class="hidden bg-red-900/50 border border-red-500/50 text-red-200 rounded-xl p-4 mb-6 text-center">
                 <p class="font-bold">Error al cargar la rifa</p>
-                <p class="text-sm mt-1">Redirigiendo al inicio...</p>
+                <p class="text-sm mt-1">Redirigiendo al inicio…</p>
             </div>
 
             <div id="raffle-content" class="hidden">
@@ -278,8 +303,8 @@ header("Expires: 0");
                                     <!-- Images injected by JS -->
                                 </div>
                                 <!-- Navigation Arrows -->
-                                <button id="gallery-prev" onclick="prevImage()" class="absolute left-3 top-1/2 -translate-y-1/2 z-20 w-10 h-10 bg-black/50 hover:bg-black/70 text-white rounded-full flex items-center justify-center text-xl opacity-0 group-hover:opacity-100 transition-opacity">❮</button>
-                                <button id="gallery-next" onclick="nextImage()" class="absolute right-3 top-1/2 -translate-y-1/2 z-20 w-10 h-10 bg-black/50 hover:bg-black/70 text-white rounded-full flex items-center justify-center text-xl opacity-0 group-hover:opacity-100 transition-opacity">❯</button>
+                                <button id="gallery-prev" onclick="prevImage()" aria-label="Imagen anterior" class="absolute left-3 top-1/2 -translate-y-1/2 z-20 w-10 h-10 bg-black/50 hover:bg-black/70 text-white rounded-full flex items-center justify-center text-xl opacity-0 group-hover:opacity-100 transition-opacity">❮</button>
+                                <button id="gallery-next" onclick="nextImage()" aria-label="Imagen siguiente" class="absolute right-3 top-1/2 -translate-y-1/2 z-20 w-10 h-10 bg-black/50 hover:bg-black/70 text-white rounded-full flex items-center justify-center text-xl opacity-0 group-hover:opacity-100 transition-opacity">❯</button>
                                 <!-- Dots Indicator -->
                                 <div id="gallery-dots" class="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex gap-2"></div>
                             </div>
@@ -290,7 +315,7 @@ header("Expires: 0");
                         </div>
 
                         <div class="glass rounded-3xl p-8 mb-6">
-                            <h1 id="raffle-title" class="text-4xl md:text-5xl font-bold mb-3 text-white leading-[1.05] tracking-tight">Cargando...</h1>
+                            <h1 id="raffle-title" class="text-4xl md:text-5xl font-bold mb-3 text-white leading-[1.05] tracking-tight">Cargando…</h1>
                             <p id="raffle-city" class="text-slate-400 mb-8 font-medium flex items-center gap-1.5"><svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21s7-6.5 7-11.5a7 7 0 1 0-14 0C5 14.5 12 21 12 21Z"/><circle cx="12" cy="9.5" r="2.25"/></svg> Ciudad</p>
 
                             <div class="grid grid-cols-3 gap-4 mb-8 pb-8 border-b border-white/10">
@@ -339,7 +364,7 @@ header("Expires: 0");
 
                             <div class="mb-8">
                                 <h3 class="text-xl font-bold mb-3 text-white border-b border-slate-700 pb-2 inline-block">Descripción</h3>
-                                <p id="raffle-description" class="text-slate-300 leading-relaxed text-lg">Cargando...</p>
+                                <p id="raffle-description" class="text-slate-300 leading-relaxed text-lg">Cargando…</p>
                             </div>
 
                             <div>
@@ -379,9 +404,9 @@ header("Expires: 0");
                                 <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                                     <span class="text-slate-500"><svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path stroke-linecap="round" d="m20 20-3.5-3.5"/></svg></span>
                                 </div>
-                                <input type="text" id="ticket-search"
+                                <input type="text" id="ticket-search" inputmode="numeric" aria-label="Buscar número de boleto"
                                     class="w-full pl-12 pr-4 py-4 rounded-xl text-lg"
-                                    placeholder="Buscar número específico (ej. 14, 07)...">
+                                    placeholder="Buscar número específico (ej. 14, 07)…">
                             </div>
 
                             <div id="tickets-grid" class="grid grid-cols-5 sm:grid-cols-6 lg:grid-cols-8 gap-3 max-h-[500px] overflow-y-auto p-4 bg-slate-900/60 rounded-2xl mb-8 border border-slate-800 custom-scrollbar">
@@ -408,8 +433,8 @@ header("Expires: 0");
                                 </div>
                                 <div id="selected-numbers-display" class="flex flex-wrap gap-2 mb-4"></div>
                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
-                                    <input type="text" id="buyer-name" required placeholder="Tu nombre" class="w-full px-4 py-3 rounded-xl bg-black/30 border border-white/10 text-white placeholder:text-slate-500 focus:outline-none focus:border-amber-500">
-                                    <input type="tel" id="buyer-phone" required placeholder="WhatsApp (3001234567)" pattern="[3][0-9]{9}" class="w-full px-4 py-3 rounded-xl bg-black/30 border border-white/10 text-white placeholder:text-slate-500 focus:outline-none focus:border-amber-500">
+                                    <input type="text" id="buyer-name" name="name" autocomplete="name" aria-label="Tu nombre" required placeholder="Tu nombre" class="w-full px-4 py-3 rounded-xl bg-black/30 border border-white/10 text-white placeholder:text-slate-500 focus:outline-none focus:border-amber-500">
+                                    <input type="tel" id="buyer-phone" name="phone" autocomplete="tel" inputmode="numeric" aria-label="Número de WhatsApp" required placeholder="WhatsApp (3001234567)" pattern="[3][0-9]{9}" class="w-full px-4 py-3 rounded-xl bg-black/30 border border-white/10 text-white placeholder:text-slate-500 focus:outline-none focus:border-amber-500">
                                 </div>
                                 <button id="pay-selected-btn" class="w-full py-4 bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-black rounded-xl text-lg hover:brightness-110 active:scale-[0.97] disabled:opacity-50 disabled:grayscale transition-all shadow-[0_0_20px_rgba(245,158,11,0.3)] hover:shadow-[0_0_25px_rgba(245,158,11,0.5)]">
                                     Pagar números seleccionados →
@@ -463,9 +488,18 @@ header("Expires: 0");
             existing.forEach(n => n.remove());
             const n = document.createElement('div');
             n.className = 'notification notification--' + type;
-            n.innerHTML = '<p class="font-medium">' + msg + '</p>';
+            n.setAttribute('role', 'status');
+            n.setAttribute('aria-live', 'polite');
+            const p = document.createElement('p');
+            p.className = 'font-medium';
+            p.textContent = msg;
+            n.appendChild(p);
             document.body.appendChild(n);
             setTimeout(() => n.remove(), 3000);
+        },
+        esc(s) {
+            return String(s ?? '').replace(/[&<>"']/g, c =>
+                ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
         }
     };
 
@@ -574,10 +608,10 @@ header("Expires: 0");
         
         if (uniqueImages.length > 0) {
             track.innerHTML = uniqueImages.map(url =>
-                `<div class="min-w-full flex-shrink-0 flex items-center justify-center bg-slate-800"><img src="${fixImageUrl(url)}" alt="${r.name || ''}" class="max-w-full max-h-[500px] w-auto h-auto object-contain"></div>`
+                `<div class="min-w-full flex-shrink-0 flex items-center justify-center bg-slate-800"><img src="${fixImageUrl(url)}" alt="${Utils.esc(r.name)}" class="max-w-full max-h-[500px] w-auto h-auto object-contain"></div>`
             ).join('');
-            dots.innerHTML = uniqueImages.map((_, i) => 
-                `<button onclick="goToImage(${i})" class="w-2 h-2 rounded-full transition-all ${i === 0 ? 'bg-white w-6' : 'bg-white/40'}"></button>`
+            dots.innerHTML = uniqueImages.map((_, i) =>
+                `<button onclick="goToImage(${i})" aria-label="Ver imagen ${i + 1}" class="w-2 h-2 rounded-full transition-all ${i === 0 ? 'bg-white w-6' : 'bg-white/40'}"></button>`
             ).join('');
             prevBtn.style.display = uniqueImages.length > 1 ? 'flex' : 'none';
             nextBtn.style.display = uniqueImages.length > 1 ? 'flex' : 'none';
@@ -634,7 +668,7 @@ header("Expires: 0");
 
             let htmlContent = '<div class="flex items-center justify-center gap-3">';
             if (ticket.status === 'available') {
-                htmlContent += '<input type="checkbox" class="w-5 h-5 ticket-checkbox rounded cursor-pointer" data-number="' + ticket.ticket_number + '" onclick="event.stopPropagation();">';
+                htmlContent += '<input type="checkbox" class="w-5 h-5 ticket-checkbox rounded cursor-pointer" aria-label="Seleccionar boleto ' + ticket.ticket_number + '" data-number="' + ticket.ticket_number + '" onclick="event.stopPropagation();">';
             }
             htmlContent += '<span class="text-2xl font-bold font-mono">' + ticket.ticket_number + '</span>';
             htmlContent += '</div>';
@@ -715,7 +749,7 @@ document.getElementById('pay-selected-btn').addEventListener('click', async () =
 
     const btn = document.getElementById('pay-selected-btn');
     btn.disabled = true;
-    btn.textContent = 'Procesando reserva...';
+    btn.textContent = 'Procesando reserva…';
 
     try {
         const numeros = selectedTickets.map(t => t.ticket_number);
@@ -738,7 +772,7 @@ document.getElementById('pay-selected-btn').addEventListener('click', async () =
                 raffle_name: data.raffle.name
             }));
 
-            Utils.showNotification('Reserva creada exitosamente. Redirigiendo al pago...', 'success');
+            Utils.showNotification('Reserva creada exitosamente. Redirigiendo al pago…', 'success');
 
             setTimeout(() => {
                 window.location.href = data.payment_url;

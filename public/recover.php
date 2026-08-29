@@ -9,16 +9,18 @@ $page_title = "Recuperar Contrasena - MisRifas";
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= $page_title ?></title>
+    <meta name="theme-color" content="#0f172a">
     <link rel="stylesheet" href="<?= BASE_PATH ?>/public/css/tailwind.min.css">
     <style>
         @layer base {
             * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
         }
+        html { color-scheme: dark; }
         body { background: #0f172a; color: #f8fafc; display: flex; align-items: center; justify-content: center; min-height: 100vh; overflow-x: hidden; }
         .bg-blob {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;
-            background: radial-gradient(circle at 10% 10%, rgba(37, 99, 235, 0.15) 0%, transparent 40%),
-                        radial-gradient(circle at 90% 90%, rgba(16, 185, 129, 0.15) 0%, transparent 40%);
+            background: radial-gradient(circle at 10% 10%, rgba(245, 158, 11, 0.12) 0%, transparent 40%),
+                        radial-gradient(circle at 90% 90%, rgba(217, 119, 6, 0.12) 0%, transparent 40%);
         }
         .form-card {
             background: rgba(30, 41, 59, 0.6);
@@ -32,19 +34,20 @@ $page_title = "Recuperar Contrasena - MisRifas";
             background: rgba(15, 23, 42, 0.5) !important;
             border: 1px solid rgba(255, 255, 255, 0.1) !important;
             color: white !important;
-            transition: all 0.3s !important;
+            transition: border-color 0.3s, box-shadow 0.3s !important;
         }
         input:focus {
-            border-color: #3b82f6 !important;
-            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2) !important;
+            border-color: #f59e0b !important;
+            box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.2) !important;
         }
         .btn-primary {
-            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-            box-shadow: 0 10px 20px -5px rgba(37, 99, 235, 0.4);
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: #1c1305;
+            box-shadow: 0 10px 20px -5px rgba(217, 119, 6, 0.4);
         }
         .btn-primary:hover {
             transform: translateY(-2px);
-            box-shadow: 0 15px 25px -5px rgba(37, 99, 235, 0.6);
+            box-shadow: 0 15px 25px -5px rgba(217, 119, 6, 0.6);
         }
     </style>
 </head>
@@ -54,8 +57,8 @@ $page_title = "Recuperar Contrasena - MisRifas";
         <div class="form-card">
             <div class="text-center mb-10">
                 <a href="<?= BASE_PATH ?>/public/index.php" class="inline-flex items-center gap-2 text-3xl font-black mb-4">
-                    <span>🎟️</span>
-                    <span class="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-emerald-400">MisRifas</span>
+                    <span aria-hidden="true">🎟️</span>
+                    <span class="bg-clip-text text-transparent bg-gradient-to-r from-amber-300 to-amber-500">MisRifas</span>
                 </a>
                 <h1 class="text-2xl font-bold text-white">Recuperar Contraseña</h1>
                 <p class="text-slate-400 mt-2">Ingresa tu email y te enviaremos un enlace para restaurar tu contraseña.</p>
@@ -63,20 +66,20 @@ $page_title = "Recuperar Contrasena - MisRifas";
 
             <form id="recovery-form" class="space-y-5">
                 <div class="space-y-2">
-                    <label class="text-sm font-bold text-slate-400 uppercase tracking-widest ml-1">Email</label>
-                    <input type="email" id="email" required class="w-full px-5 py-4 rounded-xl outline-none" placeholder="tu@email.com">
+                    <label for="email" class="text-sm font-bold text-slate-400 uppercase tracking-widest ml-1">Email</label>
+                    <input type="email" id="email" name="email" autocomplete="email" spellcheck="false" required class="w-full px-5 py-4 rounded-xl outline-none" placeholder="tu@email.com">
                 </div>
 
-                <div id="message-area" class="hidden p-4 rounded-xl text-center"></div>
+                <div id="message-area" class="hidden p-4 rounded-xl text-center" role="status" aria-live="polite"></div>
 
                 <div class="pt-4">
-                    <button type="submit" id="submit-btn" class="w-full py-4 rounded-2xl btn-primary text-white font-bold text-lg transition-all">
+                    <button type="submit" id="submit-btn" class="w-full py-4 rounded-2xl btn-primary font-bold text-lg transition-all">
                         Enviar Enlace de Recuperación
                     </button>
                 </div>
 
                 <div class="text-center pt-4">
-                    <a href="<?= BASE_PATH ?>/public/admin/index.php?auth=login" class="text-blue-400 font-bold hover:underline">Volver a Iniciar Sesión</a>
+                    <a href="<?= BASE_PATH ?>/public/admin/index.php?auth=login" class="text-amber-400 font-bold hover:underline">Volver a Iniciar Sesión</a>
                 </div>
             </form>
         </div>
@@ -90,7 +93,7 @@ $page_title = "Recuperar Contrasena - MisRifas";
             const email = document.getElementById('email').value;
             
             btn.disabled = true;
-            btn.innerHTML = '<span class="animate-spin inline-block mr-2">⏳</span> Enviando...';
+            btn.textContent = 'Enviando…';
             messageArea.classList.add('hidden');
 
             try {

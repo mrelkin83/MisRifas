@@ -15,6 +15,7 @@ $page_title = "Pago - MisRifas";
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title><?= $page_title ?></title>
+    <meta name="theme-color" content="#0f172a">
     <link rel="stylesheet" href="<?= BASE_PATH ?>/public/css/tailwind.min.css">
     <style>
         @font-face {
@@ -27,12 +28,13 @@ $page_title = "Pago - MisRifas";
         @layer base {
             * { box-sizing: border-box; margin: 0; padding: 0; }
         }
+        html { color-scheme: dark; }
         body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f172a; color: #f8fafc; }
         h1, h2, h3 { font-family: 'Outfit', 'Inter', sans-serif; }
         .glass-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.05); }
         .payment-method {
             padding: 16px; border: 2px solid rgba(255,255,255,0.1); border-radius: 12px;
-            cursor: pointer; transition: all 0.2s; text-align: left;
+            cursor: pointer; transition: border-color 0.2s, background-color 0.2s, box-shadow 0.2s; text-align: left;
             width: 100%; background: rgba(15,23,42,0.5); color: #f8fafc;
         }
         .payment-method:hover { border-color: rgba(245,158,11,0.5); background: rgba(245,158,11,0.08); }
@@ -141,7 +143,7 @@ $page_title = "Pago - MisRifas";
                     </div>
 
                     <div id="preview-container" class="hidden mt-4 text-center">
-                        <img id="preview-image" class="max-h-64 mx-auto rounded-xl border-4 border-white/10 shadow-lg">
+                        <img id="preview-image" alt="Vista previa del comprobante de pago" class="max-h-64 mx-auto rounded-xl border-4 border-white/10 shadow-lg">
                         <button onclick="removeImage()" class="text-red-400 text-xs font-bold mt-2 hover:underline">Eliminar imagen</button>
                     </div>
                 </div>
@@ -158,7 +160,7 @@ $page_title = "Pago - MisRifas";
             <div class="mt-8 text-center">
                 <p class="text-sm text-slate-400">
                     ¿Necesitas ayuda?
-                    <a href="#" onclick="contactSupport()" class="text-primary font-bold hover:underline">Contactar soporte</a>
+                    <a href="https://wa.me/573001234567?text=<?= rawurlencode('Hola, tengo un problema con mi pago en MisRifas.') ?>" target="_blank" rel="noopener" class="text-primary font-bold hover:underline">Contactar soporte</a>
                 </p>
             </div>
         </div>
@@ -199,7 +201,12 @@ $page_title = "Pago - MisRifas";
             existing.forEach(n => n.remove());
             const n = document.createElement('div');
             n.className = 'notification notification--' + type;
-            n.innerHTML = '<p class="font-medium">' + msg + '</p>';
+            n.setAttribute('role', 'status');
+            n.setAttribute('aria-live', 'polite');
+            const p = document.createElement('p');
+            p.className = 'font-medium';
+            p.textContent = msg;
+            n.appendChild(p);
             document.body.appendChild(n);
             setTimeout(() => n.remove(), 3000);
         }
@@ -337,7 +344,7 @@ $page_title = "Pago - MisRifas";
     document.getElementById('confirm-payment-btn').addEventListener('click', async () => {
         const btn = document.getElementById('confirm-payment-btn');
         btn.disabled = true;
-        btn.textContent = 'Procesando...';
+        btn.textContent = 'Procesando…';
 
         try {
             const proofFile = document.getElementById('payment-proof').files[0];
@@ -374,10 +381,6 @@ $page_title = "Pago - MisRifas";
             btn.textContent = 'Finalizar Compra';
         }
     });
-
-    function contactSupport() {
-        window.open('https://wa.me/573001234567?text=' + encodeURIComponent('Hola, tengo un problema con mi pago en MisRifas.'), '_blank');
-    }
 
     loadReservation();
     </script>

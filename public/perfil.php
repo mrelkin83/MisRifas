@@ -9,6 +9,7 @@ require_once __DIR__ . '/../config/paths.php';
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= $page_title ?></title>
+    <meta name="theme-color" content="#0f172a">
     <script>const BASE_PATH = "<?= BASE_PATH ?>";</script>
     <link rel="stylesheet" href="<?= BASE_PATH ?>/public/css/tailwind.min.css">
     <style>
@@ -19,12 +20,13 @@ require_once __DIR__ . '/../config/paths.php';
             font-display: swap;
             src: url('<?= BASE_PATH ?>/public/assets/fonts/outfit-800.woff2') format('woff2');
         }
+        html { color-scheme: dark; }
         body { background: #0f172a; color: white; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
         h1, h3 { font-family: 'Outfit', 'Inter', sans-serif; }
         .glass-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 24px; }
         .form-input { background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(255, 255, 255, 0.1); color: white; padding: 12px 16px; border-radius: 12px; width: 100%; outline: none; transition: border-color 0.2s; }
         .form-input:focus { border-color: #f59e0b; }
-        .btn-primary { background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); color: #1c1305; padding: 12px 24px; border-radius: 12px; font-weight: 700; transition: all 0.2s; width: 100%; }
+        .btn-primary { background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); color: #1c1305; padding: 12px 24px; border-radius: 12px; font-weight: 700; transition: opacity 0.2s, transform 0.2s, box-shadow 0.2s; width: 100%; }
         .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
 
         @media (max-width: 640px) {
@@ -60,7 +62,7 @@ require_once __DIR__ . '/../config/paths.php';
                     </div>
                 </label>
                 <div>
-                    <h1 class="text-3xl font-black" id="profile-name-display">Cargando...</h1>
+                    <h1 class="text-3xl font-black" id="profile-name-display">Cargando…</h1>
                     <p class="text-slate-400" id="profile-email-display">email@ejemplo.com</p>
                 </div>
             </div>
@@ -68,29 +70,29 @@ require_once __DIR__ . '/../config/paths.php';
             <form id="profile-form" class="space-y-6">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                        <label class="block text-sm font-bold text-slate-400 mb-2 uppercase tracking-widest">Nombre Completo</label>
-                        <input type="text" id="p-name" class="form-input" required>
+                        <label for="p-name" class="block text-sm font-bold text-slate-400 mb-2 uppercase tracking-widest">Nombre Completo</label>
+                        <input type="text" id="p-name" name="name" autocomplete="name" class="form-input" required>
                     </div>
                     <div>
-                        <label class="block text-sm font-bold text-slate-400 mb-2 uppercase tracking-widest">WhatsApp / Celular</label>
-                        <input type="tel" id="p-phone" class="form-input" required>
+                        <label for="p-phone" class="block text-sm font-bold text-slate-400 mb-2 uppercase tracking-widest">WhatsApp / Celular</label>
+                        <input type="tel" id="p-phone" name="phone" autocomplete="tel" inputmode="numeric" class="form-input" required>
                     </div>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                        <label class="block text-sm font-bold text-slate-400 mb-2 uppercase tracking-widest">Departamento</label>
-                        <select id="p-dept" class="form-input"></select>
+                        <label for="p-dept" class="block text-sm font-bold text-slate-400 mb-2 uppercase tracking-widest">Departamento</label>
+                        <select id="p-dept" name="department" class="form-input"></select>
                     </div>
                     <div>
-                        <label class="block text-sm font-bold text-slate-400 mb-2 uppercase tracking-widest">Ciudad</label>
-                        <select id="p-city" class="form-input"></select>
+                        <label for="p-city" class="block text-sm font-bold text-slate-400 mb-2 uppercase tracking-widest">Ciudad</label>
+                        <select id="p-city" name="city" class="form-input"></select>
                     </div>
                 </div>
 
                 <div class="pt-4 border-t border-white/5">
-                    <label class="block text-sm font-bold text-slate-400 mb-2 uppercase tracking-widest">Nueva Contraseña (Opcional)</label>
-                    <input type="password" id="p-pass" class="form-input" placeholder="••••••••">
+                    <label for="p-pass" class="block text-sm font-bold text-slate-400 mb-2 uppercase tracking-widest">Nueva Contraseña (Opcional)</label>
+                    <input type="password" id="p-pass" name="password" autocomplete="new-password" class="form-input" placeholder="••••••••">
                     <small class="text-slate-500 block mt-2">Déjalo en blanco para mantener la actual.</small>
                 </div>
 
@@ -216,7 +218,7 @@ require_once __DIR__ . '/../config/paths.php';
             e.preventDefault();
             const btn = document.getElementById('save-btn');
             btn.disabled = true;
-            btn.textContent = 'Guardando...';
+            btn.textContent = 'Guardando…';
 
             const formData = new FormData();
             formData.append('name', document.getElementById('p-name').value);
