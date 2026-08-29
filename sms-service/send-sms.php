@@ -23,8 +23,20 @@ if (empty($number) || empty($message)) {
     exit;
 }
 
+// Ruta al SQLite de la bandeja de salida de Gammu SMSD. Configurable por
+// entorno para que funcione igual en Windows/Laragon que en el VPS Linux
+// (antes estaba hardcodeada a C:\xampp\... y no existía en producción).
+// En Linux, Gammu SMSD suele usar el backend "files" o una BD MySQL; si se
+// usa el backend SQLite, apuntar GAMMU_SMSD_DB a ese archivo.
+$dbPath = getenv('GAMMU_SMSD_DB');
+if (!$dbPath) {
+    $dbPath = __DIR__ . '/gammu.db'; // junto a este script por defecto
+}
+
 try {
-    $dbPath = 'C:\xampp\htdocs\MisRifas\sms-service\gammu.db';
+    if (!file_exists($dbPath)) {
+        throw new RuntimeException('Bandeja de salida de Gammu no encontrada. Configura GAMMU_SMSD_DB.');
+    }
     $sqlite = new PDO('sqlite:' . $dbPath);
     $sqlite->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
@@ -33,6 +45,8 @@ try {
 
     echo json_encode(['success' => true, 'id' => $sqlite->lastInsertId()]);
 } catch (Exception $e) {
+    error_log('SMS send error: ' . $e->getMessage());
     http_response_code(500);
-    echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+    // No filtrar el detalle interno (rutas, driver) en la respuesta.
+    echo json_encode(['success' => false, 'error' => 'No se pudo encolar el SMS']);
 }

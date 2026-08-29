@@ -48,7 +48,7 @@ class MailService {
         $port = (int)($this->settings['mailing_smtp_port'] ?? 587);
         $user = $this->settings['mailing_smtp_user'] ?? '';
         $pass = $this->settings['mailing_smtp_pass'] ?? '';
-        $from = $this->settings['mailing_smtp_from'] ?? 'noreply@misrifas.com';
+        $from = $this->settings['mailing_smtp_from'] ?? 'no-reply@misrifas.online';
         $fromName = $this->settings['mailing_from_name'] ?? 'MisRifas';
 
         if (empty($host) || empty($user)) {

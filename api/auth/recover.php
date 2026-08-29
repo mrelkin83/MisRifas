@@ -80,7 +80,7 @@ try {
         Logger::activity('password_recovery_request', $user['id'] ?? 0, ['email' => $email]);
         
         // En producción, aquí enviarías el email con el enlace:
-        // $resetLink = "https://misrifas.com/public/reset-password.php?token=$token";
+        // $resetLink = "https://misrifas.online/public/reset-password.php?token=$token";
         // mail($email, "Recuperar contraseña - MisRifas", "Haz clic aquí: $resetLink");
     }
 

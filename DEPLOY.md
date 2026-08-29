@@ -24,6 +24,17 @@ PHP-FPM o mod_php + MySQL/MariaDB.
 
 ## 2. Primer despliegue
 
+> **Atajo — auto-instalador.** `deploy/install-vps.sh` automatiza casi todo
+> este documento (paquetes, PHP, MySQL, VirtualHost, HTTPS, permisos, cron) con
+> el dominio `misrifas.online` ya configurado. Como root en el VPS:
+> ```bash
+> bash deploy/install-vps.sh              # base (web + BD + HTTPS + cron)
+> bash deploy/install-vps.sh --mail       # + servidor de correo Postal
+> bash deploy/install-vps.sh --sms        # + gateway SMS Gammu (requiere módem)
+> ```
+> Revisa las variables de CONFIGURACIÓN al inicio del script antes de correrlo.
+> Los pasos manuales de abajo siguen valiendo como referencia y para depurar.
+
 ```bash
 git clone <repo> /var/www/misrifas
 cd /var/www/misrifas
@@ -47,9 +58,12 @@ chmod -R 755 logs public/assets/uploads public/uploads uploads
 
 Apuntar el DocumentRoot del VirtualHost a la **raíz del proyecto**, no a
 `public/` — el `.htaccess` de la raíz reescribe todo hacia
-`public/index.php` como front controller (ver el propio `.htaccess` para el
-detalle; `RewriteBase` está seteado a `/MisRifas/` para el desarrollo local,
-cambiar a `/` si el dominio de producción sirve el proyecto desde la raíz).
+`public/index.php` como front controller. El `.htaccess` ya **no** usa
+`RewriteBase` (la sustitución relativa `index.php` se resuelve contra el
+directorio del `.htaccess`), así que funciona igual sirviendo desde la raíz
+del dominio (`misrifas.online`) que desde un subdirectorio local. Requiere
+`AllowOverride All` en el `<Directory>` (con `None` se ignora el `.htaccess`
+entero, incluido el fix del header `Authorization` — ver sección 5).
 
 ## 3. CSS compilado (Tailwind)
 
@@ -85,11 +99,12 @@ infraestructura:
 
 ```bash
 sudo apt install certbot python3-certbot-apache
-sudo certbot --apache -d misrifas.com -d www.misrifas.com
+sudo certbot --apache -d misrifas.online -d www.misrifas.online
 ```
 
 Certbot configura el VirtualHost HTTPS y el renovado automático. Verificar
-después con `curl -I http://misrifas.com` que responde 301 hacia `https://`.
+después con `curl -I http://misrifas.online` que responde 301 hacia `https://`.
+(El auto-instalador de la sección 2 ya hace este paso.)
 
 ## 5. mod_fcgid / mod_cgi y el header Authorization (importante)
 
@@ -173,7 +188,46 @@ externo de cron en vez de crontab del sistema.
 # versión Windows/desarrollo, adaptar a un .service de systemd en el VPS.
 ```
 
-## 8. Checklist pre-lanzamiento
+## 8. Correo saliente — servidor open-source propio (Postal)
+
+La app **solo envía** correo (notificaciones de resultados + campañas) y habla
+SMTP estándar (`api/services/MailService.php`). Para no depender de Gmail/Brevo
+ni de sus límites, lo recomendado es un servidor de correo self-hosted en el
+propio VPS. Comparativa (evaluada en 2026):
+
+| Opción | Encaja porque | Peso |
+|--------|---------------|------|
+| **Postal** ✅ | Servidor de **envío transaccional** self-hosted (un Mailgun/SendGrid propio): SMTP + API + DKIM + colas + tracking de entregabilidad. Es exactamente el caso de MisRifas. | Docker, medio |
+| **Stalwart** | Servidor completo (envía y recibe) en **un solo binario**, moderno y ligero. Buena alternativa si además quieres buzones. | Ligero |
+| Mailcow / Mailu | Suite de correo completa con buzones/webmail. **Sobredimensionado** para solo enviar. | Pesado |
+
+Instalación asistida: `bash deploy/install-vps.sh --mail` (instala Docker y
+deja las instrucciones de Postal). Luego, en Postal: crear un *mail server*,
+generar credenciales SMTP y publicar los registros **SPF, DKIM y DMARC** de
+`misrifas.online` en el DNS (sin ellos el correo cae a spam). Finalmente en
+`.env`: `EMAIL_ENABLED=true`, `SMTP_HOST=127.0.0.1`, `SMTP_PORT=25` (o el que
+exponga Postal), `SMTP_USER`/`SMTP_PASS` de Postal, `EMAIL_FROM_ADDRESS=no-reply@misrifas.online`.
+No hay que tocar código: `MailService.php` ya envía por SMTP.
+
+## 9. SMS — gateway open-source (Gammu SMSD)
+
+El proyecto ya trae `sms-service/` que encola SMS en la **bandeja de salida de
+Gammu SMSD** (open-source). Gammu es el estándar para SMS por **módem/dongle GSM
+USB** con AT commands — requiere hardware (un módem GSM con SIM colombiana).
+
+- Instalación asistida: `bash deploy/install-vps.sh --sms` (instala `gammu` +
+  `gammu-smsd` y deja los pasos del módem).
+- Se corrigió el path del microservicio: antes estaba hardcodeado a
+  `C:\xampp\...` (no existía en Linux). Ahora se toma de `GAMMU_SMSD_DB` en
+  `.env`; apúntalo al SQLite de Gammu (`${APP_DIR}/sms-service/gammu.db`) si usas
+  el backend sqlite.
+- Capa de gestión opcional sobre Gammu: **playSMS** o **Kalkun** (UI web + bulk).
+  Para SMPP hacia una carrier en vez de módem, **Jasmin** o **Kannel**.
+
+Si no quieres hardware, un proveedor cloud (Twilio o uno colombiano) es más
+simple, pero no es self-hosted/open-source — fuera del alcance de esta guía.
+
+## 10. Checklist pre-lanzamiento
 
 - [ ] `.env` completo con secretos reales (nunca copiar el `.env` de
       desarrollo tal cual — regenerar `APP_SECRET_KEY`/`CRON_SECRET_KEY`).

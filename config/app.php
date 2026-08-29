@@ -120,7 +120,7 @@ return [
             'smtp_encryption' => getenv('SMTP_ENCRYPTION') ?: 'tls',
             'smtp_user' => getenv('SMTP_USER') ?: '',
             'smtp_password' => getenv('SMTP_PASS') ?: '',
-            'from_address' => getenv('EMAIL_FROM_ADDRESS') ?: 'noreply@misrifas.com',
+            'from_address' => getenv('EMAIL_FROM_ADDRESS') ?: 'no-reply@misrifas.online',
             'from_name' => getenv('EMAIL_FROM_NAME') ?: 'MisRifas',
         ],
     ],
