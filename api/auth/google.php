@@ -25,6 +25,14 @@ $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https'
 $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
 $GOOGLE_REDIRECT_URI = $protocol . '://' . $host . BASE_PATH . '/api/auth/google-callback.php';
 
+// Si no hay credenciales reales configuradas, no mandar al usuario a la
+// página de error 400 de Google con un client_id placeholder: volver al
+// login con un mensaje claro.
+if ($GOOGLE_CLIENT_ID === '' || $GOOGLE_CLIENT_ID === 'TU_GOOGLE_CLIENT_ID_AQUI') {
+    header('Location: ' . BASE_PATH . '/public/admin/index.php?auth=login&error=google_no_configurado');
+    exit;
+}
+
 // Generar estado único para seguridad (prevenir CSRF)
 $state = bin2hex(random_bytes(16));
 $_SESSION['oauth_state'] = $state;

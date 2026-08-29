@@ -528,6 +528,22 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
         // Redirect to Facebook OAuth
         window.location.href = BASE_PATH + '/api/auth/facebook.php';
     }
+
+    // Mostrar errores devueltos por los callbacks/iniciadores OAuth (antes se
+    // ignoraban y el usuario aterrizaba en el login sin explicación, o veía
+    // el crudo 400 de Google cuando las credenciales no están configuradas).
+    (function () {
+        var err = new URLSearchParams(window.location.search).get('error');
+        if (!err) return;
+        var msgs = {
+            google_no_configurado:   'El inicio de sesión con Google no está disponible todavía.',
+            facebook_no_configurado: 'El inicio de sesión con Facebook no está disponible todavía.',
+            invalid_state:           'La sesión de acceso expiró. Intenta de nuevo.',
+            no_code:                 'No se recibió el código de autorización. Intenta de nuevo.',
+            oauth_failed:            'No se pudo completar el inicio de sesión social. Intenta de nuevo.'
+        };
+        if (msgs[err]) showAuthNotification(msgs[err], 'error');
+    })();
     </script>
 <?php else: ?>
     <div class="admin-layout">
