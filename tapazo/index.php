@@ -341,19 +341,24 @@ if ($codigo) {
             if (file) {
                 const formData = new FormData();
                 formData.append('imagen', file);
+                imagePreview.innerHTML = '<span class="text-xs">Subiendo imagen…</span>';
                 try {
-                    const res = await fetch(BASE_PATH + '/api/upload.php', {
+                    const res = await fetch(BASE_PATH + '/api/tapazo/upload.php', {
                         method: 'POST',
                         body: formData
                     });
                     const json = await res.json();
                     if (json.success) {
                         imagenUrlInput.value = json.data.url;
-                        imagePreview.innerHTML = `<img src="${json.data.url}" class="w-full h-full object-cover">`;
+                        imagePreview.innerHTML = `<img src="${json.data.url}" class="w-full h-full object-cover" alt="Imagen del tapazo">`;
                     } else {
+                        imagePreview.innerHTML = '<span class="text-xs">Click para subir imagen</span>';
                         alert(json.message || 'Error al subir imagen');
                     }
-                } catch(err) { alert('Error al subir imagen'); }
+                } catch(err) {
+                    imagePreview.innerHTML = '<span class="text-xs">Click para subir imagen</span>';
+                    alert('Error al subir imagen');
+                }
             }
         });
 
