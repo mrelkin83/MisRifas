@@ -147,11 +147,10 @@ HTTP (usando `CRON_SECRET_KEY` del `.env`) si se prefiere un servicio
 externo de cron en vez de crontab del sistema.
 
 ```cron
-# Expira reservas de boletos vencidas — cada minuto, es la más sensible a tiempo
+# Expira/libera reservas de boletos vencidas — cada minuto, es la más sensible
+# a tiempo. Único cron de expiración: libera tickets, sincroniza numero_reservas
+# y cancela payment_intents. (release_reservations.php quedó unificado aquí.)
 * * * * * php /var/www/misrifas/cron/expire-reservations.php >> /var/www/misrifas/logs/cron.log 2>&1
-
-# Libera reservas huérfanas — cada 15 minutos
-*/15 * * * * php /var/www/misrifas/cron/release_reservations.php >> /var/www/misrifas/logs/cron.log 2>&1
 
 # Recordatorios (WhatsApp/email) — cada hora
 0 * * * * php /var/www/misrifas/cron/send_reminders.php >> /var/www/misrifas/logs/cron.log 2>&1

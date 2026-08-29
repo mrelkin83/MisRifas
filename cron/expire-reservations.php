@@ -46,6 +46,19 @@ try {
         $stmt->execute();
         $ticketsReleased = $stmt->rowCount();
 
+        // Barrido amplio: liberar CUALQUIER ticket 'reserved' vencido aunque
+        // no tenga fila en numero_reservas (reservas directas/antiguas del
+        // flujo por ticket). Antes esto lo cubria el cron separado
+        // release_reservations.php - ahora unificado aqui para que este sea
+        // el unico cron de expiracion.
+        $stmt = $db->prepare("
+            UPDATE tickets
+            SET status = 'available', user_id = NULL, reserved_at = NULL, reserved_until = NULL
+            WHERE status = 'reserved' AND reserved_until IS NOT NULL AND reserved_until < NOW()
+        ");
+        $stmt->execute();
+        $ticketsReleased += $stmt->rowCount();
+
         // Buscar números RESERVADOS con expires_at vencido
         $stmt = $db->prepare("
             UPDATE numero_reservas

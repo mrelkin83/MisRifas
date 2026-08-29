@@ -47,7 +47,7 @@ CONFIGURACIÓN DE CRON JOBS (OPCIONAL)
 
 Desde cPanel -> Cron Jobs, agregar:
 
-*/15 * * * * php /ruta/completa/cron/release_reservations.php
+* * * * * php /ruta/completa/cron/expire-reservations.php
 0 2 * * * php /ruta/completa/cron/send_reminders.php
 0 4 * * * php /ruta/completa/cron/check_commissions.php
 */5 * * * * php /ruta/completa/cron/process_notifications.php
