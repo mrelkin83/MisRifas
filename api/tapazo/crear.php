@@ -14,20 +14,30 @@ require_once __DIR__ . '/../../config/app.php';
 require_once __DIR__ . '/../../config/constants.php';
 require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../api/utils/Response.php';
+require_once __DIR__ . '/../../api/utils/Validator.php';
 
 try {
     $input = json_decode(file_get_contents('php://input'), true);
     $db = Database::getInstance()->getConnection();
 
-    $titulo = trim($input['titulo'] ?? '');
-    $descripcion = trim($input['descripcion'] ?? '');
+    // Sanitizar texto libre al escribir (mismo criterio que el resto de la
+    // app): titulo/descripcion se rinden via innerHTML en el panel admin, asi
+    // que sin esto un tapazo con <img onerror> era XSS almacenado contra el
+    // navegador del super_admin.
+    $titulo = Validator::sanitize(trim($input['titulo'] ?? ''));
+    $descripcion = Validator::sanitize(trim($input['descripcion'] ?? ''));
+    // imagen_url solo puede ser vacia o una ruta local del sitio (nunca
+    // http(s):// externo ni javascript:/data:).
     $imagen_url = trim($input['imagen_url'] ?? '');
+    if ($imagen_url !== '' && !Validator::esRutaLocalSegura($imagen_url)) {
+        Response::error('La imagen debe subirse desde el formulario (ruta local).', null, 400);
+    }
     $cantidad_jugadores = intval($input['cantidad_jugadores'] ?? 6);
     if ($cantidad_jugadores < 2 || $cantidad_jugadores > 50) {
         Response::error('La cantidad de jugadores debe estar entre 2 y 50');
     }
     $valor_cupo = floatval($input['valor_cupo'] ?? 0);
-    $regla = $input['regla'] ?? 'alto_gana';
+    $regla = in_array($input['regla'] ?? '', ['alto_gana', 'bajo_gana'], true) ? $input['regla'] : 'alto_gana';
     $fecha_hora_destape = trim($input['fecha_hora_destape'] ?? '');
 
     if (empty($titulo) || empty($fecha_hora_destape)) {
