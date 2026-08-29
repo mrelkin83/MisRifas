@@ -55,3 +55,4 @@ composer-setup.php
 # Backups de proyecto completo (pesados, no son código fuente)
 /MisRifas*.zip
 /database/backups/
+.playwright-cli/
