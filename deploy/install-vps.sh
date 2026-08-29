@@ -25,7 +25,7 @@ WWW_DOMAIN="www.misrifas.online"
 CERTBOT_EMAIL="admin@misrifas.online"     # correo para avisos de Let's Encrypt
 APP_DIR="/var/www/misrifas"
 REPO_URL="https://github.com/mrelkin83/MisRifas.git"
-PHP_VERSION="8.4"
+PHP_VERSION="auto"                        # auto = detectar del repo (8.4/8.3/…); o fija p.ej. "8.4"
 DB_NAME="misrifas"
 DB_USER="misrifas"
 WEB_USER="www-data"
@@ -50,16 +50,30 @@ warn() { echo -e "\033[1;31m  ! $*\033[0m"; }
 [ "$(id -u)" -eq 0 ] || { warn "Ejecuta como root (sudo bash install-vps.sh)"; exit 1; }
 
 # ── 1. Paquetes base ────────────────────────────────────────────────────────
+detect_php_version() {
+  # Si PHP_VERSION es fija y existe en los repos, usarla. Si es "auto",
+  # preferir 8.4/8.3 (versiones probadas); si no están, caer a la que provea
+  # el metapaquete `php` del repo default (p.ej. 8.5 en Ubuntu 26.04).
+  apt-get update -qq -y || true
+  if [ "$PHP_VERSION" != "auto" ]; then
+    apt-cache policy "php${PHP_VERSION}" 2>/dev/null | grep -q 'Candidate: [0-9]' && return
+    warn "php${PHP_VERSION} no está en los repos; autodetectando…"
+  fi
+  local v
+  for v in 8.4 8.3; do
+    if apt-cache policy "php${v}" 2>/dev/null | grep -q 'Candidate: [0-9]'; then PHP_VERSION="$v"; return; fi
+  done
+  # Fallback: versión del metapaquete `php`
+  v="$(apt-cache policy php 2>/dev/null | awk '/Candidate/{print $2}' | grep -oE '[0-9]+\.[0-9]+' | head -1)"
+  PHP_VERSION="${v:-8.4}"
+  warn "Usando PHP ${PHP_VERSION} (repo default). El proyecto se probó en 8.3/8.4; verifica el sitio tras instalar."
+}
+
 install_packages() {
   log "Instalando paquetes del sistema"
   export DEBIAN_FRONTEND=noninteractive
-  apt-get update -y
-  # PHP 8.4 en Ubuntu/Debian requiere el PPA de ondrej (o el repo sury en Debian)
-  if ! php -v 2>/dev/null | grep -q "PHP ${PHP_VERSION}"; then
-    apt-get install -y software-properties-common ca-certificates lsb-release apt-transport-https
-    add-apt-repository -y ppa:ondrej/php 2>/dev/null || warn "No se pudo agregar ppa:ondrej/php (¿Debian? usa el repo sury manualmente)"
-    apt-get update -y
-  fi
+  detect_php_version
+  log "PHP objetivo: ${PHP_VERSION}"
   apt-get install -y \
     apache2 \
     "php${PHP_VERSION}" "libapache2-mod-php${PHP_VERSION}" \

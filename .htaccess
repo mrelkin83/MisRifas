@@ -18,7 +18,11 @@ SetEnvIf Request_URI "^/MisRifas/" IS_DEV
     # Forzar HTTPS en producción (se excluye localhost/127.0.0.1 para no
     # romper el entorno de desarrollo local sin TLS). Va primero, antes de
     # cualquier otra regla, para que ningún request se procese en texto plano.
+    # Detrás de Cloudflare/proxy el TLS termina en el borde y el origen recibe
+    # HTTP con X-Forwarded-Proto: https; en ese caso NO se redirige (evita el
+    # bucle de redirección clásico de Cloudflare "Flexible/Full").
     RewriteCond %{HTTPS} off
+    RewriteCond %{HTTP:X-Forwarded-Proto} !=https [NC]
     RewriteCond %{HTTP_HOST} !^localhost [NC]
     RewriteCond %{HTTP_HOST} !^127\.0\.0\.1
     RewriteCond %{HTTP_HOST} !\.test$ [NC]
