@@ -163,8 +163,45 @@ header("Expires: 0");
             padding: 24px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1); color: white;
         }
         @media (min-width: 768px) { .modal-overlay__content { padding: 32px; } }
-        .countdown-box { background: rgba(15,23,42,0.6); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 16px; text-align: center; }
-        .countdown-box > div:first-child { font-variant-numeric: tabular-nums; }
+        .countdown-box { background: rgba(15,23,42,0.6); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 16px; text-align: center; min-width: 0; }
+        .countdown-box > div:first-child { font-variant-numeric: tabular-nums; font-size: 1.875rem; line-height: 1.1; }
+        /* Conteo regresivo: en móviles pequeños (≤6.78") las 4 columnas con
+           text-3xl y padding grande se desbordaban. Se reduce por breakpoint. */
+        .countdown-grid { gap: 0.75rem; }
+        @media (max-width: 480px) {
+            .countdown-grid { gap: 0.4rem; }
+            .countdown-box { padding: 10px 4px; border-radius: 10px; }
+            .countdown-box > div:first-child { font-size: 1.35rem; }
+            .countdown-box > div:last-child { font-size: 0.6rem; letter-spacing: 0; }
+        }
+        @media (max-width: 360px) {
+            .countdown-box { padding: 8px 2px; }
+            .countdown-box > div:first-child { font-size: 1.1rem; }
+        }
+
+        /* Hoja emergente de números seleccionados: antes iba en línea debajo de
+           la grilla; ahora flota sobre el contenido (bottom-sheet en móvil,
+           tarjeta inferior derecha en pantallas grandes). */
+        #selection-backdrop { position: fixed; inset: 0; background: rgba(15,23,42,0.6); backdrop-filter: blur(4px); z-index: 60; }
+        #multi-selection-summary.sheet {
+            position: fixed; z-index: 70; left: 0; right: 0; bottom: 0;
+            max-height: 85vh; overflow-y: auto; margin: 0;
+            border-radius: 20px 20px 0 0;
+            box-shadow: 0 -12px 40px rgba(0,0,0,0.5);
+            animation: sheetUp 0.25s ease-out;
+        }
+        @keyframes sheetUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        @media (min-width: 640px) {
+            #multi-selection-summary.sheet { left: auto; right: 1.5rem; bottom: 1.5rem; width: 24rem; border-radius: 20px; }
+        }
+        #selection-fab {
+            position: fixed; z-index: 60; left: 50%; transform: translateX(-50%); bottom: 16px;
+            display: flex; align-items: center; gap: 10px; padding: 12px 22px; border-radius: 999px;
+            background: linear-gradient(135deg,#f59e0b,#d97706); color: #1c1305; font-weight: 800;
+            box-shadow: 0 10px 25px rgba(245,158,11,0.45); cursor: pointer; border: none; font-size: 0.95rem;
+        }
+        #selection-fab:active { transform: translateX(-50%) scale(0.97); }
+        body.sheet-open { overflow: hidden; }
         /* Flechas de galería: en pantallas táctiles no hay hover, y con
            teclado deben aparecer al recibir foco. */
         #gallery-prev:focus-visible, #gallery-next:focus-visible { opacity: 1; }
@@ -344,7 +381,7 @@ header("Expires: 0");
                                 </div>
                             </div>
 
-                            <div class="grid grid-cols-4 gap-4 mb-8">
+                            <div class="grid grid-cols-4 countdown-grid mb-8">
                                 <div class="countdown-box shadow-xl">
                                     <div id="days" class="text-3xl font-black bg-clip-text text-transparent bg-gradient-to-br from-amber-300 to-amber-500">0</div>
                                     <div class="text-xs text-slate-400 uppercase tracking-wider mt-1">Días</div>
@@ -421,7 +458,12 @@ header("Expires: 0");
                                 <p class="text-slate-300 font-medium text-lg">Haz click en un número <span class="text-emerald-400 font-bold">Verde</span> para empezar</p>
                             </div>
 
-                            <div id="multi-selection-summary" class="hidden bg-gradient-to-r from-amber-900/30 to-amber-800/30 border border-amber-500/40 rounded-2xl p-6 mb-6 backdrop-blur shadow-xl">
+                            <div id="selection-backdrop" class="hidden"></div>
+                            <div id="multi-selection-summary" class="hidden sheet bg-gradient-to-r from-amber-900/30 to-amber-800/30 border border-amber-500/40 rounded-2xl p-6 backdrop-blur shadow-xl">
+                                <div class="flex justify-between items-center mb-3">
+                                    <p class="text-sm font-bold text-amber-300">Tu selección</p>
+                                    <button id="selection-close" type="button" aria-label="Cerrar" class="w-9 h-9 flex items-center justify-center rounded-full bg-black/30 text-slate-300 hover:text-white hover:bg-black/50 text-2xl leading-none">&times;</button>
+                                </div>
                                 <div class="flex justify-between items-center mb-4">
                                     <div>
                                         <p class="text-xs uppercase tracking-widest text-slate-400 mb-1">Números seleccionados</p>
@@ -441,6 +483,12 @@ header("Expires: 0");
                                     Pagar números seleccionados →
                                 </button>
                             </div>
+
+                            <!-- Botón flotante para reabrir la hoja sin perder la selección -->
+                            <button id="selection-fab" type="button" class="hidden">
+                                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9a3 3 0 0 1 3-3h14a3 3 0 0 1 3 3 2 2 0 0 0 0 4 3 3 0 0 1-3 3H5a3 3 0 0 1-3-3 2 2 0 0 0 0-4Z"/></svg>
+                                <span>Ver selección (<span id="fab-count">0</span>) · <span id="fab-total">$0</span></span>
+                            </button>
 
                             <button id="continue-btn" class="w-full py-5 bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-black rounded-2xl text-xl hover:from-amber-400 hover:to-amber-500 disabled:opacity-50 disabled:grayscale transition-all shadow-lg hover:shadow-amber-500/25 hidden">
                                 Completar Compra →
@@ -704,20 +752,48 @@ function toggleSelection(ticket) {
     updateSelectionSummary();
 }
 
+// La hoja emergente arranca abierta; el usuario puede minimizarla para seguir
+// eligiendo números y reabrirla con el botón flotante sin perder la selección.
+let sheetOpen = true;
+function isMobileViewport() { return window.matchMedia('(max-width: 639px)').matches; }
+
+function openSelectionSheet() {
+    if (selectedTickets.length === 0) return;
+    sheetOpen = true;
+    document.getElementById('multi-selection-summary').classList.remove('hidden');
+    document.getElementById('selection-fab').classList.add('hidden');
+    if (isMobileViewport()) {
+        document.getElementById('selection-backdrop').classList.remove('hidden');
+        document.body.classList.add('sheet-open');
+    }
+}
+function closeSelectionSheet() {
+    sheetOpen = false;
+    document.getElementById('multi-selection-summary').classList.add('hidden');
+    document.getElementById('selection-backdrop').classList.add('hidden');
+    document.body.classList.remove('sheet-open');
+    if (selectedTickets.length > 0) document.getElementById('selection-fab').classList.remove('hidden');
+}
+
 function updateSelectionSummary() {
     const summaryDiv = document.getElementById('multi-selection-summary');
     const selectedInfo = document.getElementById('selected-info');
     const payBtn = document.getElementById('pay-selected-btn');
+    const backdrop = document.getElementById('selection-backdrop');
+    const fab = document.getElementById('selection-fab');
 
     if (selectedTickets.length === 0) {
         summaryDiv.classList.add('hidden');
+        backdrop.classList.add('hidden');
+        fab.classList.add('hidden');
+        document.body.classList.remove('sheet-open');
+        sheetOpen = true; // la próxima primera selección vuelve a abrir la hoja
         selectedInfo.classList.remove('hidden');
         selectedInfo.innerHTML = '<p class="text-slate-300 font-medium text-lg">Haz click en un número <span class="text-emerald-400 font-bold">Verde</span> para empezar</p>';
         payBtn.disabled = true;
         return;
     }
 
-    summaryDiv.classList.remove('hidden');
     selectedInfo.classList.add('hidden');
 
     const count = selectedTickets.length;
@@ -726,6 +802,8 @@ function updateSelectionSummary() {
 
     document.getElementById('selected-count').textContent = count;
     document.getElementById('selected-total').textContent = Utils.formatPrice(total);
+    document.getElementById('fab-count').textContent = count;
+    document.getElementById('fab-total').textContent = Utils.formatPrice(total);
 
     const numbersDisplay = document.getElementById('selected-numbers-display');
     numbersDisplay.innerHTML = selectedTickets.map(t =>
@@ -733,7 +811,23 @@ function updateSelectionSummary() {
     ).join('');
 
     payBtn.disabled = false;
+
+    // Mostrar la hoja o, si está minimizada, el botón flotante.
+    if (sheetOpen) openSelectionSheet();
+    else fab.classList.remove('hidden');
 }
+
+// position:fixed no ancla al viewport si un ancestro tiene backdrop-filter o
+// transform (las tarjetas .glass): esos crean un bloque contenedor. Se mueven
+// el backdrop, la hoja y el botón flotante a <body> para que floten de verdad.
+['selection-backdrop', 'multi-selection-summary', 'selection-fab'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el && el.parentNode !== document.body) document.body.appendChild(el);
+});
+
+document.getElementById('selection-close')?.addEventListener('click', closeSelectionSheet);
+document.getElementById('selection-backdrop')?.addEventListener('click', closeSelectionSheet);
+document.getElementById('selection-fab')?.addEventListener('click', openSelectionSheet);
 
 document.getElementById('pay-selected-btn').addEventListener('click', async () => {
     if (selectedTickets.length === 0) return;
