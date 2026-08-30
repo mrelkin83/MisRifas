@@ -16,7 +16,7 @@ $vendorId = $authVendor['id'];
 
 try {
     $stmt = $db->prepare("
-        SELECT r.id, r.name, r.city, r.department, r.status, r.draw_date, r.ticket_price,
+        SELECT r.id, r.name, r.city, r.department, r.status, r.draw_date, r.ticket_price, r.image_url,
                r.total_tickets, (SELECT COUNT(*) FROM tickets t WHERE t.raffle_id = r.id AND t.status = 'paid') as sold_tickets
         FROM raffles r
         WHERE r.vendor_id = ?

@@ -920,6 +920,30 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                 </div>
 
                 <div id="section-mis-rifas" class="admin-section hidden">
+                    <style>
+                        .mr-card { background:#fff; border:1px solid #eef2f7; border-radius:16px; overflow:hidden; box-shadow:0 1px 2px rgba(15,23,42,.06); display:flex; flex-direction:column; transition:box-shadow .15s ease, transform .15s ease; }
+                        .mr-card:hover { box-shadow:0 8px 24px rgba(15,23,42,.12); transform:translateY(-2px); }
+                        .mr-media { position:relative; aspect-ratio:16/9; background:linear-gradient(135deg,#0f172a,#334155); display:flex; align-items:center; justify-content:center; font-size:36px; }
+                        .mr-media img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+                        .mr-badge { position:absolute; top:10px; left:10px; z-index:2; }
+                        .mr-kebab { position:absolute; top:8px; right:8px; z-index:2; width:34px; height:34px; border-radius:50%; background:rgba(255,255,255,.94); border:none; cursor:pointer; font-size:18px; font-weight:700; line-height:1; color:#0f172a; box-shadow:0 2px 8px rgba(0,0,0,.22); }
+                        .mr-kebab:active { transform:scale(.92); }
+                        .mr-body { padding:12px 14px 14px; display:flex; flex-direction:column; gap:9px; flex:1; }
+                        .mr-name { font-weight:800; font-size:15px; color:#0f172a; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+                        .mr-place { font-size:12px; color:#94a3b8; margin-top:-5px; }
+                        .mr-row { display:flex; align-items:center; justify-content:space-between; gap:8px; font-size:13px; color:#475569; }
+                        .mr-chip { font-size:11.5px; font-weight:700; padding:3px 9px; border-radius:99px; white-space:nowrap; }
+                        .mr-chip--soon { background:#fef3c7; color:#92400e; }
+                        .mr-chip--ok { background:#e0f2fe; color:#075985; }
+                        .mr-chip--past { background:#f1f5f9; color:#64748b; }
+                        .mr-progress { height:8px; border-radius:99px; background:#e2e8f0; overflow:hidden; }
+                        .mr-progress > div { height:100%; border-radius:99px; background:linear-gradient(90deg,#f59e0b,#d97706); }
+                        .mr-progress > div.mr-full { background:linear-gradient(90deg,#10b981,#059669); }
+                        .mr-meta { display:flex; justify-content:space-between; align-items:baseline; font-size:12px; color:#64748b; }
+                        .mr-meta strong { color:#0f172a; }
+                        .mr-revenue { margin-top:auto; padding-top:9px; border-top:1px dashed #e2e8f0; display:flex; justify-content:space-between; font-size:12.5px; color:#64748b; }
+                        .mr-revenue b { color:#059669; font-size:13.5px; }
+                    </style>
                     <div class="section-card">
                         <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
                             <h2 class="text-lg font-bold">Mis Rifas</h2>
@@ -927,10 +951,11 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                         </div>
                         <div id="my-raffles-loading" class="text-center text-gray-400 py-10">Cargando tus rifas…</div>
                         <div id="my-raffles-empty" class="text-center py-10 hidden">
+                            <div style="font-size:44px;margin-bottom:8px;">🎟️</div>
                             <p class="text-gray-500 mb-4">Aún no has creado rifas.</p>
                             <button class="btn btn--primary" onclick="switchTo('crear')">Crear mi primera rifa</button>
                         </div>
-                        <div id="my-raffles-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-4"></div>
+                        <div id="my-raffles-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
                     </div>
                 </div>
 
@@ -1933,27 +1958,45 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                 const pct = total > 0 ? Math.min(100, Math.round(sold * 100 / total)) : 0;
                 const statusClass = r.status === 'active' ? 'active' : (r.status === 'completed' ? 'completed' : (r.status === 'cancelled' ? 'cancelled' : 'pending'));
                 const place = [r.city, r.department].filter(Boolean).join(', ');
-                return '<div class="section-card" style="margin:0;display:flex;flex-direction:column;gap:10px;">' +
-                    '<div class="flex items-start justify-between gap-2">' +
-                        '<div style="min-width:0;">' +
-                            '<div class="font-bold" style="font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + userEsc(r.name || 'Rifa') + '</div>' +
-                            (place ? '<div style="font-size:12px;color:#94a3b8;">' + userEsc(place) + '</div>' : '') +
-                        '</div>' +
-                        '<button class="btn btn--sm" aria-label="Acciones" title="Acciones" onclick="openRaffleSheet(' + parseInt(r.id, 10) + ')" style="font-size:20px;line-height:1;padding:2px 10px;flex-shrink:0;">⋮</button>' +
+                const price = parseFloat(r.ticket_price || 0);
+                const img = r.image_url ? fixUrl(r.image_url) : '';
+
+                // Chip de tiempo al sorteo (solo rifas no terminadas)
+                let chip = '';
+                if (r.draw_date && r.status !== 'completed' && r.status !== 'cancelled') {
+                    const days = Math.ceil((new Date(r.draw_date) - Date.now()) / 86400000);
+                    if (days < 0)       chip = '<span class="mr-chip mr-chip--past">Sorteo vencido</span>';
+                    else if (days === 0) chip = '<span class="mr-chip mr-chip--soon">¡Sorteo hoy!</span>';
+                    else if (days === 1) chip = '<span class="mr-chip mr-chip--soon">Sorteo mañana</span>';
+                    else if (days <= 7)  chip = '<span class="mr-chip mr-chip--soon">Faltan ' + days + ' días</span>';
+                    else                 chip = '<span class="mr-chip mr-chip--ok">Faltan ' + days + ' días</span>';
+                } else if (r.status === 'completed') {
+                    chip = '<span class="mr-chip mr-chip--past">Finalizada</span>';
+                }
+
+                return '<div class="mr-card">' +
+                    '<div class="mr-media">🎟️' +
+                        (img ? '<img src="' + userEsc(img) + '" alt="" loading="lazy" onerror="this.remove()">' : '') +
+                        '<span class="mr-badge"><span class="badge badge--' + statusClass + '">' + (statusMap[r.status] || r.status || '') + '</span></span>' +
+                        '<button class="mr-kebab" aria-label="Acciones" title="Acciones" onclick="openRaffleSheet(' + parseInt(r.id, 10) + ')">⋮</button>' +
                     '</div>' +
-                    '<div class="flex items-center gap-2 flex-wrap" style="font-size:13px;">' +
-                        '<span class="badge badge--' + statusClass + '">' + (statusMap[r.status] || r.status || '') + '</span>' +
-                        '<span style="color:#64748b;">' + Utils.formatPrice(r.ticket_price || 0) + ' / boleta</span>' +
-                    '</div>' +
-                    '<div>' +
-                        '<div class="flex justify-between" style="font-size:12px;color:#64748b;margin-bottom:4px;">' +
-                            '<span><strong>' + sold + '</strong> de ' + total + ' vendidas</span><span>' + pct + '%</span>' +
+                    '<div class="mr-body">' +
+                        '<div class="mr-name">' + userEsc(r.name || 'Rifa') + '</div>' +
+                        (place ? '<div class="mr-place">📍 ' + userEsc(place) + '</div>' : '') +
+                        '<div class="mr-row">' +
+                            '<span>' + Utils.formatPrice(price) + ' / boleta</span>' + chip +
                         '</div>' +
-                        '<div style="height:8px;border-radius:99px;background:#e2e8f0;overflow:hidden;">' +
-                            '<div style="height:100%;width:' + pct + '%;border-radius:99px;background:linear-gradient(90deg,#f59e0b,#d97706);"></div>' +
+                        '<div>' +
+                            '<div class="mr-meta" style="margin-bottom:4px;">' +
+                                '<span><strong>' + sold + '</strong> de ' + total + ' vendidas</span><span>' + pct + '%</span>' +
+                            '</div>' +
+                            '<div class="mr-progress"><div class="' + (pct >= 100 ? 'mr-full' : '') + '" style="width:' + pct + '%;"></div></div>' +
+                        '</div>' +
+                        '<div class="mr-revenue">' +
+                            '<span>Sorteo: ' + (r.draw_date ? new Date(r.draw_date).toLocaleDateString('es-CO') : '--') + '</span>' +
+                            '<span>Recaudado <b>' + Utils.formatPrice(sold * price) + '</b></span>' +
                         '</div>' +
                     '</div>' +
-                    '<div style="font-size:12px;color:#94a3b8;">Sorteo: ' + (r.draw_date ? new Date(r.draw_date).toLocaleDateString('es-CO') : '--') + '</div>' +
                 '</div>';
             }).join('');
         } catch (e) {
