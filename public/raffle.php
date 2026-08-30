@@ -752,9 +752,11 @@ function toggleSelection(ticket) {
     updateSelectionSummary();
 }
 
-// La hoja emergente arranca abierta; el usuario puede minimizarla para seguir
-// eligiendo números y reabrirla con el botón flotante sin perder la selección.
+// Panel emergente de selección. En escritorio abre automáticamente como tarjeta
+// flotante; en móvil arranca minimizado (botón flotante) para no tapar la grilla
+// y poder elegir VARIOS números; el usuario lo abre cuando quiere pagar.
 let sheetOpen = true;
+let hadSelection = false;
 function isMobileViewport() { return window.matchMedia('(max-width: 639px)').matches; }
 
 function openSelectionSheet() {
@@ -762,10 +764,10 @@ function openSelectionSheet() {
     sheetOpen = true;
     document.getElementById('multi-selection-summary').classList.remove('hidden');
     document.getElementById('selection-fab').classList.add('hidden');
-    if (isMobileViewport()) {
-        document.getElementById('selection-backdrop').classList.remove('hidden');
-        document.body.classList.add('sheet-open');
-    }
+    // NO bloqueante: el panel flota pero la grilla de boletos sigue tocable y
+    // scrolleable, para poder seguir eligiendo VARIOS números con el panel abierto.
+    document.getElementById('selection-backdrop').classList.add('hidden');
+    document.body.classList.remove('sheet-open');
 }
 function closeSelectionSheet() {
     sheetOpen = false;
@@ -787,7 +789,7 @@ function updateSelectionSummary() {
         backdrop.classList.add('hidden');
         fab.classList.add('hidden');
         document.body.classList.remove('sheet-open');
-        sheetOpen = true; // la próxima primera selección vuelve a abrir la hoja
+        hadSelection = false;
         selectedInfo.classList.remove('hidden');
         selectedInfo.innerHTML = '<p class="text-slate-300 font-medium text-lg">Haz click en un número <span class="text-emerald-400 font-bold">Verde</span> para empezar</p>';
         payBtn.disabled = true;
@@ -812,9 +814,19 @@ function updateSelectionSummary() {
 
     payBtn.disabled = false;
 
-    // Mostrar la hoja o, si está minimizada, el botón flotante.
-    if (sheetOpen) openSelectionSheet();
-    else fab.classList.remove('hidden');
+    // Primera selección: escritorio abre la tarjeta; móvil arranca minimizado
+    // (botón flotante) para seguir eligiendo varios números sin tapar la grilla.
+    if (!hadSelection) {
+        hadSelection = true;
+        sheetOpen = !isMobileViewport();
+    }
+
+    if (sheetOpen) {
+        openSelectionSheet();
+    } else {
+        summaryDiv.classList.add('hidden');
+        fab.classList.remove('hidden');
+    }
 }
 
 // position:fixed no ancla al viewport si un ancestro tiene backdrop-filter o

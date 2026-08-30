@@ -795,7 +795,7 @@ $page_description = "La plataforma más confiable para crear y participar en rif
                                 <div class="progress-bar group-hover:h-2 transition-all"><div class="progress-bar__fill" style="width: ${r.sold_percentage}%"></div></div>
                                 <div class="flex justify-between items-center mt-2">
                                     <span class="text-[10px] font-black text-slate-500 uppercase tracking-widest">${r.sold_tickets} / ${r.total_tickets} Vendidos</span>
-                                    <span class="text-[10px] font-black text-amber-500 uppercase tracking-widest">${Math.max(0, Math.floor((new Date(r.draw_date) - new Date()) / (1000 * 60 * 60 * 24)))} Días restantes</span>
+                                    <span class="text-[10px] font-black text-amber-500 uppercase tracking-widest">${(() => { const dd = Math.max(0, Math.floor((new Date(r.draw_date) - new Date()) / (1000 * 60 * 60 * 24))); return dd + (dd === 1 ? ' Día restante' : ' Días restantes'); })()}</span>
                                 </div>
                                 <a href="${BASE_PATH}/public/raffle.php?id=${r.id}" class="btn btn--primary w-full mt-6 shadow-amber-500/20 group-hover:shadow-amber-500/40 group-hover:-translate-y-0.5 transition-all">Participar Ahora &rarr;</a>
                             </div>
