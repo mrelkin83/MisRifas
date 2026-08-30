@@ -582,6 +582,10 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>
                     <span class="nav-text">Crear Rifa</span>
                 </a>
+                <a href="#mis-rifas" class="nav-item" data-section="mis-rifas" onclick="switchTo('mis-rifas')">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h11l-1 15a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 3Zm11 4h2.5a2 2 0 0 1 2 2.2l-.4 4A2 2 0 0 1 18.1 15H16"/></svg>
+                    <span class="nav-text">Mis Rifas</span>
+                </a>
                 <a href="#pagos" class="nav-item" data-section="pagos" onclick="switchTo('pagos')">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="3"/></svg>
                     <span class="nav-text">Pagos Recibidos</span>
@@ -912,6 +916,21 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                                 Crear Rifa
                             </button>
                         </form>
+                    </div>
+                </div>
+
+                <div id="section-mis-rifas" class="admin-section hidden">
+                    <div class="section-card">
+                        <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+                            <h2 class="text-lg font-bold">Mis Rifas</h2>
+                            <button class="btn btn--primary btn--sm" onclick="switchTo('crear')">+ Crear rifa</button>
+                        </div>
+                        <div id="my-raffles-loading" class="text-center text-gray-400 py-10">Cargando tus rifas…</div>
+                        <div id="my-raffles-empty" class="text-center py-10 hidden">
+                            <p class="text-gray-500 mb-4">Aún no has creado rifas.</p>
+                            <button class="btn btn--primary" onclick="switchTo('crear')">Crear mi primera rifa</button>
+                        </div>
+                        <div id="my-raffles-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-4"></div>
                     </div>
                 </div>
 
@@ -1707,6 +1726,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
             var titles = {
                 dashboard: 'Dashboard',
                 rifas: 'Mis Rifas',
+                'mis-rifas': 'Mis Rifas',
                 crear: 'Crear Rifa',
                 comisiones: 'Comisiones',
                 configuracion: 'Configuración',
@@ -1725,6 +1745,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
         
         // Load section data
         if (section === 'dashboard') loadDashboard();
+        if (section === 'mis-rifas') loadMyRaffles();
         if (section === 'boletas-compradas') loadUserBoughtTickets();
         if (section === 'rifas') loadAllRaffles();
         if (section === 'comisiones') loadCommissions();
@@ -1891,6 +1912,57 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
         }).join('');
     }
 
+    // Sección "Mis Rifas": lista completa del vendedor en tarjetas, con menú ⋮.
+    async function loadMyRaffles() {
+        const loading = document.getElementById('my-raffles-loading');
+        const empty = document.getElementById('my-raffles-empty');
+        const grid = document.getElementById('my-raffles-grid');
+        loading.classList.remove('hidden');
+        empty.classList.add('hidden');
+        grid.innerHTML = '';
+        try {
+            const res = await API.get('/vendor/list_raffles.php');
+            loading.classList.add('hidden');
+            const raffles = (res.success && res.data) ? res.data : [];
+            if (!raffles.length) { empty.classList.remove('hidden'); return; }
+            window.__myRaffles = raffles;
+            const statusMap = { draft: 'Borrador', active: 'Activa', blocked: 'Bloqueada', completed: 'Completada', cancelled: 'Cancelada' };
+            grid.innerHTML = raffles.map(r => {
+                const sold = parseInt(r.sold_tickets || 0, 10);
+                const total = parseInt(r.total_tickets || 0, 10);
+                const pct = total > 0 ? Math.min(100, Math.round(sold * 100 / total)) : 0;
+                const statusClass = r.status === 'active' ? 'active' : (r.status === 'completed' ? 'completed' : (r.status === 'cancelled' ? 'cancelled' : 'pending'));
+                const place = [r.city, r.department].filter(Boolean).join(', ');
+                return '<div class="section-card" style="margin:0;display:flex;flex-direction:column;gap:10px;">' +
+                    '<div class="flex items-start justify-between gap-2">' +
+                        '<div style="min-width:0;">' +
+                            '<div class="font-bold" style="font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + userEsc(r.name || 'Rifa') + '</div>' +
+                            (place ? '<div style="font-size:12px;color:#94a3b8;">' + userEsc(place) + '</div>' : '') +
+                        '</div>' +
+                        '<button class="btn btn--sm" aria-label="Acciones" title="Acciones" onclick="openRaffleSheet(' + parseInt(r.id, 10) + ')" style="font-size:20px;line-height:1;padding:2px 10px;flex-shrink:0;">⋮</button>' +
+                    '</div>' +
+                    '<div class="flex items-center gap-2 flex-wrap" style="font-size:13px;">' +
+                        '<span class="badge badge--' + statusClass + '">' + (statusMap[r.status] || r.status || '') + '</span>' +
+                        '<span style="color:#64748b;">' + Utils.formatPrice(r.ticket_price || 0) + ' / boleta</span>' +
+                    '</div>' +
+                    '<div>' +
+                        '<div class="flex justify-between" style="font-size:12px;color:#64748b;margin-bottom:4px;">' +
+                            '<span><strong>' + sold + '</strong> de ' + total + ' vendidas</span><span>' + pct + '%</span>' +
+                        '</div>' +
+                        '<div style="height:8px;border-radius:99px;background:#e2e8f0;overflow:hidden;">' +
+                            '<div style="height:100%;width:' + pct + '%;border-radius:99px;background:linear-gradient(90deg,#f59e0b,#d97706);"></div>' +
+                        '</div>' +
+                    '</div>' +
+                    '<div style="font-size:12px;color:#94a3b8;">Sorteo: ' + (r.draw_date ? new Date(r.draw_date).toLocaleDateString('es-CO') : '--') + '</div>' +
+                '</div>';
+            }).join('');
+        } catch (e) {
+            loading.classList.add('hidden');
+            empty.classList.remove('hidden');
+            console.error('Error loading my raffles:', e);
+        }
+    }
+
     async function loadAllRaffles() {
         try {
             const response = await API.get('/admin/raffles.php');
@@ -2024,6 +2096,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
             loading.classList.add('hidden');
             
             if (res.success && res.data && res.data.tickets && res.data.tickets.length > 0) {
+                window.__userTickets = res.data.tickets;
                 container.innerHTML = res.data.tickets.map(ticket => {
                     const opps = typeof ticket.opportunities === 'string' ? JSON.parse(ticket.opportunities) : (ticket.opportunities || []);
                     const statusClass = ticket.status === 'paid' ? 'completed' : 'pending';
@@ -2036,8 +2109,11 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                     return `
                         <div class="section-card" style="border-left: 5px solid #3b82f6; background: #f8fafc;">
                             <div class="flex justify-between items-start mb-2">
-                                <h3 class="font-bold text-lg">${ticket.raffle_name || 'Rifa'}</h3>
-                                <span class="badge badge--${statusClass}">${statusText}</span>
+                                <h3 class="font-bold text-lg">${userEsc(ticket.raffle_name || 'Rifa')}</h3>
+                                <div class="flex items-center gap-2">
+                                    <span class="badge badge--${statusClass}">${statusText}</span>
+                                    <button class="btn btn--sm" aria-label="Acciones" title="Acciones" onclick="openTicketSheet(${parseInt(ticket.id, 10)})" style="font-size:20px;line-height:1;padding:2px 10px;">⋮</button>
+                                </div>
                             </div>
                             <div class="flex items-center gap-6">
                                 <div style="font-size: 2.5rem; font-weight: 900; color: #2563eb; background: white; padding: 10px 20px; border-radius: 12px; border: 2px solid #e2e8f0;">
@@ -2436,6 +2512,9 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
             await API.post('/admin/raffles/delete.php', { raffle_id: raffleId });
             Utils.showNotification('Rifa "' + raffleName + '" eliminada ✅', 'success');
             loadGestionRaffles();
+            loadDashboard();
+            const secMR = document.getElementById('section-mis-rifas');
+            if (secMR && !secMR.classList.contains('hidden')) loadMyRaffles();
         } catch (error) {
             Utils.showNotification(error.message || 'Error al eliminar rifa', 'error');
         }
@@ -2910,20 +2989,20 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                     tbody.innerHTML = '<tr><td colspan="7" class="text-center text-gray-500 py-6">No hay pagos pendientes de validar</td></tr>';
                     return;
                 }
+                window.__payments = data;
                 tbody.innerHTML = data.map(p => {
                     const statusMap = { pending: 'Pendiente', verifying: 'Por verificar', approved: 'Aprobado', rejected: 'Rechazado' };
                     const proofBtn = p.payment_proof_url
                         ? `<a href="<?= BASE_PATH ?>/public${p.payment_proof_url}" target="_blank" style="color:#2563eb;text-decoration:underline;font-size:13px;">Ver comprobante</a>`
                         : `<span style="color:#9ca3af;font-size:12px;">Sin comprobante</span>`;
                     const actions = (p.payment_status === 'pending' || p.payment_status === 'verifying')
-                        ? `<button class="btn btn--sm" style="background:#10b981;color:white;margin-right:6px;" onclick="approvePayment(${p.ticket_id})">✅ Aprobar</button>
-                           <button class="btn btn--sm" style="background:#ef4444;color:white;" onclick="rejectPayment(${p.ticket_id})">❌ Rechazar</button>`
+                        ? `<button class="btn btn--sm" aria-label="Acciones" title="Acciones" onclick="openPaymentSheet(${parseInt(p.ticket_id, 10)})" style="font-size:20px;line-height:1;padding:2px 10px;">⋮</button>`
                         : `<span style="color:#94a3b8;font-size:12px;">${statusMap[p.payment_status] || p.payment_status}</span>`;
                     return `<tr>
-                        <td class="font-medium">${p.raffle_name || ''}</td>
-                        <td><strong>#${p.ticket_number}</strong></td>
-                        <td>${p.buyer_name || '—'}<br><span style="color:#94a3b8;font-size:12px;">${p.buyer_phone || ''}</span></td>
-                        <td>${p.payment_method || '—'}</td>
+                        <td class="font-medium">${userEsc(p.raffle_name || '')}</td>
+                        <td><strong>#${userEsc(p.ticket_number)}</strong></td>
+                        <td>${userEsc(p.buyer_name || '—')}<br><span style="color:#94a3b8;font-size:12px;">${userEsc(p.buyer_phone || '')}</span></td>
+                        <td>${userEsc(p.payment_method || '—')}</td>
                         <td><span class="badge badge--pending">${statusMap[p.payment_status] || p.payment_status}</span></td>
                         <td>${proofBtn}</td>
                         <td>${actions}</td>
@@ -3438,6 +3517,10 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
             <span>Panel</span>
         </button>
+        <button class="vtab" data-tab="mis-rifas" onclick="switchTo('mis-rifas')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h11l-1 15a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 3Zm11 4h2.5a2 2 0 0 1 2 2.2l-.4 4A2 2 0 0 1 18.1 15H16"/></svg>
+            <span>Rifas</span>
+        </button>
         <button class="vtab" data-tab="pagos" onclick="switchTo('pagos')">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
             <span>Pagos</span>
@@ -3494,30 +3577,69 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
             window.showRaffleSheet = function(){ el('raffle-sheet').style.display='block'; el('raffle-sheet-backdrop').style.display='block'; document.body.style.overflow='hidden'; };
             window.closeRaffleSheet = function(){ el('raffle-sheet').style.display='none'; el('raffle-sheet-backdrop').style.display='none'; document.body.style.overflow=''; };
 
+            // Sheet genérico: título, subtítulo y lista de acciones {label, onClick, danger}.
+            window.openActionSheet = function(title, sub, items){
+                el('raffle-sheet-title').textContent = title || '';
+                el('raffle-sheet-status').textContent = sub || '';
+                var body = el('raffle-sheet-actions');
+                body.innerHTML = '';
+                (items || []).forEach(function(it){
+                    body.appendChild(rsItem(it.label, function(){ closeRaffleSheet(); it.onClick(); }, it.danger));
+                });
+                showRaffleSheet();
+            };
+
+            function refreshRaffleViews(){
+                if (window.loadDashboard) loadDashboard();
+                var sec = document.getElementById('section-mis-rifas');
+                if (window.loadMyRaffles && sec && !sec.classList.contains('hidden')) loadMyRaffles();
+            }
+
             window.raffleSheetStatus = async function(id, status){
-                closeRaffleSheet();
                 try {
                     await API.post('/admin/raffles/update_status.php', { raffle_id: id, status: status });
                     Utils.showNotification(status === 'active' ? 'Rifa publicada ✅' : 'Rifa ocultada (borrador)', 'success');
                 } catch (e) { Utils.showNotification(e.message || 'Error al cambiar estado', 'error'); }
-                if (window.loadDashboard) loadDashboard();
+                refreshRaffleViews();
             };
 
             window.openRaffleSheet = function(id){
-                var r = (window.__dashRaffles || []).find(function(x){ return x.id === id; });
+                var list = (window.__dashRaffles || []).concat(window.__myRaffles || []);
+                var r = list.find(function(x){ return String(x.id) === String(id); });
                 if (!r) return;
-                el('raffle-sheet-title').textContent = r.name || 'Rifa';
-                el('raffle-sheet-status').textContent = 'Estado: ' + (r.status || '') + ' · ' + (r.sold_tickets || 0) + ' vendidos';
-                var body = el('raffle-sheet-actions');
-                body.innerHTML = '';
-                body.appendChild(rsItem('👁️  Ver rifa', function(){ closeRaffleSheet(); viewRaffle(id); }));
+                var items = [
+                    { label: '👁️  Ver rifa', onClick: function(){ viewRaffle(id); } }
+                ];
                 if (r.status === 'active') {
-                    body.appendChild(rsItem('🙈  Ocultar (pasar a borrador)', function(){ raffleSheetStatus(id, 'draft'); }));
+                    items.push({ label: '🙈  Ocultar (pasar a borrador)', onClick: function(){ raffleSheetStatus(id, 'draft'); } });
                 } else {
-                    body.appendChild(rsItem('🚀  Publicar rifa', function(){ raffleSheetStatus(id, 'active'); }));
+                    items.push({ label: '🚀  Publicar rifa', onClick: function(){ raffleSheetStatus(id, 'active'); } });
                 }
-                body.appendChild(rsItem('🗑️  Eliminar', function(){ closeRaffleSheet(); if (window.deleteRaffle) deleteRaffle(id, r.name); }, true));
-                showRaffleSheet();
+                items.push({ label: '🗑️  Eliminar', danger: true, onClick: function(){ if (window.deleteRaffle) deleteRaffle(id, r.name); } });
+                openActionSheet(r.name || 'Rifa', 'Estado: ' + (r.status || '') + ' · ' + (r.sold_tickets || 0) + ' vendidos', items);
+            };
+
+            // ⋮ en "Pagos Recibidos": comprobante + aprobar/rechazar en sheet.
+            window.openPaymentSheet = function(ticketId){
+                var p = (window.__payments || []).find(function(x){ return String(x.ticket_id) === String(ticketId); });
+                if (!p) return;
+                var items = [];
+                if (p.payment_proof_url) {
+                    items.push({ label: '🧾  Ver comprobante', onClick: function(){ window.open(BASE_PATH + '/public' + p.payment_proof_url, '_blank'); } });
+                }
+                items.push({ label: '✅  Aprobar pago', onClick: function(){ approvePayment(p.ticket_id); } });
+                items.push({ label: '❌  Rechazar pago', danger: true, onClick: function(){ rejectPayment(p.ticket_id); } });
+                openActionSheet('Boleto #' + (p.ticket_number || ''), (p.raffle_name || '') + (p.buyer_name ? ' · ' + p.buyer_name : ''), items);
+            };
+
+            // ⋮ en "Boletas Compradas": ir a la rifa del boleto.
+            window.openTicketSheet = function(ticketId){
+                var t = (window.__userTickets || []).find(function(x){ return String(x.id) === String(ticketId); });
+                if (!t) return;
+                var items = [];
+                if (t.raffle_id) items.push({ label: '👁️  Ver rifa', onClick: function(){ viewRaffle(t.raffle_id); } });
+                if (!items.length) return;
+                openActionSheet('Boleto #' + (t.ticket_number || ''), t.raffle_name || '', items);
             };
         })();
     </script>

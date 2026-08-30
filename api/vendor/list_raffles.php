@@ -8,10 +8,11 @@ require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../api/utils/Auth.php';
 require_once __DIR__ . '/../../api/utils/Response.php';
 
-Auth::requireVendor();
+$authVendor = Auth::requireVendor();
 
 $db = Database::getInstance()->getConnection();
-$vendorId = $_SESSION['user_id'];
+// Identidad del token (no de la sesión) para funcionar igual vía Bearer.
+$vendorId = $authVendor['id'];
 
 try {
     $stmt = $db->prepare("
