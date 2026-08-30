@@ -32,6 +32,7 @@ try {
         WHERE r.status = 'active'
           AND r.draw_date <= NOW()
           AND lr.winning_number IS NOT NULL
+          AND lr.verified = 1
     ");
     $raffles = $stmt->fetchAll(PDO::FETCH_ASSOC);
 

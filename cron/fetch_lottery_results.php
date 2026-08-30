@@ -73,14 +73,19 @@ try {
                     'number' => $winningNumber
                 ]);
             } else {
+                // Scrape falló: NO se inventa un número (ver LotteryScraperService).
+                // Se registra el intento (winning_number queda NULL, verified=0)
+                // para observabilidad; el sorteo sigue pendiente y reintenta.
                 $stmt = $db->prepare("
-                    UPDATE lottery_results
-                    SET scrape_attempts = scrape_attempts + 1
-                    WHERE lottery_id = ? AND draw_date = ?
+                    INSERT INTO lottery_results (lottery_id, draw_date, scraped_at, scrape_source, scrape_attempts, verified)
+                    VALUES (?, ?, NOW(), 'colombia.com', 1, 0)
+                    ON DUPLICATE KEY UPDATE
+                        scrape_attempts = scrape_attempts + 1,
+                        scraped_at = NOW()
                 ");
                 $stmt->execute([$item['lottery_id'], $item['target_date']]);
 
-                Logger::warning("Scraping sin resultado", [
+                Logger::warning("Scraping sin resultado (sorteo queda pendiente, se reintentará)", [
                     'lottery' => $item['lottery_name'],
                     'date' => $item['target_date']
                 ]);
