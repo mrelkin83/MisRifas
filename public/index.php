@@ -210,9 +210,9 @@ $page_description = "La plataforma más confiable para crear y participar en rif
         .hero-slider__arrow--prev { left: 24px; }
         .hero-slider__arrow--next { right: 24px; }
         @media (max-width: 640px) {
-            .hero-slider__arrow { width: 40px; height: 40px; font-size: 16px; }
-            .hero-slider__arrow--prev { left: 12px; }
-            .hero-slider__arrow--next { right: 12px; }
+            /* En móvil las flechas se encimaban sobre el texto del hero. Se
+               ocultan: swipe táctil + dots + autoplay cubren la navegación. */
+            .hero-slider__arrow { display: none; }
         }
 
         /* Dots */
