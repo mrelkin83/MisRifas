@@ -164,6 +164,40 @@ function fxBuyer(?string $phone = null): array {
     return ['id' => $id, 'phone' => $phone];
 }
 
+/**
+ * Deja un boleto de la rifa en estado 'reserved' para un comprador, con su fila
+ * en numero_reservas y un pago 'pending'. Devuelve ['ticket_id','payment_id'].
+ * Simula el estado tras una reserva + comprobante subido, listo para aprobar.
+ */
+function fxPendingPayment(int $raffleId, string $numero, int $buyerId, float $amount = 1000): array {
+    $db = testdb();
+    $expires = date('Y-m-d H:i:s', strtotime('+10 min'));
+    $db->prepare("UPDATE tickets SET status='reserved', user_id=?, reserved_at=NOW(), reserved_until=? WHERE raffle_id=? AND ticket_number=?")
+       ->execute([$buyerId, $expires, $raffleId, $numero]);
+    $ticketId = (int)$db->query("SELECT id FROM tickets WHERE raffle_id=$raffleId AND ticket_number=" . $db->quote($numero))->fetchColumn();
+
+    $reservationId = 'TEST-' . bin2hex(random_bytes(6));
+    $db->prepare("INSERT INTO numero_reservas (raffle_id, numero, estado, user_id, reservation_id, reserved_at, expires_at) VALUES (?,?, 'RESERVADO', ?, ?, NOW(), ?)")
+       ->execute([$raffleId, $numero, $buyerId, $reservationId, $expires]);
+
+    $ref = 'TESTREF-' . bin2hex(random_bytes(6));
+    $db->prepare("INSERT INTO payments (user_id, raffle_id, ticket_id, amount, transaction_reference, transaction_status) VALUES (?,?,?,?,?, 'pending')")
+       ->execute([$buyerId, $raffleId, $ticketId, $amount, $ref]);
+    $paymentId = (int)$db->lastInsertId();
+    // La limpieza de payments/numero_reservas/tickets la cubre el teardown de la rifa.
+    return ['ticket_id' => $ticketId, 'payment_id' => $paymentId];
+}
+
+/** Ejecuta un script de cron por CLI y devuelve ['rc'=>int,'out'=>string]. */
+function runCron(string $relativePath): array {
+    $php  = PHP_BINARY ?: 'php';
+    $path = __DIR__ . '/../' . ltrim($relativePath, '/');
+    $out = [];
+    $rc = 0;
+    exec(escapeshellarg($php) . ' ' . escapeshellarg($path) . ' 2>&1', $out, $rc);
+    return ['rc' => $rc, 'out' => implode("\n", $out)];
+}
+
 /** Mintea un token válido para un vendor/super_admin y lo restaura al final. */
 function fxToken(int $vendorId): string {
     $db = testdb();
