@@ -20,15 +20,19 @@ class Database
 
     private function __construct()
     {
-        // Cargar variables del .env si aún no están en el entorno
-        self::loadEnv();
+        // Cargar variables del .env si aún no están en el entorno.
+        // getenv()/putenv() no son thread-safe (Apache mpm_winnt corre PHP en
+        // hilos que comparten el environ del proceso): bajo carga concurrente
+        // getenv() puede devolver vacío de forma intermitente. Por eso el
+        // array parseado del .env (estado local, sin carrera) es el respaldo.
+        $env = self::loadEnv();
 
-        $this->host     = getenv('DB_HOST')    ?: 'localhost';
-        $this->port     = getenv('DB_PORT')    ?: 3306;
-        $this->dbname   = getenv('DB_NAME')    ?: '';
-        $this->username = getenv('DB_USER')    ?: '';
-        $this->password = getenv('DB_PASS')    ?: '';
-        $this->charset  = getenv('DB_CHARSET') ?: 'utf8mb4';
+        $this->host     = getenv('DB_HOST')    ?: ($env['DB_HOST']    ?? 'localhost');
+        $this->port     = getenv('DB_PORT')    ?: ($env['DB_PORT']    ?? 3306);
+        $this->dbname   = getenv('DB_NAME')    ?: ($env['DB_NAME']    ?? '');
+        $this->username = getenv('DB_USER')    ?: ($env['DB_USER']    ?? '');
+        $this->password = getenv('DB_PASS')    ?: ($env['DB_PASS']    ?? '');
+        $this->charset  = getenv('DB_CHARSET') ?: ($env['DB_CHARSET'] ?? 'utf8mb4');
 
         if (empty($this->dbname) || empty($this->username)) {
             throw new Exception('Database not configured. Set DB_NAME, DB_USER in .env');
@@ -67,19 +71,22 @@ class Database
     }
 
     /**
-     * Carga el archivo .env desde la raíz del proyecto.
-     * Solo procesa líneas con formato CLAVE=VALOR y omite comentarios.
+     * Carga el archivo .env desde la raíz del proyecto y devuelve el mapa
+     * parseado. Solo procesa líneas con formato CLAVE=VALOR y omite
+     * comentarios. El valor de retorno permite leer la configuración sin
+     * depender de getenv() (ver nota de thread-safety en el constructor).
      */
-    private static function loadEnv(): void
+    private static function loadEnv(): array
     {
         // Busca el .env en la raíz del proyecto
         $envFile = dirname(__DIR__) . '/.env';
 
         if (!file_exists($envFile)) {
-            return; // Si no existe .env, continúa con variables del sistema
+            return []; // Si no existe .env, continúa con variables del sistema
         }
 
         $lines = file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+        $vars = [];
 
         foreach ($lines as $line) {
             $line = trim($line);
@@ -97,6 +104,7 @@ class Database
             [$key, $value] = explode('=', $line, 2);
             $key   = trim($key);
             $value = trim($value, " \t\n\r\0\x0B\"'"); // Quita espacios y comillas
+            $vars[$key] = $value;
 
             // Solo setear si no está ya definida en el entorno
             if (!getenv($key)) {
@@ -105,6 +113,8 @@ class Database
                 $_SERVER[$key] = $value;
             }
         }
+
+        return $vars;
     }
 
     /**

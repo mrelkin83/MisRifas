@@ -5,7 +5,8 @@
 
 // Cargar variables de entorno desde .env
 if (!function_exists('loadEnv')) {
-    function loadEnv($path = __DIR__ . '/../../.env')
+    // El .env vive en la raíz del proyecto: un nivel arriba de config/.
+    function loadEnv($path = __DIR__ . '/../.env')
     {
         if (!file_exists($path)) {
             return;
