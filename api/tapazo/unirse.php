@@ -15,8 +15,15 @@ require_once __DIR__ . '/../../config/constants.php';
 require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../api/utils/Response.php';
 require_once __DIR__ . '/../../api/utils/Validator.php';
+require_once __DIR__ . '/../../api/utils/RateLimiter.php';
 
 try {
+    // Endpoint público (sin registro): limitar por IP para frenar el llenado
+    // automatizado de cupos / spam de participantes.
+    if (!RateLimiter::check('tapazo_unirse_' . ($_SERVER['REMOTE_ADDR'] ?? 'unknown'), 20, 10)) {
+        Response::error('Demasiados intentos. Intenta de nuevo en unos minutos.', null, 429);
+    }
+
     $input = json_decode(file_get_contents('php://input'), true);
     $db = Database::getInstance()->getConnection();
 

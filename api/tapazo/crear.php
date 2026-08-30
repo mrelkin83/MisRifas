@@ -15,8 +15,15 @@ require_once __DIR__ . '/../../config/constants.php';
 require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../api/utils/Response.php';
 require_once __DIR__ . '/../../api/utils/Validator.php';
+require_once __DIR__ . '/../../api/utils/RateLimiter.php';
 
 try {
+    // Endpoint público (Tapazo self-service, sin registro): limitar creación por
+    // IP para frenar spam masivo de tapazos que ensucian el listado público.
+    if (!RateLimiter::check('tapazo_crear_' . ($_SERVER['REMOTE_ADDR'] ?? 'unknown'), 5, 10)) {
+        Response::error('Has creado demasiados tapazos. Intenta de nuevo en unos minutos.', null, 429);
+    }
+
     $input = json_decode(file_get_contents('php://input'), true);
     $db = Database::getInstance()->getConnection();
 

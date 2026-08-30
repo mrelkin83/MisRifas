@@ -40,6 +40,11 @@ SetEnvIf Request_URI "^/MisRifas/" IS_DEV
     RewriteRule ^logs/ - [F,L]
     RewriteRule ^api/config/ - [F,L]
     RewriteRule ^api/utils/ - [F,L]
+    # api/cron y api/workers son scripts de cola/cron sin guard CLI ni auth
+    # (duplicados legacy de cron/, que sí lo tienen). Accesibles por HTTP
+    # dispararían el envío de correos encolados: solo deben correr por CLI.
+    RewriteRule ^api/cron/ - [F,L]
+    RewriteRule ^api/workers/ - [F,L]
     # tools/ tiene scripts de migracion/seed sin autenticacion que
     # ESCRIBEN en la base de datos (ej. seed_data.php marca rifas como
     # completadas e inventa numeros ganadores) - nunca deben ser
