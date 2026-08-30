@@ -53,6 +53,16 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
         .user-menu { display: flex; align-items: center; gap: 12px; }
         .user-name { font-size: 14px; color: #6b7280; }
         .user-avatar { width: 36px; height: 36px; background: #fef3c7; color: #b45309; font-weight: 700; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 15px; }
+        .user-menu { position: relative; }
+        .user-menu-btn { display: flex; align-items: center; gap: 10px; background: none; border: none; cursor: pointer; padding: 4px 8px; border-radius: 10px; transition: background 0.2s; }
+        .user-menu-btn:hover { background: #f3f4f6; }
+        .user-menu-caret { color: #9ca3af; transition: transform 0.2s; }
+        .user-menu-btn[aria-expanded="true"] .user-menu-caret { transform: rotate(180deg); }
+        .user-dropdown { position: absolute; right: 0; top: calc(100% + 8px); background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; box-shadow: 0 12px 32px rgba(0,0,0,0.14); min-width: 190px; padding: 6px; z-index: 60; }
+        .user-dropdown.hidden { display: none; }
+        .user-dropdown button { display: block; width: 100%; text-align: left; padding: 11px 12px; border: none; background: none; border-radius: 8px; cursor: pointer; font-size: 14px; color: #374151; font-weight: 500; }
+        .user-dropdown button:hover { background: #f3f4f6; }
+        .user-dropdown__logout { color: #dc2626 !important; }
 
         .admin-content { padding: 24px; }
         .admin-section { display: block; }
@@ -154,7 +164,12 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
             .admin-header { padding-left: 60px !important; }
             .form-row { grid-template-columns: 1fr; }
             .stats-grid { grid-template-columns: 1fr 1fr; }
-            .mobile-toggle { 
+            .stat-card { padding: 14px; gap: 10px; min-width: 0; }
+            .stat-content { min-width: 0; }
+            .stat-value { font-size: 18px; word-break: break-word; }
+            .stat-label { font-size: 12px; }
+            .data-table { display: block; overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch; }
+            .mobile-toggle {
                 display: flex !important; 
                 position: absolute; 
                 left: 16px; 
@@ -665,9 +680,16 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                     </svg>
                 </button>
                 <h1>Dashboard</h1>
-                <div class="user-menu">
-                    <span class="user-name" id="user-name">Usuario</span>
-                    <div class="user-avatar"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg></div>
+                <div class="user-menu" id="user-menu">
+                    <button type="button" id="user-menu-btn" class="user-menu-btn" aria-haspopup="true" aria-expanded="false" aria-label="Menú de usuario">
+                        <span class="user-name" id="user-name">Usuario</span>
+                        <div class="user-avatar"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg></div>
+                        <svg class="user-menu-caret" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                    </button>
+                    <div class="user-dropdown hidden" id="user-dropdown" role="menu">
+                        <button type="button" role="menuitem" onclick="switchTo('mi-perfil'); toggleUserMenu(false);">Mi Perfil</button>
+                        <button type="button" role="menuitem" class="user-dropdown__logout" onclick="logout()">Salir</button>
+                    </div>
                 </div>
             </header>
 
@@ -1697,6 +1719,16 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
     const token = localStorage.getItem('misrifas_token');
     if (!token) {
         window.location.href = BASE_PATH + '/public/admin/index.php?auth=login';
+    } else {
+        // Guarda: un comprador que llega aquí NO debe entrar al panel —sus
+        // llamadas darían 401 y se cerraría su sesión—; se le envía a su panel
+        // de comprador sin destruir el token.
+        try {
+            var _u = JSON.parse(localStorage.getItem('misrifas_user') || '{}');
+            if (_u && _u.role === 'buyer') {
+                window.location.href = BASE_PATH + '/public/dashboard.php';
+            }
+        } catch (e) {}
     }
 
     function logout() {
@@ -1704,6 +1736,21 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
         localStorage.removeItem('misrifas_user');
         window.location.href = BASE_PATH + '/public/admin/index.php?auth=login';
     }
+
+    // Menú del círculo de usuario (antes el avatar no hacía nada).
+    window.toggleUserMenu = function (force) {
+        var d = document.getElementById('user-dropdown');
+        var b = document.getElementById('user-menu-btn');
+        if (!d || !b) return;
+        var show = (force === undefined) ? d.classList.contains('hidden') : force;
+        d.classList.toggle('hidden', !show);
+        b.setAttribute('aria-expanded', show ? 'true' : 'false');
+    };
+    document.getElementById('user-menu-btn')?.addEventListener('click', function (e) {
+        e.stopPropagation();
+        window.toggleUserMenu();
+    });
+    document.addEventListener('click', function () { window.toggleUserMenu(false); });
 
     let currentSection = 'dashboard';
 
@@ -2045,10 +2092,13 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
         try {
             const user = JSON.parse(localStorage.getItem('misrifas_user') || '{}');
             const token = localStorage.getItem('misrifas_token');
-            if (!user.id || !token) return;
-            
-            // Use existing API endpoint to get current user tickets
-            const res = await API.get('/user/tickets.php', { user_id: user.id });
+            if (!token) return;
+
+            // El endpoint busca por teléfono o código único (no por user_id, que
+            // daba 400). Si no hay teléfono asociado, estado vacío en vez de error.
+            if (!user.phone) { loading.classList.add('hidden'); empty.classList.remove('hidden'); return; }
+
+            const res = await API.get('/user/tickets.php', { phone: user.phone });
             loading.classList.add('hidden');
             
             if (res.success && res.data && res.data.tickets && res.data.tickets.length > 0) {
@@ -2087,9 +2137,11 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                 empty.classList.remove('hidden');
             }
         } catch (e) {
+            // "Usuario no encontrado" (no compró boletos con este teléfono) no es
+            // un error: se muestra el estado vacío en vez de un mensaje rojo.
             loading.classList.add('hidden');
-            console.error('Error loading user tickets:', e);
-            container.innerHTML = '<p class="text-center text-red-500">Error al cargar tus boletos</p>';
+            container.innerHTML = '';
+            empty.classList.remove('hidden');
         }
     }
 
