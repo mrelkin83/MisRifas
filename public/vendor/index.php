@@ -1813,6 +1813,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                     tbody.innerHTML = '<tr><td colspan="6" class="text-center text-gray-500 py-6">No hay comisiones registradas</td></tr>';
                     return;
                 }
+                window.__commissions = data;
                 tbody.innerHTML = data.map(c => {
                     const isPaid    = parseInt(c.commission_paid) === 1;
                     const isOverdue = !isPaid && new Date(c.commission_due_date) < new Date();
@@ -1823,11 +1824,11 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                         ? `<input type="number" value="${commissionAmount}" min="0" step="1000" class="commission-edit-input w-28 px-2 py-1 border border-slate-300 rounded text-sm font-bold" data-raffle-id="${c.raffle_id}" onchange="updateCommissionAmount(${c.raffle_id}, this.value)">`
                         : `<span class="font-bold text-slate-700">$${commissionAmount.toLocaleString('es-CO')}</span>`;
                     const actionBtn   = !isPaid
-                        ? `<button class="btn btn--sm" style="background:#10b981;color:white;margin-right:4px;" onclick="markCommissionPaid(${c.raffle_id})">✅ Pagar</button>`
+                        ? `<button class="btn btn--sm" aria-label="Acciones" title="Acciones" onclick="openCommissionSheet(${parseInt(c.raffle_id, 10)})" style="font-size:20px;line-height:1;padding:2px 10px;">⋮</button>`
                         : '<span style="color:#10b981;font-size:12px;">&#10003; Cobrada</span>';
                     return '<tr>' +
-                        '<td class="font-medium">' + (c.raffle_name || '') + '</td>' +
-                        '<td style="color:#94a3b8;font-size:13px;">' + (c.creator_name || 'Vendedor') + '</td>' +
+                        '<td class="font-medium">' + userEsc(c.raffle_name || '') + '</td>' +
+                        '<td style="color:#94a3b8;font-size:13px;">' + userEsc(c.creator_name || 'Vendedor') + '</td>' +
                         '<td>' + Utils.formatPrice(c.total_sales || 0) + '</td>' +
                         '<td>' + commissionEditable + '</td>' +
                         '<td><span class="badge badge--' + statusClass + '">' + statusText + '</span></td>' +
@@ -2015,16 +2016,17 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                     tbody.innerHTML = '<tr><td colspan="7" class="text-center">No hay rifas</td></tr>';
                     return;
                 }
+                window.__allRaffles = response.data;
                 tbody.innerHTML = response.data.map(r => {
                     const statusClass = r.status || 'pending';
                     return '<tr>' +
-                        '<td class="font-medium">' + (r.name || '') + '</td>' +
-                        '<td>' + (r.city || '') + '</td>' +
+                        '<td class="font-medium">' + userEsc(r.name || '') + '</td>' +
+                        '<td>' + userEsc(r.city || '') + '</td>' +
                         '<td><span class="badge badge--' + statusClass + '">' + statusClass + '</span></td>' +
                         '<td>' + (r.sold_tickets || 0) + '</td>' +
                         '<td>' + Utils.formatPrice(r.ticket_price || 0) + '</td>' +
                         '<td>' + (r.draw_date ? new Date(r.draw_date).toLocaleDateString('es-CO') : '--') + '</td>' +
-                        '<td><button class="btn btn--sm btn--outline" onclick="viewRaffle(' + r.id + ')">Ver</button></td>' +
+                        '<td><button class="btn btn--sm" aria-label="Acciones" title="Acciones" onclick="openRaffleSheet(' + parseInt(r.id, 10) + ')" style="font-size:20px;line-height:1;padding:2px 10px;">⋮</button></td>' +
                     '</tr>';
                 }).join('');
             }
@@ -2047,18 +2049,16 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                 const modeMap = { highest: '🔼 Más alto gana', lowest: '🔽 Más bajo gana' };
                 const statusMap = { draft: 'Borrador', active: 'Activo', completed: 'Completado', cancelled: 'Cancelado' };
                 const statusClass = { draft: 'pending', active: 'active', completed: 'completed', cancelled: 'cancelled' };
+                window.__tapazos = res.data;
                 tbody.innerHTML = res.data.map(t => {
                     return '<tr>' +
-                        '<td class="font-bold">' + (t.name || '') + '</td>' +
+                        '<td class="font-bold">' + userEsc(t.name || '') + '</td>' +
                         '<td>' + (t.joined_count || 0) + ' / ' + t.total_participants + '</td>' +
-                        '<td>' + (t.prize || '--') + '</td>' +
+                        '<td>' + userEsc(t.prize || '--') + '</td>' +
                         '<td>' + (modeMap[t.win_mode] || t.win_mode) + '</td>' +
                         '<td><span class="badge badge--' + (statusClass[t.status] || 'pending') + '">' + (statusMap[t.status] || t.status) + '</span></td>' +
                         '<td>' + new Date(t.created_at).toLocaleDateString('es-CO') + '</td>' +
-                        '<td class="flex gap-2">' +
-                            '<button onclick="viewTapazo(' + t.id + ')" class="btn btn--sm" style="background:#3b82f6;color:white;">👁️ Ver</button>' +
-                            (t.status === 'active' ? '<button onclick="completeTapazo(' + t.id + ')" class="btn btn--sm" style="background:#10b981;color:white;">✅ Completar</button>' : '') +
-                        '</td>' +
+                        '<td><button class="btn btn--sm" aria-label="Acciones" title="Acciones" onclick="openTapazoSheet(' + parseInt(t.id, 10) + ')" style="font-size:20px;line-height:1;padding:2px 10px;">⋮</button></td>' +
                     '</tr>';
                 }).join('');
             } else {
@@ -2303,9 +2303,6 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
             const statusBadge = suspended
                 ? '<span class="badge badge--cancelled">Suspendido</span>'
                 : '<span class="badge badge--active">Activo</span>';
-            const toggleBtn = suspended
-                ? '<button onclick="toggleUserStatus(\'' + u.type + '\',' + u.id + ',\'activate\')" class="btn btn--sm" style="background:#10b981;color:white;" title="Activar">Activar</button>'
-                : '<button onclick="toggleUserStatus(\'' + u.type + '\',' + u.id + ',\'suspend\')" class="btn btn--sm" style="background:#f59e0b;color:#1c1305;" title="Suspender">Suspender</button>';
             return '<tr>' +
                 '<td><span class="badge badge--' + (u.type === 'vendor' ? 'completed' : 'pending') + '">' + typeLabel[u.type] + '</span></td>' +
                 '<td class="font-medium">' + userEsc(u.name) + (u.deps ? ' <span class="text-gray-400 text-xs">(' + u.deps + ')</span>' : '') + '</td>' +
@@ -2314,11 +2311,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                 '<td>' + (roleLabel[u.role] || u.role) + '</td>' +
                 '<td>' + statusBadge + '</td>' +
                 '<td style="color:#94a3b8;font-size:12px;">' + (u.created_at ? new Date(u.created_at).toLocaleDateString('es-CO') : '—') + '</td>' +
-                '<td class="flex gap-2 flex-wrap">' +
-                    '<button onclick="openUserEdit(\'' + u.type + '\',' + u.id + ')" class="btn btn--sm" style="background:#3b82f6;color:white;" title="Editar">Editar</button>' +
-                    toggleBtn +
-                    '<button onclick="deleteUser(\'' + u.type + '\',' + u.id + ',\'' + userEsc(u.name).replace(/'/g, "\\'") + '\')" class="btn btn--sm" style="background:#ef4444;color:white;" title="Eliminar">Eliminar</button>' +
-                '</td>' +
+                '<td><button class="btn btn--sm" aria-label="Acciones" title="Acciones" onclick="openUserSheet(\'' + u.type + '\',' + parseInt(u.id, 10) + ')" style="font-size:20px;line-height:1;padding:2px 10px;">⋮</button></td>' +
             '</tr>';
         }).join('');
     }
@@ -2439,16 +2432,13 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
             const statusClass = r.status === 'active' ? 'active' : (r.status === 'completed' ? 'completed' : (r.status === 'cancelled' ? 'cancelled' : (r.status === 'blocked' ? 'pending' : 'pending')));
             return '<tr>' +
                 '<td class="text-gray-400 text-sm">' + (r.id || '') + '</td>' +
-                '<td class="font-medium">' + (r.name || '') + '</td>' +
-                '<td style="color:#64748b;font-size:13px;">' + (r.creator_name || '--') + '</td>' +
-                '<td>' + (r.city || '--') + '</td>' +
+                '<td class="font-medium">' + userEsc(r.name || '') + '</td>' +
+                '<td style="color:#64748b;font-size:13px;">' + userEsc(r.creator_name || '--') + '</td>' +
+                '<td>' + userEsc(r.city || '--') + '</td>' +
                 '<td><span class="badge badge--' + statusClass + '">' + (statusMap[r.status] || r.status) + '</span></td>' +
                 '<td class="font-bold">' + (r.sold_tickets || 0) + '</td>' +
                 '<td>' + (r.draw_date ? new Date(r.draw_date).toLocaleDateString('es-CO') : '--') + '</td>' +
-                '<td class="flex gap-2 flex-wrap">' +
-                    '<button onclick="openEditModal(' + r.id + ')" class="btn btn--sm" style="background:#3b82f6;color:white;" title="Editar">✏️ Editar</button>' +
-                    '<button onclick="deleteRaffle(' + r.id + ', \'' + (r.name || '').replace(/'/g, "\\'") + '\')" class="btn btn--sm" style="background:#ef4444;color:white;" title="Eliminar">🗑️ Eliminar</button>' +
-                '</td>' +
+                '<td><button class="btn btn--sm" aria-label="Acciones" title="Acciones" onclick="openGestionSheet(' + parseInt(r.id, 10) + ')" style="font-size:20px;line-height:1;padding:2px 10px;">⋮</button></td>' +
             '</tr>';
         }).join('');
     }
@@ -3632,10 +3622,15 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                 showRaffleSheet();
             };
 
+            function visible(id){
+                var el2 = document.getElementById(id);
+                return el2 && !el2.classList.contains('hidden');
+            }
             function refreshRaffleViews(){
                 if (window.loadDashboard) loadDashboard();
-                var sec = document.getElementById('section-mis-rifas');
-                if (window.loadMyRaffles && sec && !sec.classList.contains('hidden')) loadMyRaffles();
+                if (window.loadMyRaffles && visible('section-mis-rifas')) loadMyRaffles();
+                if (window.loadAllRaffles && visible('section-rifas')) loadAllRaffles();
+                if (window.loadGestionRaffles && visible('section-gestion-rifas')) loadGestionRaffles();
             }
 
             window.raffleSheetStatus = async function(id, status){
@@ -3647,7 +3642,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
             };
 
             window.openRaffleSheet = function(id){
-                var list = (window.__dashRaffles || []).concat(window.__myRaffles || []);
+                var list = (window.__dashRaffles || []).concat(window.__myRaffles || [], window.__allRaffles || []);
                 var r = list.find(function(x){ return String(x.id) === String(id); });
                 if (!r) return;
                 var items = [
@@ -3673,6 +3668,69 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                 items.push({ label: '✅  Aprobar pago', onClick: function(){ approvePayment(p.ticket_id); } });
                 items.push({ label: '❌  Rechazar pago', danger: true, onClick: function(){ rejectPayment(p.ticket_id); } });
                 openActionSheet('Boleto #' + (p.ticket_number || ''), (p.raffle_name || '') + (p.buyer_name ? ' · ' + p.buyer_name : ''), items);
+            };
+
+            // ⋮ en "Comisiones": ver rifa / marcar como pagada.
+            window.openCommissionSheet = function(raffleId){
+                var c = (window.__commissions || []).find(function(x){ return String(x.raffle_id) === String(raffleId); });
+                if (!c) return;
+                var items = [
+                    { label: '👁️  Ver rifa', onClick: function(){ viewRaffle(c.raffle_id); } },
+                    { label: '✅  Marcar como pagada', onClick: function(){ markCommissionPaid(c.raffle_id); } }
+                ];
+                openActionSheet(c.raffle_name || 'Comisión',
+                    'Comisión: ' + Utils.formatPrice(c.commission_amount || 0) + ' · ' + (c.creator_name || ''), items);
+            };
+
+            // ⋮ en "El Tapazo": ver participantes / completar si está activo.
+            window.openTapazoSheet = function(id){
+                var t = (window.__tapazos || []).find(function(x){ return String(x.id) === String(id); });
+                if (!t) return;
+                var items = [
+                    { label: '👁️  Ver participantes', onClick: function(){ viewTapazo(t.id); } }
+                ];
+                if (t.status === 'active') {
+                    items.push({ label: '✅  Completar (sortear ganador)', onClick: function(){ completeTapazo(t.id); } });
+                }
+                openActionSheet(t.name || 'Tapazo',
+                    (t.joined_count || 0) + ' / ' + (t.total_participants || 0) + ' participantes · ' + (t.status || ''), items);
+            };
+
+            // ⋮ en "Usuarios": editar / activar-suspender / eliminar.
+            window.openUserSheet = function(type, id){
+                // allUsers es un `let` de otro <script> (no cuelga de window); typeof evita ReferenceError.
+                var u = (typeof allUsers !== 'undefined' ? allUsers : []).find(function(x){ return x.type === type && String(x.id) === String(id); });
+                if (!u) return;
+                var suspended = u.status !== 'active';
+                var items = [
+                    { label: '✏️  Editar', onClick: function(){ openUserEdit(u.type, u.id); } }
+                ];
+                if (suspended) {
+                    items.push({ label: '🔓  Activar', onClick: function(){ toggleUserStatus(u.type, u.id, 'activate'); } });
+                } else {
+                    items.push({ label: '⏸️  Suspender', onClick: function(){ toggleUserStatus(u.type, u.id, 'suspend'); } });
+                }
+                items.push({ label: '🗑️  Eliminar', danger: true, onClick: function(){ deleteUser(u.type, u.id, u.name || ''); } });
+                openActionSheet(u.name || 'Usuario',
+                    (u.email || u.phone || '') + ' · ' + (suspended ? 'Suspendido' : 'Activo'), items);
+            };
+
+            // ⋮ en "Gestión de Rifas" (super_admin): ver / editar / estado / eliminar.
+            window.openGestionSheet = function(id){
+                var r = (typeof allGestionRaffles !== 'undefined' ? allGestionRaffles : []).find(function(x){ return String(x.id) === String(id); });
+                if (!r) return;
+                var items = [
+                    { label: '👁️  Ver rifa', onClick: function(){ viewRaffle(r.id); } },
+                    { label: '✏️  Editar', onClick: function(){ openEditModal(r.id); } }
+                ];
+                if (r.status === 'active') {
+                    items.push({ label: '🙈  Ocultar (pasar a borrador)', onClick: function(){ changeRaffleStatus(r.id, 'draft'); } });
+                } else if (r.status === 'draft' || r.status === 'blocked') {
+                    items.push({ label: '🚀  Publicar rifa', onClick: function(){ changeRaffleStatus(r.id, 'active'); } });
+                }
+                items.push({ label: '🗑️  Eliminar', danger: true, onClick: function(){ deleteRaffle(r.id, r.name || ''); } });
+                openActionSheet(r.name || 'Rifa',
+                    'Estado: ' + (r.status || '') + ' · ' + (r.sold_tickets || 0) + ' vendidos · ' + (r.creator_name || ''), items);
             };
 
             // ⋮ en "Boletas Compradas": ir a la rifa del boleto.
