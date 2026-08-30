@@ -252,8 +252,17 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                 </div>
                 <div>
                     <label for="login-password" class="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
-                    <input type="password" id="login-password" name="password" autocomplete="current-password" required class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-primary" placeholder="••••••••">
+                    <div class="relative">
+                        <input type="password" id="login-password" name="password" autocomplete="current-password" required class="w-full px-4 py-3 pr-12 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-primary" placeholder="••••••••">
+                        <button type="button" id="login-toggle-pass" aria-label="Mostrar contraseña" aria-pressed="false" class="absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 hover:text-primary focus:outline-none focus:text-primary">
+                            <svg id="login-eye" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                        </button>
+                    </div>
                 </div>
+                <label class="flex items-center gap-2 text-sm text-gray-600 select-none cursor-pointer">
+                    <input type="checkbox" id="login-remember" class="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary">
+                    Recordar cuenta
+                </label>
                 <div id="login-error" class="hidden text-red-500 text-sm text-center"></div>
                 <button type="submit" id="login-btn" class="w-full py-4 bg-primary text-slate-950 font-bold rounded-xl hover:bg-primary-dark disabled:opacity-50">
                     Iniciar Sesión
@@ -386,12 +395,42 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
         setTimeout(() => n.remove(), 3000);
     }
 
+    // Recordar cuenta: precargar el email guardado (nunca la contraseña).
+    (function () {
+        const emailInput = document.getElementById('login-email');
+        const remember = document.getElementById('login-remember');
+        if (!emailInput || !remember) return;
+        try {
+            const saved = localStorage.getItem('misrifas_remember');
+            if (saved) { emailInput.value = saved; remember.checked = true; }
+        } catch (e) {}
+    })();
+
+    // Mostrar/ocultar contraseña.
+    document.getElementById('login-toggle-pass')?.addEventListener('click', function () {
+        const passInput = document.getElementById('login-password');
+        const show = passInput.type === 'password';
+        passInput.type = show ? 'text' : 'password';
+        this.setAttribute('aria-pressed', show ? 'true' : 'false');
+        this.setAttribute('aria-label', show ? 'Ocultar contraseña' : 'Mostrar contraseña');
+        document.getElementById('login-eye').innerHTML = show
+            ? '<path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c6.5 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.53 13.53 0 0 0 2 11s3.5 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><path d="M14.12 14.12A3 3 0 1 1 9.88 9.88"/><path d="m2 2 20 20"/>'
+            : '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>';
+    });
+
     document.getElementById('login-form')?.addEventListener('submit', async (e) => {
         e.preventDefault();
         const email = document.getElementById('login-email').value.trim();
         const password = document.getElementById('login-password').value;
         const btn = document.getElementById('login-btn');
         const errorDiv = document.getElementById('login-error');
+
+        // Persistir/limpiar la cuenta recordada según el checkbox.
+        try {
+            const remember = document.getElementById('login-remember');
+            if (remember && remember.checked && email) localStorage.setItem('misrifas_remember', email);
+            else localStorage.removeItem('misrifas_remember');
+        } catch (e) {}
 
         btn.disabled = true;
         btn.textContent = 'Iniciando sesión…';
