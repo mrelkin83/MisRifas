@@ -125,9 +125,19 @@ if ($user) {
                 </div>
                 <div>
                     <label for="login-password" class="block text-sm font-medium text-slate-300 mb-1">Contraseña</label>
-                    <input type="password" id="login-password" name="password" autocomplete="current-password" required
-                           class="w-full px-4 py-3 bg-slate-700/50 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500">
+                    <div class="relative">
+                        <input type="password" id="login-password" name="password" autocomplete="current-password" required
+                               class="w-full px-4 py-3 pr-12 bg-slate-700/50 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500">
+                        <button type="button" id="login-toggle-pass" aria-label="Mostrar contraseña" aria-pressed="false"
+                                class="absolute inset-y-0 right-0 flex items-center px-3 text-slate-400 hover:text-amber-400 focus:outline-none focus:text-amber-400">
+                            <svg id="login-eye" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                        </button>
+                    </div>
                 </div>
+                <label class="flex items-center gap-2 text-sm text-slate-300 select-none cursor-pointer">
+                    <input type="checkbox" id="login-remember" class="w-4 h-4 rounded border-white/20 bg-slate-700 text-amber-500 focus:ring-amber-500">
+                    Recordar cuenta
+                </label>
                 <button type="submit" id="login-btn"
                         class="w-full py-3 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-xl transition-colors">
                     Iniciar Sesión
@@ -268,12 +278,42 @@ document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('login-form');
     if (!form) return;
 
+    const idInput = document.getElementById('login-identifier');
+    const passInput = document.getElementById('login-password');
+    const remember = document.getElementById('login-remember');
+
+    // Recordar cuenta: prellenar el identificador guardado (nunca la contraseña).
+    try {
+        const saved = localStorage.getItem('misrifas_remember');
+        if (saved) { idInput.value = saved; remember.checked = true; passInput.focus(); }
+    } catch (e) {}
+
+    // Mostrar/ocultar contraseña.
+    const togglePass = document.getElementById('login-toggle-pass');
+    togglePass.addEventListener('click', function() {
+        const show = passInput.type === 'password';
+        passInput.type = show ? 'text' : 'password';
+        togglePass.setAttribute('aria-pressed', show ? 'true' : 'false');
+        togglePass.setAttribute('aria-label', show ? 'Ocultar contraseña' : 'Mostrar contraseña');
+        const eye = document.getElementById('login-eye');
+        // Al mostrar, tacha el ojo; al ocultar, ojo normal.
+        eye.innerHTML = show
+            ? '<path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c6.5 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.53 13.53 0 0 0 2 11s3.5 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><path d="M14.12 14.12A3 3 0 1 1 9.88 9.88"/><path d="m2 2 20 20"/>'
+            : '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>';
+    });
+
     form.addEventListener('submit', async function(e) {
         e.preventDefault();
         const btn = document.getElementById('login-btn');
         const msg = document.getElementById('login-msg');
-        const identifier = document.getElementById('login-identifier').value.trim();
-        const password = document.getElementById('login-password').value;
+        const identifier = idInput.value.trim();
+        const password = passInput.value;
+
+        // Persistir/limpiar la cuenta recordada según el checkbox.
+        try {
+            if (remember.checked && identifier) localStorage.setItem('misrifas_remember', identifier);
+            else localStorage.removeItem('misrifas_remember');
+        } catch (e) {}
 
         btn.disabled = true;
         btn.textContent = 'Ingresando…';
