@@ -95,6 +95,47 @@ try {
     $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if ($user && !empty($user['password_hash']) && password_verify($password, $user['password_hash'])) {
+        // Unificación: cualquier usuario puede organizar rifas. Se asegura/crea
+        // su identidad de vendedor y se inicia sesión en el panel de organizador
+        // (que también muestra sus boletas compradas). Defensivo: si no se puede
+        // provisionar (p. ej. sin email), cae al panel de comprador y el login
+        // nunca se rompe.
+        $provVendor = null;
+        try {
+            $provVendor = ensureVendorForUser($db, $user);
+        } catch (\Throwable $e) {
+            Logger::warning('No se pudo provisionar vendor para user ' . $user['id'] . ': ' . $e->getMessage());
+        }
+
+        if ($provVendor) {
+            $token = bin2hex(random_bytes(32));
+            $expires = date('Y-m-d H:i:s', strtotime('+30 days'));
+            $stmt = $db->prepare("UPDATE vendors SET auth_token = ?, auth_token_expires = ?, last_login = NOW() WHERE id = ?");
+            $stmt->execute([Auth::hashToken($token), $expires, $provVendor['id']]);
+            Logger::activity('user_login_as_vendor', $provVendor['id'], ['email' => $provVendor['email'], 'from_user' => $user['id']]);
+
+            $_SESSION['user_id'] = $provVendor['id'];
+            $_SESSION['user_email'] = $provVendor['email'];
+            $_SESSION['user_role'] = $provVendor['role'];
+            session_write_close();
+
+            Response::success([
+                'token' => $token,
+                'expires_at' => $expires,
+                'user' => [
+                    'id' => $provVendor['id'],
+                    'username' => $provVendor['slug'],
+                    'email' => $provVendor['email'],
+                    'full_name' => $provVendor['business_name'],
+                    'role' => $provVendor['role'],
+                    'phone' => $provVendor['phone'],
+                    'slug' => $provVendor['slug'],
+                    'source' => 'vendor'
+                ]
+            ], 'Login exitoso');
+        }
+
+        // Fallback: sesión de comprador (no se pudo provisionar organizador).
         $token = bin2hex(random_bytes(32));
         $expires = date('Y-m-d H:i:s', strtotime('+30 days'));
 
@@ -133,4 +174,48 @@ try {
 } catch (Exception $e) {
     Logger::exception($e);
     Response::serverError('Error al iniciar sesion');
+}
+
+/**
+ * Unificación de cuentas: garantiza que un usuario (comprador) tenga una
+ * identidad de vendedor/organizador para poder crear rifas. Idempotente:
+ * si ya existe un vendor con ese email/teléfono lo devuelve; si no, lo
+ * provisiona. Devuelve null si no se puede (sin email, o vendor no activo).
+ */
+function ensureVendorForUser(PDO $db, array $user): ?array
+{
+    $email = trim((string)($user['email'] ?? ''));
+    $phone = trim((string)($user['phone_whatsapp'] ?? ''));
+
+    // vendors.email es NOT NULL: sin email no se puede provisionar.
+    if ($email === '') return null;
+
+    $stmt = $db->prepare("SELECT * FROM vendors WHERE email = ? OR (phone <> '' AND phone = ?) LIMIT 1");
+    $stmt->execute([$email, $phone]);
+    $vendor = $stmt->fetch(PDO::FETCH_ASSOC);
+    if ($vendor) {
+        return (($vendor['status'] ?? '') === 'active') ? $vendor : null;
+    }
+
+    // Generar un slug único a partir del nombre.
+    $name = trim((string)($user['name'] ?? '')) ?: 'Organizador';
+    $base = trim(preg_replace('/[^a-z0-9]+/', '-', strtolower($name)), '-') ?: 'organizador';
+    $slug = $base;
+    $i = 1;
+    $chk = $db->prepare("SELECT 1 FROM vendors WHERE slug = ?");
+    do {
+        $chk->execute([$slug]);
+        $taken = (bool)$chk->fetchColumn();
+        if ($taken) { $slug = $base . '-' . (++$i); }
+    } while ($taken && $i < 100);
+
+    $ins = $db->prepare("INSERT INTO vendors
+        (slug, business_name, email, password_hash, phone, role, status, payment_config, created_at)
+        VALUES (?, ?, ?, ?, ?, 'vendor', 'active', '{\"mode\":\"manual\"}', NOW())");
+    $ins->execute([$slug, $name, $email, $user['password_hash'], $phone]);
+    $newId = (int)$db->lastInsertId();
+
+    $sel = $db->prepare("SELECT * FROM vendors WHERE id = ?");
+    $sel->execute([$newId]);
+    return $sel->fetch(PDO::FETCH_ASSOC) ?: null;
 }
