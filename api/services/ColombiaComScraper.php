@@ -46,6 +46,34 @@ class ColombiaComScraper
         return self::extractFromHistorical($html, $drawDate);
     }
 
+    /**
+     * Devuelve el texto visible de la página de la lotería + su URL, para
+     * cuando el parser determinista no da y se quiere que una IA lo LEA
+     * (grounded, nunca de memoria). Devuelve null si no hay slug o no carga.
+     *
+     * @return array{url:string,text:string}|null
+     */
+    public static function pageTextFor($lotteryName)
+    {
+        $slug = self::resolveSlug($lotteryName);
+        if (!$slug) {
+            return null;
+        }
+        $url = "https://www.colombia.com/loterias/{$slug}";
+        $html = self::httpGet($url);
+        if (!$html) {
+            return null;
+        }
+        // Quedarnos con el cuerpo y limpiar a texto plano acotado.
+        $html = preg_replace('#<(script|style|noscript)[^>]*>.*?</\1>#is', ' ', $html);
+        $text = trim(preg_replace('/\s+/', ' ', html_entity_decode(strip_tags($html), ENT_QUOTES | ENT_HTML5, 'UTF-8')));
+        if ($text === '') {
+            return null;
+        }
+        // Acotar a un tramo razonable para no inflar el prompt del LLM.
+        return ['url' => $url, 'text' => mb_substr($text, 0, 6000)];
+    }
+
     private static function resolveSlug($lotteryName)
     {
         $name = strtolower($lotteryName);

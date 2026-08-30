@@ -1051,8 +1051,10 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                                 <label>Número ganador</label>
                                 <input type="text" id="lr-number" inputmode="numeric" pattern="\d{2,6}" maxlength="6" placeholder="ej: 1234" class="w-full px-4 py-2 border rounded-lg" required>
                             </div>
+                            <button type="button" id="lr-suggest" class="btn h-11 px-4" title="Busca el número real y lo precarga como sugerencia; tú lo verificas antes de guardar">🤖 Sugerir con IA</button>
                             <button type="submit" class="btn btn--primary h-11 px-6">Guardar resultado</button>
                         </form>
+                        <p id="lr-suggest-note" class="text-xs text-gray-500 mt-2 hidden"></p>
                     </div>
 
                     <div class="section-card">
@@ -2050,6 +2052,38 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
             Utils.showNotification(err.message || 'Error al guardar el resultado', 'error');
         } finally {
             btn.disabled = false; btn.textContent = 'Guardar resultado';
+        }
+    });
+
+    // Sugerir con IA: busca el número REAL (scraper, y si no da, IA leyendo la
+    // página) y lo precarga como sugerencia. Nunca guarda ni verifica: se
+    // revisa y se confirma con "Guardar resultado".
+    document.getElementById('lr-suggest')?.addEventListener('click', async () => {
+        const lotteryId = parseInt(document.getElementById('lr-lottery').value);
+        const date = document.getElementById('lr-date').value;
+        const note = document.getElementById('lr-suggest-note');
+        if (!lotteryId || !date) { Utils.showNotification('Elige la lotería y la fecha primero', 'error'); return; }
+        const btn = document.getElementById('lr-suggest');
+        const orig = btn.textContent;
+        btn.disabled = true; btn.textContent = 'Buscando…';
+        note.classList.add('hidden');
+        try {
+            const res = await API.get('/admin/lottery-results/suggest.php', { lottery_id: lotteryId, draw_date: date });
+            if (res && res.success && res.number) {
+                document.getElementById('lr-number').value = res.number;
+                const via = res.method === 'ia' ? 'IA (leyó la página)' : 'búsqueda automática';
+                note.textContent = 'Sugerido por ' + via + ' · fuente: ' + (res.source || '—') + '. ' + (res.note || 'Verifícalo antes de guardar.');
+                note.classList.remove('hidden');
+                Utils.showNotification('Número sugerido: ' + res.number + ' — verifícalo antes de guardar', 'success');
+            } else {
+                note.textContent = (res && res.message) || 'No se pudo sugerir automáticamente. Ingrésalo manualmente.';
+                note.classList.remove('hidden');
+                Utils.showNotification((res && res.message) || 'Sin sugerencia', 'info');
+            }
+        } catch (err) {
+            Utils.showNotification(err.message || 'Error al generar la sugerencia', 'error');
+        } finally {
+            btn.disabled = false; btn.textContent = orig;
         }
     });
 
