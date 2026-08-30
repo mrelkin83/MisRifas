@@ -602,6 +602,13 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h11l-1 15a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 3Zm11 4h2.5a2 2 0 0 1 2 2.2l-.4 4A2 2 0 0 1 18.1 15H16"/></svg>
                     <span class="nav-text">El Tapazo</span>
                 </a>
+                <!-- WhatsApp IA: SOLO super_admin. Oculto por defecto (fail-closed);
+                     se muestra abajo si el rol es super_admin. El módulo vive en
+                     páginas server-rendered aparte, protegidas por sesión. -->
+                <a href="<?= BASE_PATH ?>/public/admin/whatsapp/dashboard.php" class="nav-item" id="nav-whatsapp" style="display:none">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5Z"/></svg>
+                    <span class="nav-text">WhatsApp IA</span>
+                </a>
             </nav>
             <div class="sidebar-footer">
                 <button class="logout-btn" onclick="logout()">
@@ -3339,7 +3346,11 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
         // Ocultar secciones exclusivas de super_admin (comisiones, campaigns, banners, gestion-rifas)
         // Solo super_admin puede ver estas secciones - vendedor NO las ve
         var userRole = user.role || 'unknown';
-        
+
+        // WhatsApp IA: solo super_admin (fail-closed, oculto por defecto)
+        var navWhatsapp = document.getElementById('nav-whatsapp');
+        if (navWhatsapp) navWhatsapp.style.display = (userRole === 'super_admin') ? 'flex' : 'none';
+
         if (userRole !== 'super_admin') {
             // Ocultar usando style.display
             var navComisiones = document.getElementById('nav-comisiones');
@@ -3386,6 +3397,8 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                 localStorage.setItem('misrifas_user', JSON.stringify(freshUser));
 
                 // Re-verificar rol por si cambió
+                var navWa = document.getElementById('nav-whatsapp');
+                if (navWa) navWa.style.display = (freshUser.role === 'super_admin') ? 'flex' : 'none';
                 if (freshUser.role !== 'super_admin') {
                     document.getElementById('nav-comisiones').style.display = 'none';
                     document.getElementById('nav-campaigns').style.display = 'none';
