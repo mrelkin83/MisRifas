@@ -1029,6 +1029,32 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
 
                 <!-- SECCIÓN: GESTIÓN DE RIFAS (CRUD) -->
                 <div id="section-gestion-rifas" class="admin-section hidden">
+                    <!-- Resultado de lotería (manual) — respaldo del scraper -->
+                    <div class="section-card">
+                        <div class="section-header">
+                            <div>
+                                <h2 class="text-xl font-bold">Resultado de Lotería (manual)</h2>
+                                <p class="text-sm text-gray-500 mt-1">Si el scraper no obtuvo el número ganador, cárgalo aquí (verifícalo en la fuente oficial). Los sorteos pendientes se procesarán en la próxima corrida.</p>
+                            </div>
+                        </div>
+                        <div id="pending-draws" class="mb-4 text-sm"></div>
+                        <form id="lottery-result-form" class="flex flex-col md:flex-row md:items-end gap-3">
+                            <div class="form-group flex-1">
+                                <label>Lotería</label>
+                                <select id="lr-lottery" class="w-full px-4 py-2 border rounded-lg" required></select>
+                            </div>
+                            <div class="form-group">
+                                <label>Fecha del sorteo</label>
+                                <input type="date" id="lr-date" class="w-full px-4 py-2 border rounded-lg" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Número ganador</label>
+                                <input type="text" id="lr-number" inputmode="numeric" pattern="\d{2,6}" maxlength="6" placeholder="ej: 1234" class="w-full px-4 py-2 border rounded-lg" required>
+                            </div>
+                            <button type="submit" class="btn btn--primary h-11 px-6">Guardar resultado</button>
+                        </form>
+                    </div>
+
                     <div class="section-card">
                         <div class="section-header flex justify-between items-center mb-6">
                             <div>
@@ -1649,7 +1675,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
         if (section === 'pagos') loadPayments();
         if (section === 'mi-perfil') loadPerfilAPI();
         if (section === 'banners') loadBannersConfig();
-        if (section === 'gestion-rifas') loadGestionRaffles();
+        if (section === 'gestion-rifas') { loadGestionRaffles(); loadLotteryResultUI(); }
         if (section === 'usuarios') loadUsers();
         if (section === 'crear') {
             // Initialize form with user data
@@ -1977,6 +2003,55 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
             container.innerHTML = '<p class="text-center text-red-500">Error al cargar tus boletos</p>';
         }
     }
+
+    // ================================================================
+    // RESULTADO DE LOTERÍA MANUAL (solo super_admin)
+    // ================================================================
+    async function loadLotteryResultUI() {
+        try {
+            const res = await API.get('/lotteries/index.php');
+            if (res.success) {
+                document.getElementById('lr-lottery').innerHTML = '<option value="">Selecciona…</option>' +
+                    res.data.map(l => '<option value="' + l.id + '">' + userEsc(l.name) + '</option>').join('');
+            }
+        } catch (e) {}
+        try {
+            const p = await API.get('/admin/lottery-results/pending.php');
+            const box = document.getElementById('pending-draws');
+            if (p.success && (p.data || []).length) {
+                box.innerHTML = '<div class="font-bold text-amber-700 mb-2">Sorteos pendientes de resultado:</div>' +
+                    p.data.map(d => '<button type="button" class="inline-block mr-2 mb-2 px-3 py-1 bg-amber-100 text-amber-800 rounded-lg hover:bg-amber-200" onclick="fillPendingResult(' + d.lottery_id + ',\'' + d.draw_date + '\')">' + userEsc(d.lottery_name) + ' · ' + d.draw_date + ' (' + d.rifas + ' rifa' + (d.rifas > 1 ? 's' : '') + ')</button>').join('');
+            } else if (box) {
+                box.innerHTML = '<span class="text-gray-400">No hay sorteos pendientes de resultado.</span>';
+            }
+        } catch (e) {}
+    }
+
+    window.fillPendingResult = (lotteryId, date) => {
+        document.getElementById('lr-lottery').value = lotteryId;
+        document.getElementById('lr-date').value = date;
+        document.getElementById('lr-number').focus();
+    };
+
+    document.getElementById('lottery-result-form')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const btn = e.target.querySelector('button[type="submit"]');
+        btn.disabled = true; btn.textContent = 'Guardando…';
+        try {
+            await API.post('/admin/lottery-results/set.php', {
+                lottery_id: parseInt(document.getElementById('lr-lottery').value),
+                draw_date: document.getElementById('lr-date').value,
+                winning_number: document.getElementById('lr-number').value
+            });
+            Utils.showNotification('Resultado guardado ✅', 'success');
+            e.target.reset();
+            loadLotteryResultUI();
+        } catch (err) {
+            Utils.showNotification(err.message || 'Error al guardar el resultado', 'error');
+        } finally {
+            btn.disabled = false; btn.textContent = 'Guardar resultado';
+        }
+    });
 
     // ================================================================
     // GESTIÓN DE USUARIOS (solo super_admin)
