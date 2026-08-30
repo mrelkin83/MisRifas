@@ -1,7 +1,5 @@
 <?php
 
-require_once __DIR__ . '/../api/services/MessageBuilderService.php';
-
 class MessageBuilderService
 {
     public static function buildWinnerMessage(array $raffle, array $ticket, array $winner, array $lottery, string $winningDigits): array
