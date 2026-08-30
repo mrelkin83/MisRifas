@@ -1685,7 +1685,10 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
         // Add active to clicked link
         var activeLink = document.querySelector('[data-section="' + section + '"]');
         if (activeLink) activeLink.classList.add('nav-item--active');
-        
+
+        // Reflejar la pestaña activa en la tab bar móvil.
+        if (window.syncVendorTab) window.syncVendorTab(section);
+
         // Hide all sections
         var sections = document.querySelectorAll('.admin-section');
         for (var j = 0; j < sections.length; j++) {
@@ -3396,6 +3399,63 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
             switchTo(initialSection);
         }
     });
+    </script>
+    <!-- ============ Navegación móvil: tab bar inferior + FAB ============ -->
+    <style>
+        #vendor-fab, #vendor-tabbar { display: none; }
+        @media (max-width: 768px) {
+            .admin-main { padding-bottom: 78px; }
+            #vendor-tabbar {
+                display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 90;
+                background: #0f172a; border-top: 1px solid #1e293b;
+                padding: 6px 4px calc(6px + env(safe-area-inset-bottom, 0px));
+                box-shadow: 0 -6px 20px rgba(0,0,0,.25);
+            }
+            .vtab {
+                flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+                gap: 3px; background: none; border: none; cursor: pointer; padding: 6px 2px;
+                color: #94a3b8; font-size: 11px; font-weight: 600; border-radius: 12px;
+            }
+            .vtab svg { width: 22px; height: 22px; }
+            .vtab--on { color: #f59e0b; }
+            #vendor-fab {
+                display: flex; align-items: center; justify-content: center;
+                position: fixed; right: 18px; bottom: 84px; z-index: 91;
+                width: 58px; height: 58px; border-radius: 50%; border: none; cursor: pointer;
+                background: linear-gradient(135deg, #f59e0b, #d97706); color: #1c1305;
+                box-shadow: 0 10px 25px rgba(245,158,11,.5);
+            }
+            #vendor-fab:active { transform: scale(.94); }
+            #vendor-fab svg { width: 28px; height: 28px; }
+        }
+    </style>
+    <button id="vendor-fab" type="button" aria-label="Crear rifa" onclick="switchTo('crear')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+    </button>
+    <nav id="vendor-tabbar" aria-label="Navegación">
+        <button class="vtab" data-tab="dashboard" onclick="switchTo('dashboard')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+            <span>Panel</span>
+        </button>
+        <button class="vtab" data-tab="pagos" onclick="switchTo('pagos')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+            <span>Pagos</span>
+        </button>
+        <button class="vtab" data-tab="boletas-compradas" onclick="switchTo('boletas-compradas')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v1a2 2 0 0 0 0 4v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1a2 2 0 0 0 0-4Z"/><path d="M13 5v14" stroke-dasharray="2 3"/></svg>
+            <span>Boletas</span>
+        </button>
+        <button class="vtab" data-tab="mi-perfil" onclick="switchTo('mi-perfil')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
+            <span>Perfil</span>
+        </button>
+    </nav>
+    <script>
+        window.syncVendorTab = function (section) {
+            document.querySelectorAll('#vendor-tabbar .vtab').forEach(function (t) {
+                t.classList.toggle('vtab--on', t.getAttribute('data-tab') === section);
+            });
+        };
     </script>
 </body>
 </html>
