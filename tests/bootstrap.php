@@ -115,14 +115,15 @@ function fxRaffle(array $opts = []): int {
     $drawDate = $opts['draw_date'] ?? date('Y-m-d H:i:s', strtotime('+7 days'));
     $createdBy = $opts['created_by'] ?? 5; // vendor de prueba por defecto
     $nTickets  = $opts['tickets'] ?? 10;
+    $lotteryId = $opts['lottery_id'] ?? 1;
 
     $stmt = $db->prepare("INSERT INTO raffles
         (name, description, image_url, city, whatsapp_contact, responsible_person,
          ticket_price, total_tickets, digits, draw_date, lottery_id, opportunities,
          winning_mode, created_by, status)
         VALUES ('__TEST__ Rifa', '__TEST__', 'https://placehold.co/1x1', 'Bogotá',
-                '3000000000', '__TEST__', ?, ?, 2, ?, 1, 1, 'last_2', ?, 'active')");
-    $stmt->execute([$opts['price'] ?? 1000, $nTickets, $drawDate, $createdBy]);
+                '3000000000', '__TEST__', ?, ?, 2, ?, ?, 1, 'last_2', ?, 'active')");
+    $stmt->execute([$opts['price'] ?? 1000, $nTickets, $drawDate, $lotteryId, $createdBy]);
     $raffleId = (int)$db->lastInsertId();
 
     if ($nTickets > 0) {
