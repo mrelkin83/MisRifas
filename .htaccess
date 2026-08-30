@@ -50,6 +50,7 @@ SetEnvIf Request_URI "^/MisRifas/" IS_DEV
     # completadas e inventa numeros ganadores) - nunca deben ser
     # accesibles por HTTP, solo por CLI.
     RewriteRule ^tools/ - [F,L]
+    RewriteRule ^tests/ - [F,L]
     RewriteRule ^composer-setup\.php$ - [F,L]
 
     # NO redireccionar si ya existe el archivo o directorio
