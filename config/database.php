@@ -42,8 +42,15 @@ class Database
                 PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
                 PDO::ATTR_EMULATE_PREPARES   => false,
                 PDO::ATTR_PERSISTENT         => false,
-                PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES {$this->charset} COLLATE {$this->charset}_unicode_ci"
             ];
+            // PDO::MYSQL_ATTR_INIT_COMMAND quedó deprecado en PHP 8.5 a favor de
+            // Pdo\Mysql::ATTR_INIT_COMMAND (disponible desde 8.4). Mismo valor
+            // entero (1002); se usa el nuevo si existe y se cae al viejo en
+            // PHP < 8.4 para no romper entornos anteriores.
+            $initCommandKey = defined('Pdo\\Mysql::ATTR_INIT_COMMAND')
+                ? \Pdo\Mysql::ATTR_INIT_COMMAND
+                : PDO::MYSQL_ATTR_INIT_COMMAND;
+            $options[$initCommandKey] = "SET NAMES {$this->charset} COLLATE {$this->charset}_unicode_ci";
 
             $this->connection = new PDO($dsn, $this->username, $this->password, $options);
 
