@@ -160,7 +160,8 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                 z-index: 100;
             }
             .sidebar.sidebar--active { transform: translateX(0); }
-            .admin-main { margin-left: 0 !important; width: 100%; }
+            .admin-main { margin-left: 0 !important; width: 100%; overflow-x: hidden; }
+            .banner-file { max-width: 100%; box-sizing: border-box; }
             .admin-header { padding-left: 60px !important; }
             .form-row { grid-template-columns: 1fr; }
             .stats-grid { grid-template-columns: 1fr 1fr; }
