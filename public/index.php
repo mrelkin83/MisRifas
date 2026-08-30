@@ -311,15 +311,29 @@ $page_description = "La plataforma más confiable para crear y participar en rif
                     <a href="<?= BASE_PATH ?>/public/register.php" class="px-5 py-2.5 bg-gradient-to-r from-amber-400 to-amber-600 text-slate-950 rounded-xl hover:from-amber-300 hover:to-amber-500 active:scale-[0.97] transition-all font-bold shadow-lg shadow-amber-500/30">Crear Cuenta</a>
                 </div>
 
-                <div id="user-menu" class="hidden items-center gap-4">
-                    <a href="<?= BASE_PATH ?>/public/perfil.php" class="flex items-center gap-2 group">
+                <div id="user-menu" class="hidden items-center gap-3" style="position:relative;">
+                    <button id="user-avatar-btn" type="button" aria-haspopup="true" aria-expanded="false" class="flex items-center gap-2 group focus:outline-none" style="background:none;border:none;cursor:pointer;padding:0;">
                         <div class="w-10 h-10 rounded-full bg-amber-500 text-slate-950 flex items-center justify-center text-lg font-bold group-hover:scale-110 transition-transform" id="user-avatar">U</div>
                         <span class="text-slate-200 font-bold group-hover:text-white" id="user-name">Usuario</span>
-                    </a>
-                    <button onclick="logout()" class="p-2.5 bg-white/5 border border-white/10 text-slate-400 rounded-xl hover:text-red-400 hover:bg-red-500/10 transition-all" title="Cerrar Sesión">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 21H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3M16 17l5-5-5-5M21 12H9"/></svg>
+                        <svg id="user-caret" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color:#94a3b8;transition:transform .2s;"><path d="m6 9 6 6 6-6"/></svg>
                     </button>
+                    <div id="user-dropdown" style="display:none;position:absolute;right:0;top:calc(100% + 10px);width:15rem;background:#1e293b;border:1px solid rgba(255,255,255,.1);border-radius:16px;box-shadow:0 20px 40px rgba(0,0,0,.5);padding:8px;z-index:60;">
+                        <div style="padding:8px 12px 10px;border-bottom:1px solid rgba(255,255,255,.06);margin-bottom:6px;">
+                            <p style="font-size:11px;color:#94a3b8;margin:0;">Sesión iniciada</p>
+                            <p id="user-dd-name" style="font-size:14px;font-weight:700;color:#fff;margin:2px 0 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Usuario</p>
+                        </div>
+                        <a href="<?= BASE_PATH ?>/public/dashboard.php" class="udd-item">📊 Mi Panel</a>
+                        <a href="<?= BASE_PATH ?>/public/mis-boletos.php" class="udd-item">🎟️ Mis Boletos</a>
+                        <a href="<?= BASE_PATH ?>/public/ganadores.php" class="udd-item">🏆 Ganadores</a>
+                        <a href="<?= BASE_PATH ?>/public/perfil.php" class="udd-item">⚙️ Configuración</a>
+                        <button type="button" onclick="logout()" class="udd-item" style="color:#f87171;width:100%;text-align:left;background:none;border:none;cursor:pointer;">↪ Cerrar sesión</button>
+                    </div>
                 </div>
+                <style>
+                    .udd-item{display:block;padding:10px 12px;border-radius:10px;font-size:14px;color:#e2e8f0;text-decoration:none;font-weight:500;transition:background .15s;}
+                    .udd-item:hover{background:rgba(255,255,255,.06);}
+                    #user-avatar-btn[aria-expanded="true"] #user-caret{transform:rotate(180deg);}
+                </style>
             </div>
         </nav>
     </header>
@@ -938,16 +952,33 @@ $page_description = "La plataforma más confiable para crear y participar en rif
         window.location.reload();
     }
 
+    function toggleUserDropdown(force) {
+        const dd = document.getElementById('user-dropdown');
+        const btn = document.getElementById('user-avatar-btn');
+        if (!dd || !btn) return;
+        const show = (force === undefined) ? (dd.style.display === 'none' || !dd.style.display) : force;
+        dd.style.display = show ? 'block' : 'none';
+        btn.setAttribute('aria-expanded', show ? 'true' : 'false');
+    }
+
     function checkAuth() {
         const userStr = localStorage.getItem('misrifas_user');
         if (userStr) {
             try {
                 const user = JSON.parse(userStr);
+                const name = user.full_name || user.name || user.email || 'Usuario';
                 document.getElementById('auth-buttons').classList.add('hidden');
                 document.getElementById('user-menu').classList.remove('hidden');
                 document.getElementById('user-menu').classList.add('flex');
-                document.getElementById('user-name').textContent = user.full_name;
-                document.getElementById('user-avatar').textContent = user.full_name.charAt(0).toUpperCase();
+                document.getElementById('user-name').textContent = name;
+                document.getElementById('user-dd-name').textContent = name;
+                document.getElementById('user-avatar').textContent = name.charAt(0).toUpperCase();
+
+                // Menú desplegable del avatar (antes solo abría el perfil).
+                const btn = document.getElementById('user-avatar-btn');
+                btn.addEventListener('click', (e) => { e.stopPropagation(); toggleUserDropdown(); });
+                document.addEventListener('click', () => toggleUserDropdown(false));
+                document.getElementById('user-dropdown').addEventListener('click', (e) => e.stopPropagation());
             } catch (e) {
                 console.error('Error parsing user data:', e);
             }
