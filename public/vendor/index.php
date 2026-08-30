@@ -1878,6 +1878,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
             tbody.innerHTML = '<tr><td colspan="5" class="text-center">No hay rifas</td></tr>';
             return;
         }
+        window.__dashRaffles = raffles;
         tbody.innerHTML = raffles.map(r => {
             const statusClass = r.status || 'pending';
             return '<tr>' +
@@ -1885,7 +1886,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                 '<td><span class="badge badge--' + statusClass + '">' + statusClass + '</span></td>' +
                 '<td>' + (r.sold_tickets || 0) + '</td>' +
                 '<td>' + (r.draw_date ? new Date(r.draw_date).toLocaleDateString('es-CO') : '--') + '</td>' +
-                '<td><button class="btn btn--sm btn--outline" onclick="viewRaffle(' + r.id + ')">Ver</button></td>' +
+                '<td><button class="btn btn--sm" aria-label="Acciones" title="Acciones" onclick="openRaffleSheet(' + r.id + ')" style="font-size:20px;line-height:1;padding:2px 10px;">⋮</button></td>' +
             '</tr>';
         }).join('');
     }
@@ -3456,6 +3457,69 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                 t.classList.toggle('vtab--on', t.getAttribute('data-tab') === section);
             });
         };
+    </script>
+
+    <!-- ============ Bottom sheet de acciones de rifa (menú 3 puntos) ============ -->
+    <style>
+        #raffle-sheet-backdrop { display:none; position:fixed; inset:0; background:rgba(15,23,42,.5); z-index:120; }
+        #raffle-sheet { display:none; position:fixed; left:0; right:0; bottom:0; z-index:121; background:#fff; border-radius:20px 20px 0 0; box-shadow:0 -12px 40px rgba(0,0,0,.25); padding:10px 12px calc(12px + env(safe-area-inset-bottom,0px)); animation:rsUp .22s ease-out; max-width:520px; margin:0 auto; }
+        @keyframes rsUp { from{transform:translateY(100%);} to{transform:translateY(0);} }
+        #raffle-sheet .rs-handle { width:40px; height:4px; border-radius:99px; background:#e5e7eb; margin:4px auto 10px; }
+        #raffle-sheet .rs-head { padding:0 8px 10px; border-bottom:1px solid #f1f5f9; margin-bottom:6px; }
+        #raffle-sheet .rs-title { font-weight:800; color:#111827; font-size:16px; }
+        #raffle-sheet .rs-sub { font-size:12px; color:#6b7280; margin-top:2px; }
+        .rs-item { display:flex; align-items:center; gap:12px; width:100%; text-align:left; background:none; border:none; cursor:pointer; padding:14px 10px; border-radius:12px; font-size:15px; font-weight:600; color:#374151; }
+        .rs-item:hover { background:#f3f4f6; }
+        .rs-item--danger { color:#dc2626; }
+    </style>
+    <div id="raffle-sheet-backdrop" onclick="closeRaffleSheet()"></div>
+    <div id="raffle-sheet" role="dialog" aria-modal="true">
+        <div class="rs-handle"></div>
+        <div class="rs-head">
+            <div class="rs-title" id="raffle-sheet-title">Rifa</div>
+            <div class="rs-sub" id="raffle-sheet-status"></div>
+        </div>
+        <div id="raffle-sheet-actions"></div>
+    </div>
+    <script>
+        (function () {
+            function el(id){ return document.getElementById(id); }
+            function rsItem(label, onClick, danger){
+                var b = document.createElement('button');
+                b.className = 'rs-item' + (danger ? ' rs-item--danger' : '');
+                b.textContent = label;
+                b.addEventListener('click', onClick);
+                return b;
+            }
+            window.showRaffleSheet = function(){ el('raffle-sheet').style.display='block'; el('raffle-sheet-backdrop').style.display='block'; document.body.style.overflow='hidden'; };
+            window.closeRaffleSheet = function(){ el('raffle-sheet').style.display='none'; el('raffle-sheet-backdrop').style.display='none'; document.body.style.overflow=''; };
+
+            window.raffleSheetStatus = async function(id, status){
+                closeRaffleSheet();
+                try {
+                    await API.post('/admin/raffles/update_status.php', { raffle_id: id, status: status });
+                    Utils.showNotification(status === 'active' ? 'Rifa publicada ✅' : 'Rifa ocultada (borrador)', 'success');
+                } catch (e) { Utils.showNotification(e.message || 'Error al cambiar estado', 'error'); }
+                if (window.loadDashboard) loadDashboard();
+            };
+
+            window.openRaffleSheet = function(id){
+                var r = (window.__dashRaffles || []).find(function(x){ return x.id === id; });
+                if (!r) return;
+                el('raffle-sheet-title').textContent = r.name || 'Rifa';
+                el('raffle-sheet-status').textContent = 'Estado: ' + (r.status || '') + ' · ' + (r.sold_tickets || 0) + ' vendidos';
+                var body = el('raffle-sheet-actions');
+                body.innerHTML = '';
+                body.appendChild(rsItem('👁️  Ver rifa', function(){ closeRaffleSheet(); viewRaffle(id); }));
+                if (r.status === 'active') {
+                    body.appendChild(rsItem('🙈  Ocultar (pasar a borrador)', function(){ raffleSheetStatus(id, 'draft'); }));
+                } else {
+                    body.appendChild(rsItem('🚀  Publicar rifa', function(){ raffleSheetStatus(id, 'active'); }));
+                }
+                body.appendChild(rsItem('🗑️  Eliminar', function(){ closeRaffleSheet(); if (window.deleteRaffle) deleteRaffle(id, r.name); }, true));
+                showRaffleSheet();
+            };
+        })();
     </script>
 </body>
 </html>
