@@ -102,12 +102,19 @@ try {
     }
 
     // Validar raffle existe y está activa
-    $stmt = $db->prepare("SELECT id, name, ticket_price, total_tickets, status FROM raffles WHERE id = ? AND status = 'active'");
+    $stmt = $db->prepare("SELECT id, name, ticket_price, total_tickets, status, draw_date FROM raffles WHERE id = ? AND status = 'active'");
     $stmt->execute([$raffleId]);
     $raffle = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$raffle) {
         Response::error('La rifa no existe o no está activa', null, 404);
+    }
+
+    // Integridad del sorteo: cerrar ventas cuando la fecha de sorteo ya pasó,
+    // aunque el cron todavía no marque la rifa como 'completed'. Sin esto se
+    // podía reservar un número DESPUÉS de conocerse el resultado de la lotería.
+    if (!empty($raffle['draw_date']) && strtotime($raffle['draw_date']) <= time()) {
+        Response::error('Esta rifa ya cerró sus ventas (la fecha del sorteo ya pasó).', null, 409);
     }
 
     // Validar que todos los números estén disponibles

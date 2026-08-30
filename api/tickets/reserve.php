@@ -103,6 +103,13 @@ try {
         Response::error('La rifa no está activa', null, 400);
     }
 
+    // Integridad del sorteo: no permitir reservar cuando la fecha del sorteo ya
+    // pasó (evita comprar el número ganador ya conocido antes de que el cron
+    // cierre la rifa).
+    if (!empty($raffle['draw_date']) && strtotime($raffle['draw_date']) <= time()) {
+        Response::error('Esta rifa ya cerró sus ventas (la fecha del sorteo ya pasó).', null, 409);
+    }
+
     // Verificar que el boleto existe y está disponible
     if (!$ticketRepo->isTicketAvailable($raffleId, $ticketNumber)) {
         Response::conflict('El boleto no está disponible');
