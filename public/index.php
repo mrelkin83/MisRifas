@@ -266,6 +266,13 @@ $page_description = "La plataforma más confiable para crear y participar en rif
             #nav-menu.active {
                 display: flex !important;
             }
+            /* En el menú móvil, el menú de usuario se muestra como lista siempre
+               abierta (el dropdown absoluto de escritorio no aplica aquí). */
+            #user-menu { flex-direction: column; align-items: stretch; gap: .5rem; width: 100%; }
+            #user-avatar-btn { justify-content: flex-start; width: 100%; }
+            #user-caret { display: none; }
+            #user-dropdown { display: block !important; position: static; width: 100%; box-shadow: none; background: rgba(255,255,255,.03); margin-top: 6px; }
+            #auth-buttons { flex-direction: column; align-items: stretch; width: 100%; }
             .premium-filter {
                 padding: 1.25rem !important;
                 border-radius: 20px !important;
