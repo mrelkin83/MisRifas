@@ -42,7 +42,7 @@ $basePath = defined('BASE_PATH') ? BASE_PATH : '';
             <a href="<?= $basePath ?>/public/dashboard.php" class="text-slate-300 hover:text-white font-medium transition-colors <?= $current_page === 'dashboard' ? 'text-white' : '' ?>">
                 Mi Panel
             </a>
-            <a href="<?= $basePath ?>/public/vendor/index.php" class="text-slate-300 hover:text-white font-medium transition-colors <?= $current_page === 'index' && $is_vendor_page ? 'text-white' : '' ?>">
+            <a href="<?= $basePath ?>/public/vendor/index.php" data-nav="vendor" style="display:none" class="text-slate-300 hover:text-white font-medium transition-colors <?= $current_page === 'index' && $is_vendor_page ? 'text-white' : '' ?>">
                 Panel Vendedor
             </a>
             <a href="<?= $basePath ?>/public/ganadores.php" class="flex items-center gap-1 text-slate-300 hover:text-white font-medium transition-colors <?= $current_page === 'ganadores' ? 'text-white' : '' ?>">
@@ -51,9 +51,12 @@ $basePath = defined('BASE_PATH') ? BASE_PATH : '';
             <a href="<?= $basePath ?>/public/que-es.php" class="text-slate-300 hover:text-white font-medium transition-colors">
                 ¿Qué es?
             </a>
-            <a href="<?= $basePath ?>/public/admin/index.php?auth=login" class="ml-2 px-5 py-2.5 bg-white/5 border border-white/10 text-white rounded-xl hover:bg-white/10 active:scale-[0.97] transition-all font-medium backdrop-blur-sm text-sm">
+            <a href="<?= $basePath ?>/public/admin/index.php?auth=login" data-nav="login" class="ml-2 px-5 py-2.5 bg-white/5 border border-white/10 text-white rounded-xl hover:bg-white/10 active:scale-[0.97] transition-all font-medium backdrop-blur-sm text-sm">
                 Iniciar Sesión
             </a>
+            <button type="button" data-nav="logout" style="display:none" class="ml-2 px-5 py-2.5 bg-white/5 border border-white/10 text-white rounded-xl hover:bg-white/10 active:scale-[0.97] transition-all font-medium backdrop-blur-sm text-sm">
+                Salir
+            </button>
         </div>
     </nav>
 
@@ -62,16 +65,37 @@ $basePath = defined('BASE_PATH') ? BASE_PATH : '';
         <div class="container mx-auto px-4 py-4 flex flex-col gap-2">
             <a href="<?= $basePath ?>/public/index.php" class="text-slate-300 hover:text-white font-medium py-3 px-3 rounded-lg hover:bg-white/5 transition-all">Inicio</a>
             <a href="<?= $basePath ?>/public/dashboard.php" class="text-slate-300 hover:text-white font-medium py-3 px-3 rounded-lg hover:bg-white/5 transition-all">Mi Panel</a>
-            <a href="<?= $basePath ?>/public/vendor/index.php" class="text-slate-300 hover:text-white font-medium py-3 px-3 rounded-lg hover:bg-white/5 transition-all">Panel Vendedor</a>
+            <a href="<?= $basePath ?>/public/vendor/index.php" data-nav="vendor" style="display:none" class="text-slate-300 hover:text-white font-medium py-3 px-3 rounded-lg hover:bg-white/5 transition-all">Panel Vendedor</a>
             <a href="<?= $basePath ?>/public/ganadores.php" class="text-slate-300 hover:text-white font-medium py-3 px-3 rounded-lg hover:bg-white/5 transition-all"><svg class="w-4 h-4 inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4Z"/><path d="M7 5H4a1 1 0 0 0-1 1 4 4 0 0 0 4 4M17 5h3a1 1 0 0 1 1 1 4 4 0 0 1-4 4"/></svg> Ganadores</a>
             <a href="<?= $basePath ?>/public/que-es.php" class="text-slate-300 hover:text-white font-medium py-3 px-3 rounded-lg hover:bg-white/5 transition-all">¿Qué es MisRifas?</a>
-            <a href="<?= $basePath ?>/public/admin/index.php?auth=login" class="mt-2 px-5 py-3 bg-white/5 border border-white/10 text-white rounded-xl hover:bg-white/10 active:scale-[0.97] transition-all font-medium text-center">Iniciar Sesión</a>
+            <a href="<?= $basePath ?>/public/admin/index.php?auth=login" data-nav="login" class="mt-2 px-5 py-3 bg-white/5 border border-white/10 text-white rounded-xl hover:bg-white/10 active:scale-[0.97] transition-all font-medium text-center">Iniciar Sesión</a>
+            <button type="button" data-nav="logout" style="display:none" class="mt-2 px-5 py-3 bg-white/5 border border-white/10 text-white rounded-xl hover:bg-white/10 active:scale-[0.97] transition-all font-medium text-center">Salir</button>
         </div>
     </div>
 </header>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Header consciente de la sesión: "Panel Vendedor" solo se muestra a
+    // vendedores/super_admin (antes lo veían todos y un comprador que entraba al
+    // panel recibía 401 y se cerraba su sesión). Login/Salir según haya token.
+    (function () {
+        var token = null, user = {};
+        try { token = localStorage.getItem('misrifas_token'); user = JSON.parse(localStorage.getItem('misrifas_user') || '{}') || {}; } catch (e) {}
+        var loggedIn = !!token;
+        var role = user && user.role;
+        var canVendor = role === 'vendor' || role === 'super_admin';
+        document.querySelectorAll('[data-nav="vendor"]').forEach(function (el) { el.style.display = canVendor ? '' : 'none'; });
+        document.querySelectorAll('[data-nav="login"]').forEach(function (el) { el.style.display = loggedIn ? 'none' : ''; });
+        document.querySelectorAll('[data-nav="logout"]').forEach(function (el) {
+            el.style.display = loggedIn ? '' : 'none';
+            el.addEventListener('click', function () {
+                try { localStorage.removeItem('misrifas_token'); localStorage.removeItem('misrifas_user'); } catch (e) {}
+                window.location.href = '<?= $basePath ?>/public/index.php';
+            });
+        });
+    })();
+
     const btn = document.getElementById('mobile-menu-btn');
     const menu = document.getElementById('mobile-menu');
     if (btn && menu) {
