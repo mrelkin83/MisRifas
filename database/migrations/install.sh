@@ -44,6 +44,7 @@ MIGRATIONS=(
   "v3.5_pago_modo_default.sql"
   "v3.6_commission_recalc_on_update.sql"
   "v3.7_invalidate_legacy_tokens.sql"
+  "v3.8_winner_acceptance.sql"
 )
 
 echo "==> Recreando base de datos '$DB_NAME'"

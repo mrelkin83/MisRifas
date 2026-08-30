@@ -16,17 +16,30 @@ class MessageBuilderService
             'draw_date' => date('d/m/Y', strtotime($raffle['draw_date'])),
         ];
 
+        $confirmUrl = $winner['confirm_url'] ?? '';
+        $vars['confirm_url'] = $confirmUrl;
+
         $text = "Felicitaciones {nombre}! Ganaste la rifa *{raffle_name}* con el numero *{ticket_number}*. "
-              . "El numero ganador de la {lottery_name} del {draw_date} fue *{full_number}*. "
-              . "Pronto te contactaremos para la entrega del premio.";
+              . "El numero ganador de la {lottery_name} del {draw_date} fue *{full_number}*. ";
+        // Para transparencia: el ganador confirma la aceptacion del premio.
+        if ($confirmUrl !== '') {
+            $text .= "Confirma que aceptas tu premio aqui: {confirm_url} . ";
+        }
+        $text .= "Pronto te contactaremos para la entrega del premio.";
 
         $text = self::replaceVars($text, $vars);
+
+        $confirmBlockHtml = $confirmUrl !== ''
+            ? "<p style='margin:24px 0;'><a href='{confirm_url}' style='background:#22c55e;color:#052e13;padding:12px 24px;border-radius:10px;text-decoration:none;font-weight:bold;display:inline-block;'>Confirmar aceptacion del premio</a></p>"
+              . "<p style='font-size:12px;color:#94a3b8;'>Al confirmar dejas constancia publica de que aceptas el premio y el resultado del sorteo.</p>"
+            : '';
 
         $html = self::buildEmailHtml(
             'Felicitaciones - Ganaste la rifa!',
             "<h2 style='color:#fbbf24;'>Felicitaciones {nombre}!</h2>"
             . "<p>Ganaste la rifa <strong>{raffle_name}</strong> con el boleto <strong>{ticket_number}</strong>.</p>"
             . "<p>El numero ganador de la {lottery_name} del {draw_date} fue <strong style='color:#22c55e;font-size:1.5em;'>{full_number}</strong></p>"
+            . $confirmBlockHtml
             . "<p>Pronto te contactaremos para la entrega del premio.</p>",
             $vars
         );

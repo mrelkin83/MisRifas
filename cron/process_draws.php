@@ -144,10 +144,13 @@ function registerWinner(array $raffle, array $ticket, string $matchedDigits, arr
 {
     $db = Database::getInstance()->getConnection();
 
+    // Token para la confirmación pública de aceptación del premio (sin login).
+    $acceptanceToken = bin2hex(random_bytes(24));
+
     $stmt = $db->prepare("
         INSERT INTO raffle_winners
-            (raffle_id, ticket_id, user_id, winning_number, matched_opportunity, prize_description)
-        VALUES (?, ?, ?, ?, ?, ?)
+            (raffle_id, ticket_id, user_id, winning_number, matched_opportunity, prize_description, acceptance_token)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
     ");
     $stmt->execute([
         $raffle['id'],
@@ -155,7 +158,8 @@ function registerWinner(array $raffle, array $ticket, string $matchedDigits, arr
         $ticket['user_id'],
         $raffle['winning_number'],
         $matchedDigits,
-        $raffle['name']
+        $raffle['name'],
+        $acceptanceToken
     ]);
 
     $db->prepare("UPDATE raffles SET status = 'completed' WHERE id = ?")
@@ -167,12 +171,17 @@ function registerWinner(array $raffle, array $ticket, string $matchedDigits, arr
         'winning_number' => $matchedDigits
     ]);
 
+    // Enlace público de confirmación de aceptación (transparencia del sorteo).
+    $appUrl = rtrim(getenv('APP_URL') ?: 'http://localhost', '/');
+    $confirmUrl = $appUrl . '/public/ganador-confirmar.php?t=' . $acceptanceToken;
+
     $lottery = ['name' => $raffle['lottery_name']];
     $winner = [
         'name' => $ticket['buyer_name'],
         'phone_whatsapp' => $ticket['buyer_phone'],
         'email' => $ticket['buyer_email'],
         'ticket_number' => $ticket['ticket_number'],
+        'confirm_url' => $confirmUrl,
     ];
 
     $msg = MessageBuilderService::buildWinnerMessage($raffle, $ticket, $winner, $lottery, $matchedDigits);

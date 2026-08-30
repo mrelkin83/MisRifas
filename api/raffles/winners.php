@@ -19,7 +19,9 @@ try {
             l.name as lottery_name,
             u.name as winner_name,
             u.phone_whatsapp as winner_phone,
-            u.city as winner_city
+            u.city as winner_city,
+            rw.acceptance_status,
+            rw.accepted_at
         FROM raffle_winners rw
         INNER JOIN raffles r ON rw.raffle_id = r.id
         INNER JOIN lotteries l ON r.lottery_id = l.id
