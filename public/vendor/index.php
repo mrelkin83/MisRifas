@@ -1673,6 +1673,18 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                         <h2 class="text-lg font-bold mb-2 flex items-center gap-2"><svg class="w-5 h-5 text-primary shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m3 11 18-8-8 18-2-8-8-2Z"/></svg>Comunicaciones y notificaciones</h2>
                         <p class="text-sm text-gray-500 mb-4">Mapa de TODO lo que el sistema envía y dónde se configura cada canal.</p>
 
+                        <!-- Diagnóstico EN VIVO: cada chip sale de una verificación real
+                             (socket SMTP, API Evolution, binario gammu, settings BD) —
+                             nunca de un texto estático que "asume" que funciona. -->
+                        <div style="padding:14px;border:1px solid #e2e8f0;border-radius:12px;margin-bottom:14px;background:#f8fafc;">
+                            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+                                <div style="font-weight:800;font-size:13px;">🩺 Diagnóstico en vivo</div>
+                                <button type="button" onclick="loadSystemStatus()" style="font-size:12px;font-weight:700;color:#f59e0b;background:none;border:none;cursor:pointer;">↻ Verificar de nuevo</button>
+                            </div>
+                            <p style="font-size:12px;color:#64748b;margin:4px 0 10px;">Nada se asume: cada estado se comprueba en este instante contra el servidor real.</p>
+                            <div id="sys-status" style="display:grid;gap:8px;"><p style="font-size:12px;color:#94a3b8;">Verificando…</p></div>
+                        </div>
+
                         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;margin-bottom:18px;">
                             <div style="padding:14px;border:1px solid #e2e8f0;border-radius:12px;">
                                 <div style="font-weight:800;font-size:13px;">🏆 Resultados del sorteo</div>
@@ -1688,11 +1700,16 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                             </div>
                             <div style="padding:14px;border:1px solid #e2e8f0;border-radius:12px;">
                                 <div style="font-weight:800;font-size:13px;">🔐 OTP de registro</div>
-                                <p style="font-size:12px;color:#64748b;margin-top:4px;">Automático, sin configuración: al registrarse, el usuario recibe un código <code>VERIFY-XXXXX</code> por correo, o lo ENVÍA por WhatsApp (OTP inverso) para verificar su número. Usa el SMTP de abajo y el canal WhatsApp del sistema.</p>
+                                <p style="font-size:12px;color:#64748b;margin-top:4px;">Dos canales: por <strong>correo</strong> (usa el SMTP de abajo) el usuario recibe el código <code>VERIFY-XXXXX</code>; por <strong>WhatsApp</strong> (OTP inverso) el usuario ENVÍA ese código al número de la plataforma configurado aquí. Sin número, el canal WhatsApp se ofrece como "no disponible" y el registro usa solo el correo.</p>
+                                <div style="margin-top:8px;display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+                                    <input type="text" id="otp-wa-number" placeholder="573001234567 (sin +)" style="flex:1;min-width:140px;font-size:12px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:8px;">
+                                    <button type="button" onclick="saveOtpNumber()" style="font-size:12px;font-weight:700;padding:6px 12px;border-radius:8px;background:#f59e0b;color:#fff;border:none;cursor:pointer;">Guardar</button>
+                                </div>
+                                <p style="font-size:11px;color:#94a3b8;margin-top:4px;">Número WhatsApp de la plataforma que RECIBE los códigos; debe estar vinculado al motor (QR) para poder leerlos.</p>
                             </div>
                             <div style="padding:14px;border:1px solid #e2e8f0;border-radius:12px;">
                                 <div style="font-weight:800;font-size:13px;">✉️ SMS (Gammu)</div>
-                                <p style="font-size:12px;color:#64748b;margin-top:4px;">Canal opcional de respaldo. Se activa por el archivo <code>.env</code> del servidor (<code>SMS_ENABLED=true</code> + módem configurado). Hoy está <strong>apagado</strong>: el sistema opera con correo + WhatsApp.</p>
+                                <p style="font-size:12px;color:#64748b;margin-top:4px;">Canal opcional de respaldo que exige un <strong>módem GSM físico con SIM</strong> conectado al servidor — en un VPS de nube no puede operar. Se activa instalando <code>gammu</code> y poniendo <code>SMS_ENABLED=true</code> en el <code>.env</code>. Su estado real lo dice el diagnóstico de arriba.</p>
                             </div>
                         </div>
 
@@ -1970,7 +1987,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
             console.log('Running onTotalTicketsChange for section crear');
             onTotalTicketsChange();
         }
-        if (section === 'configuracion') { loadSettings(); loadEmailSettings(); loadTemplates(); }
+        if (section === 'configuracion') { loadSettings(); loadEmailSettings(); loadTemplates(); loadSystemStatus(); }
         if (section === 'tapazo') loadTapazos();
         if (section === 'email-campaigns') { loadCampaigns(); loadEmailSettings(); }
     }
@@ -3064,6 +3081,36 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
 
 
     // ── Editor de plantillas (v4.13, solo super_admin) ──
+    // ── Diagnóstico en vivo: consulta system_status.php (verificaciones
+    // reales, no afirmaciones) y pinta un chip por subsistema. ──
+    async function loadSystemStatus() {
+        const box = document.getElementById('sys-status');
+        if (!box) return;
+        box.innerHTML = '<p style="font-size:12px;color:#94a3b8;">Verificando…</p>';
+        try {
+            const res = await API.get('/admin/system_status.php');
+            const iconos = { ok: '✅', warn: '⚠️', fail: '❌' };
+            const colores = { ok: '#16a34a', warn: '#d97706', fail: '#dc2626' };
+            box.innerHTML = (res.data.checks || []).map(c =>
+                '<div style="display:flex;gap:8px;align-items:flex-start;font-size:12px;line-height:1.5;">' +
+                    '<span style="flex-shrink:0;">' + iconos[c.estado] + '</span>' +
+                    '<div><strong style="color:' + colores[c.estado] + ';">' + userEsc(c.nombre) + '</strong> — ' + userEsc(c.detalle) +
+                    (c.arreglo ? ' <em style="color:#64748b;">→ ' + userEsc(c.arreglo) + '</em>' : '') +
+                    '</div></div>').join('');
+        } catch (e) {
+            box.innerHTML = '<p style="font-size:12px;color:#94a3b8;">Diagnóstico disponible solo para el super administrador.</p>';
+        }
+    }
+
+    async function saveOtpNumber() {
+        const num = (document.getElementById('otp-wa-number').value || '').replace(/\D/g, '');
+        try {
+            await API.post('/admin/settings.php', { otp_whatsapp_number: num });
+            Utils.showNotification(num ? 'Número OTP guardado ✅' : 'Número borrado: canal WhatsApp del OTP desactivado', 'success');
+            loadSystemStatus();
+        } catch (e) { Utils.showNotification(e.message || 'No se pudo guardar', 'error'); }
+    }
+
     async function loadTemplates() {
         const box = document.getElementById('tpl-editor');
         if (!box) return;
