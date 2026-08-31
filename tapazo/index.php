@@ -1010,6 +1010,14 @@ $ogDesc = $tapazo
             renderPlayersList(initialJugadores, <?= $tapazo['cantidad_jugadores'] ?>);
 
             const estadoActual = '<?= $tapazo['estado'] ?>';
+            // RESILIENCIA: si el destape ya está en curso, arrancar la vista y
+            // el polling de inmediato — sin depender del SSE (proxies y
+            // compresión lo pueden matar; el polling a siguiente.php no falla).
+            if (estadoActual === 'destapando') {
+                document.getElementById('state-joining').classList.add('hidden');
+                document.getElementById('state-revealing').classList.remove('hidden');
+                startDestapePolling();
+            }
             if (estadoActual === 'finalizado') {
                 fetch(BASE_PATH + '/api/tapazo/info.php?codigo=<?= $tapazo['codigo_unico'] ?>')
                     .then(r => r.json()).then(json => {

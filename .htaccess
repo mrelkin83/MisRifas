@@ -104,6 +104,9 @@ Options -Indexes
 # ============================================
 
 <IfModule mod_deflate.c>
+    # SSE del Tapazo: mod_deflate BUFFEREA text/event-stream y el destape en
+    # vivo nunca llega al navegador. Sin gzip para el stream.
+    SetEnvIfNoCase Request_URI "destape\.php$" no-gzip dont-vary
     AddOutputFilterByType DEFLATE application/javascript
     AddOutputFilterByType DEFLATE application/rss+xml
     AddOutputFilterByType DEFLATE application/vnd.ms-fontobject
