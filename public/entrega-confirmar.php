@@ -43,6 +43,12 @@ require_once __DIR__ . '/../config/app.php';
             <span style="color:#94a3b8;font-size:13px;">Boleto ganador #<span id="ticket-number"></span> · <span id="winner-name"></span></span>
         </div>
 
+        <!-- Evidencia OBLIGATORIA que subió el organizador al reportar -->
+        <div id="vendor-evidence" class="hidden" style="margin:14px 0;">
+            <p style="font-size:12px;color:#94a3b8;text-transform:uppercase;font-weight:700;letter-spacing:.5px;margin-bottom:6px;">📷 Evidencia de entrega del organizador</p>
+            <img id="vendor-photo" alt="Evidencia de la entrega subida por el organizador" style="width:100%;border-radius:12px;border:1px solid rgba(255,255,255,.1);">
+        </div>
+
         <label class="file-label" for="photo">📷 Foto recibiendo el premio (opcional)<input type="file" id="photo" accept="image/*" style="display:none;"></label>
         <p id="photo-name" style="font-size:12px;color:#4ade80;text-align:center;margin-top:6px;"></p>
 
@@ -89,6 +95,10 @@ require_once __DIR__ . '/../config/app.php';
             $('ticket-number').textContent = r.data.ticket_number;
             $('winner-name').textContent = r.data.winner_name;
             $('vendor-name').textContent = r.data.vendor_name;
+            if (r.data.vendor_photo) {
+                $('vendor-photo').src = r.data.vendor_photo;
+                $('vendor-evidence').classList.remove('hidden');
+            }
         })
         .catch(() => { $('loading').classList.add('hidden'); finish('⚠️', 'Error de conexión', 'Intenta de nuevo en unos minutos.'); });
 

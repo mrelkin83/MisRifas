@@ -4359,12 +4359,55 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
 
             // §13.4 paso 3: el vendedor declara que entregó; el GANADOR es
             // quien confirma con SU enlace (token distinto al de aceptación).
-            window.reportDelivery = async function(raffleId){
-                if (!confirm('¿Reportar que ya ENTREGASTE el premio?\n\nEl ganador recibirá un enlace para confirmarlo — hasta entonces figura como "pendiente de confirmación".')) return;
-                try {
-                    var r = await API.post('/vendor/delivery.php', { raffle_id: raffleId });
-                    Utils.showNotification(r.message || 'Entrega reportada 📦', 'success');
-                } catch (e) { Utils.showNotification(e.message || 'No se pudo reportar', 'error'); }
+            // Reportar entrega: la FOTO de evidencia es OBLIGATORIA (§13.4).
+            window.reportDelivery = function(raffleId){
+                var old = document.getElementById('delivery-modal');
+                if (old) old.remove();
+                var wrap = document.createElement('div');
+                wrap.id = 'delivery-modal';
+                wrap.innerHTML =
+                    '<div id="dlv-backdrop" style="position:fixed;inset:0;background:rgba(15,23,42,.6);z-index:140;"></div>' +
+                    '<div style="position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:141;background:#fff;border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.35);padding:22px;width:min(92vw,400px);">' +
+                        '<h3 style="font-weight:800;font-size:16px;margin-bottom:4px;">📦 Reportar entrega del premio</h3>' +
+                        '<p style="font-size:12.5px;color:#6b7280;margin-bottom:12px;">La <strong>foto de evidencia es obligatoria</strong>: el premio entregado, el acta o el ganador recibiéndolo. El ganador la verá en su enlace de confirmación.</p>' +
+                        '<label style="display:block;padding:14px;border:2px dashed #cbd5e1;border-radius:12px;text-align:center;font-size:13px;color:#64748b;cursor:pointer;">📷 Toca para elegir la foto' +
+                            '<input type="file" id="dlv-photo" accept="image/*" style="display:none;"></label>' +
+                        '<img id="dlv-preview" style="display:none;width:100%;max-height:180px;object-fit:cover;border-radius:12px;margin-top:10px;" alt="Evidencia">' +
+                        '<div style="display:flex;gap:8px;margin-top:14px;">' +
+                            '<button type="button" id="dlv-send" disabled style="flex:1;padding:12px;border:none;border-radius:10px;background:#22c55e;color:#052e13;font-weight:800;cursor:pointer;opacity:.5;">Reportar entrega</button>' +
+                            '<button type="button" id="dlv-cancel" style="padding:12px 16px;border:1px solid #e2e8f0;border-radius:10px;background:#fff;font-weight:700;cursor:pointer;">Cancelar</button>' +
+                        '</div>' +
+                    '</div>';
+                document.body.appendChild(wrap);
+                var close = function(){ wrap.remove(); };
+                document.getElementById('dlv-backdrop').addEventListener('click', close);
+                document.getElementById('dlv-cancel').addEventListener('click', close);
+                var b64 = null;
+                document.getElementById('dlv-photo').addEventListener('change', function(e){
+                    var f = e.target.files[0];
+                    if (!f) return;
+                    var rd = new FileReader();
+                    rd.onload = function(){
+                        b64 = rd.result;
+                        var img = document.getElementById('dlv-preview');
+                        img.src = b64; img.style.display = 'block';
+                        var btn = document.getElementById('dlv-send');
+                        btn.disabled = false; btn.style.opacity = '1';
+                    };
+                    rd.readAsDataURL(f);
+                });
+                document.getElementById('dlv-send').addEventListener('click', async function(){
+                    if (!b64) return;
+                    this.disabled = true; this.textContent = 'Reportando…';
+                    try {
+                        var r = await API.post('/vendor/delivery.php', { raffle_id: raffleId, photo: b64 });
+                        Utils.showNotification(r.message || 'Entrega reportada 📦', 'success');
+                        close();
+                    } catch (e) {
+                        Utils.showNotification(e.message || 'No se pudo reportar', 'error');
+                        this.disabled = false; this.textContent = 'Reportar entrega';
+                    }
+                });
             };
 
             // ⋮ en "Comisiones": ver rifa / marcar como pagada.

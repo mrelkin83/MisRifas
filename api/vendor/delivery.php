@@ -63,13 +63,42 @@ try {
         Response::error('Ya reportaste la entrega; falta que el ganador la confirme con su enlace.', null, 409);
     }
 
+    // Evidencia OBLIGATORIA del vendedor: foto de la entrega (premio
+    // entregado, acta o el ganador recibiendo). Whitelist + re-codificación GD
+    // (descarta payloads) → storage/entregas/ (fuera del webroot). El ganador
+    // la ve en su página de confirmación antes de confirmar o disputar.
+    $photo = (string)($input['photo'] ?? '');
+    if (!preg_match('/^data:image\/(jpe?g|png|webp);base64,(.+)$/i', $photo, $m)) {
+        Response::error('La foto de evidencia de la entrega es OBLIGATORIA (JPG, PNG o WebP). Adjunta una foto del premio entregado o del ganador recibiéndolo.', 'EVIDENCE_REQUIRED', 422);
+    }
+    $imageData = base64_decode($m[2], true);
+    if ($imageData === false || strlen($imageData) > 8 * 1024 * 1024) {
+        Response::error('La imagen no es válida o supera 8 MB', null, 422);
+    }
+    $info = @getimagesizefromstring($imageData);
+    if ($info === false || !in_array($info['mime'], ['image/jpeg', 'image/png', 'image/webp'], true)) {
+        Response::error('El archivo no es una imagen válida', null, 422);
+    }
+    $im = @imagecreatefromstring($imageData);
+    if ($im === false) {
+        Response::error('No se pudo procesar la imagen', null, 422);
+    }
+    $dir = __DIR__ . '/../../storage/entregas';
+    if (!is_dir($dir)) {
+        mkdir($dir, 0755, true);
+    }
+    $photoFile = 'vendor_' . $raffleId . '_' . bin2hex(random_bytes(6)) . '.jpg';
+    imagejpeg($im, $dir . '/' . $photoFile, 85);
+    imagedestroy($im);
+
     // Token de ENTREGA — distinto al de aceptación, se invalida al usarse.
     $deliveryToken = bin2hex(random_bytes(32));
     $db->prepare("
         UPDATE raffle_winners
-        SET delivery_status = 'delivery_reported', delivery_reported_at = NOW(), delivery_token = ?
+        SET delivery_status = 'delivery_reported', delivery_reported_at = NOW(), delivery_token = ?,
+            delivery_vendor_photo_path = ?
         WHERE id = ? AND delivery_status = 'pending'
-    ")->execute([$deliveryToken, $w['id']]);
+    ")->execute([$deliveryToken, $photoFile, $w['id']]);
 
     Logger::activity('delivery_reported', $vendorId, ['raffle_id' => $raffleId, 'winner_id' => $w['id']]);
 

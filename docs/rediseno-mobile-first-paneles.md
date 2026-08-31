@@ -246,3 +246,83 @@ Aplica en este orden; cada paso se verifica en navegador (≈390 px y escritorio
 - No refresques todas las secciones tras cada acción — solo las visibles.
 - No interpoles texto de usuario en `innerHTML` sin escapar.
 - No pruebes solo el camino feliz: abre el sheet, ejecuta una mutación real, verifica BD y refresco de UI.
+
+---
+
+## 11. Sitio público como app nativa (no "página adaptada")
+
+Cuando el proyecto tenga también un sitio público, el móvil se piensa como
+pantalla de app Android/iOS, no como la página de escritorio encogida:
+
+- **App-bar compacto (64 px)** en vez del header de 80 px; logo más pequeño.
+  Si cambias la altura del header, actualiza TODO lo anclado a ella (menú
+  móvil `top:`, secciones `sticky top:`).
+- **Hero → banner-card**: la portada de 400-600 px pasa a tarjeta de ~240 px
+  con margen y bordes redondeados (como los carruseles de promos de una app).
+- **Buscador píldora PEGAJOSO** bajo el app-bar: input compacto (44-48 px,
+  `border-radius:9999px`) + botón circular de filtros con badge de activos.
+- **Filtros en bottom sheet** con el MISMO DOM: en escritorio los filtros son
+  el grid de siempre; en móvil, CSS convierte el contenedor en hoja inferior
+  (`position:fixed; bottom:0; transform:translateY(110%)` → `.open`
+  `translateY(0)`), con cabecera propia (handle + título + ✕) visible solo
+  en móvil. El botón "Buscar" cierra la hoja además de filtrar.
+- **Pestañas → chips deslizables** de una línea: `flex-wrap:nowrap;
+  overflow-x:auto; scrollbar-width:none`, chips `border-radius:99px`.
+- **Footer estilo app**: en móvil se compacta y centra; las columnas de
+  enlaces que DUPLICAN la tab bar/hamburguesa se ocultan (`display:none`).
+  Queda: marca, dato de confianza, 1-2 enlaces útiles y el copyright en 11px.
+
+## 12. Tab bar del sitio público (compartida)
+
+- Un **partial PHP compartido** (`partials/tabbar.php`): estilos + markup +
+  JS en un solo archivo; cada página declara `$tabActive = '…'` e incluye el
+  partial antes de `</body>`. Solo móvil (≤768 px); el body recibe
+  `padding-bottom` para no tapar contenido.
+- La pestaña de CUENTA es consciente de la sesión: sin token → login; con
+  token, JS la re-apunta al panel según el rol y la renombra ("Mi Panel").
+- **Regla de oro: UNA tab bar por pantalla.** El panel autenticado conserva
+  su tab bar propia (secciones del panel) y NUNCA se apila la del sitio
+  encima. En el panel, agrega una pestaña "Inicio" que lleve al sitio.
+- En pantallas de FLUJO con CTAs inferiores propios (detalle con hoja de
+  selección, pago): la tab bar convive subiendo el FAB contextual
+  (`bottom: calc(78px + safe-area)`) y dando a la hoja/backdrop un z-index
+  MAYOR que la barra para que la cubran al abrirse.
+- Las vistas de login/registro de los paneles son pantallas públicas:
+  también llevan la tab bar del sitio (ojo: si esa rama PHP no cierra
+  `</body>`, el include va al final de la rama, no en el cierre global).
+
+## 13. Header con avatar (sitio público)
+
+- El menú de usuario (avatar + dropdown) vive EN el header, visible también
+  en móvil **junto a la hamburguesa**: `[links…] [avatar] [☰]`. En móvil se
+  oculta el nombre y el caret (solo el círculo con la inicial).
+- **Un botón = una función, sin duplicados**: el avatar abre SU dropdown de
+  cuenta; la hamburguesa abre SOLO la navegación (+ login/registro sin
+  sesión). Nunca metas la lista de cuenta dentro del menú hamburguesa si el
+  avatar ya está en el header — el usuario la vería dos veces.
+- En los paneles: `[☰][avatar]` juntos a la izquierda y el título de la
+  sección a la derecha; el dropdown se alinea al lado del avatar
+  (`left:0` si el avatar quedó a la izquierda — `right:0` lo saca de
+  pantalla).
+
+## 14. Gotchas nuevos (aprendidos en producción)
+
+- **`backdrop-filter` en un ancestro rompe `position:fixed`** (el fixed pasa
+  a ser relativo a ese ancestro). Aplica también al contenedor STICKY del
+  buscador: si la hoja de filtros nace "abierta" o recortada, quita el blur
+  del ancestro (usa fondo sólido) o mueve la hoja a hijo directo de `<body>`.
+- **Strings multilínea en JS**: un `confirm('…')` con saltos de línea
+  LITERALES dentro de la cadena es un error de sintaxis que mata TODO el
+  bloque `<script>` (y con él, todos los sheets definidos ahí). Siempre
+  `\n` escapado. `php -l` NO lo detecta — solo el navegador o un chequeo
+  `new Function(bloque)` en CI.
+- **Clases responsive purgadas**: `w-9`, `h-9`, `md:inline`… pueden no
+  existir en el CSS compilado aunque "se vean estándar". Para componentes
+  nuevos: estilos inline o clases propias; para ocultar por breakpoint,
+  media query propia en vez de `md:*`.
+- **Paneles gemelos**: el usuario suele probar en el OTRO panel. Toda mejora
+  se porta a ambos EN EL MISMO cambio, o se reportará como "no aplicada".
+- **Nav escrita a mano por página = deriva**: los menús divergen solos
+  (enlaces que solo existen en una página confunden). Unifica el conjunto de
+  enlaces y nómbralos por lo que HACEN para el usuario ("Resultados",
+  "Verificar boleta"), no por implementación interna.

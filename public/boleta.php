@@ -85,7 +85,7 @@ $e = fn($s) => htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8');
     </div>
 <?php endif; ?>
     <div class="foot">
-        <a href="<?= BASE_PATH ?>/public/comprobar-boleta.php">Comprobar otra boleta</a> ·
+        <a href="<?= BASE_PATH ?>/public/comprobar-boleta.php">Verificar otra boleta</a> ·
         <a href="<?= BASE_PATH ?>/public/index.php">MisRifas</a>
     </div>
 </div>

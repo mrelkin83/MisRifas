@@ -5,7 +5,22 @@
  */
 $basePath = defined('BASE_PATH') ? BASE_PATH : '';
 ?>
-<footer class="bg-[#0b1120] text-slate-400 border-t border-slate-800/50 mt-20">
+<style>
+    /* Footer estilo app en móvil: compacto y centrado. Las columnas de
+       enlaces duplican la tab bar/hamburguesa — se ocultan. */
+    @media (max-width: 768px) {
+        #shared-footer { margin-top: 40px; }
+        #shared-footer .grid { grid-template-columns: 1fr !important; gap: 14px; padding-top: 26px; padding-bottom: 12px; text-align: center; }
+        #shared-footer .grid > div:nth-child(2),
+        #shared-footer .grid > div:nth-child(3) { display: none; }
+        #shared-footer .grid > div:first-child a { justify-content: center; }
+        #shared-footer .grid > div:last-child ul { display: flex; justify-content: center; gap: 16px; }
+        #shared-footer .grid h4 { margin-bottom: 8px; }
+        #shared-footer > div > div:last-child { padding-top: 10px; padding-bottom: 12px; gap: 4px; }
+        #shared-footer > div > div:last-child p { font-size: 11px; text-align: center; }
+    }
+</style>
+<footer class="bg-[#0b1120] text-slate-400 border-t border-slate-800/50 mt-20" id="shared-footer">
     <div class="container mx-auto px-4">
         <!-- Main footer content -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 py-16">
@@ -25,7 +40,7 @@ $basePath = defined('BASE_PATH') ? BASE_PATH : '';
                 <h4 class="text-white font-bold mb-4 text-sm uppercase tracking-wider">Navegación</h4>
                 <ul class="space-y-2.5">
                     <li><a href="<?= $basePath ?>/public/index.php" class="text-slate-400 hover:text-white transition-colors text-sm">Inicio</a></li>
-                    <li><a href="<?= $basePath ?>/public/mis-boletos.php" class="text-slate-400 hover:text-white transition-colors text-sm">Consultar Boletas</a></li>
+                    <li><a href="<?= $basePath ?>/public/mis-boletos.php" class="text-slate-400 hover:text-white transition-colors text-sm">Resultados</a></li>
                     <li><a href="<?= $basePath ?>/public/ganadores.php" class="text-slate-400 hover:text-white transition-colors text-sm">Ganadores</a></li>
                     <li><a href="<?= $basePath ?>/public/que-es.php" class="text-slate-400 hover:text-white transition-colors text-sm">¿Qué es MisRifas?</a></li>
                 </ul>

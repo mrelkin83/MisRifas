@@ -50,7 +50,7 @@ require_once __DIR__ . '/../config/app.php';
             <div class="hidden md:flex items-center gap-6" id="nav-menu">
                 <a href="<?= BASE_PATH ?>/public/index.php" class="text-slate-300 hover:text-white font-medium transition-colors">Inicio</a>
                 <a href="<?= BASE_PATH ?>/tapazo/index.php" class="text-slate-300 hover:text-white font-medium transition-colors">🍺 El Tapazo</a>
-                <a href="<?= BASE_PATH ?>/public/mis-boletos.php" class="text-slate-300 hover:text-white font-medium transition-colors">Consultar Boletas</a>
+                <a href="<?= BASE_PATH ?>/public/mis-boletos.php" class="text-slate-300 hover:text-white font-medium transition-colors">Resultados</a>
                 <a href="<?= BASE_PATH ?>/public/ganadores.php" class="text-slate-300 hover:text-white font-medium transition-colors">Ganadores</a>
                 <a href="<?= BASE_PATH ?>/public/vendor/index.php?auth=register" class="px-5 py-2.5 bg-white/5 border border-white/10 text-white rounded-xl hover:bg-white/10 transition-all font-medium backdrop-blur-sm">Crear mi rifa</a>
             </div>

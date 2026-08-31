@@ -2,7 +2,7 @@
 header("Cache-Control: no-cache, no-store, must-revalidate");
 header("Pragma: no-cache");
 header("Expires: 0");
-$page_title = "Boletas Compradas - MisRifas";
+$page_title = "Resultados de sorteos - MisRifas";
 require_once __DIR__ . '/../config/database.php';
 ?>
 <!DOCTYPE html>
@@ -95,44 +95,32 @@ require_once __DIR__ . '/../config/database.php';
 
     <main class="py-8">
         <div class="container mx-auto px-4 max-w-2xl">
-            <h1 class="text-3xl font-bold text-center mb-8">Boletas Compradas</h1>
+            <h1 class="text-2xl md:text-3xl font-bold text-center mb-2" style="text-wrap:balance;">🔎 Consulta tus resultados</h1>
+            <p class="text-slate-400 text-center text-sm mb-8">¿No te llegó la notificación del sorteo? Averigua aquí si fuiste el ganador.</p>
 
             <div class="glass-card rounded-2xl shadow-md p-6 md:p-8 mb-8">
-                <h2 class="text-xl font-bold mb-4">Consulta tus Boletas</h2>
-                <p class="text-slate-300 mb-6 text-sm sm:text-base">Ingresa tu WhatsApp o código único para ver tus boletos</p>
-
                 <form id="lookup-form" class="space-y-4">
                     <div>
-                        <label for="phone" class="block text-sm font-medium text-slate-300 mb-1">WhatsApp</label>
-                        <input type="tel" id="phone" name="phone" autocomplete="tel" inputmode="numeric" placeholder="3001234567" pattern="[3][0-9]{9}"
+                        <label for="query" class="block text-sm font-medium text-slate-300 mb-1">WhatsApp, código de boleta o código único</label>
+                        <input type="text" id="query" name="query" autocomplete="off" spellcheck="false" inputmode="text"
+                            placeholder="3001234567 · XXXX-XXXX-XXXX · código único"
                             class="w-full px-4 py-3 bg-black/20 border-2 border-white/10 rounded-lg text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-primary">
-                    </div>
-
-                    <div class="flex items-center gap-4 py-2">
-                        <div class="flex-1 h-px bg-white/10"></div>
-                        <span class="text-slate-500 text-sm">O</span>
-                        <div class="flex-1 h-px bg-white/10"></div>
-                    </div>
-
-                    <div>
-                        <label for="unique-id" class="block text-sm font-medium text-slate-300 mb-1">Código Único</label>
-                        <input type="text" id="unique-id" name="unique_id" autocomplete="off" spellcheck="false" placeholder="XXXXXXXX-XXXX-XXXX"
-                            class="w-full px-4 py-3 bg-black/20 border-2 border-white/10 rounded-lg text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-primary">
+                        <p class="text-xs text-slate-500 mt-2">Con tu <strong>WhatsApp</strong> o tu <strong>código único</strong> ves TODOS tus boletos y sus resultados; con el <strong>código de una boleta</strong> (XXXX-XXXX-XXXX) ves solo esa.</p>
                     </div>
 
                     <button type="submit" id="search-btn" class="w-full py-4 bg-primary text-slate-950 font-bold rounded-xl text-lg hover:bg-primary-light disabled:opacity-50 transition-colors">
-                        Buscar mis Boletas
+                        Consultar resultado
                     </button>
                 </form>
                 <p class="text-center text-sm text-slate-400 mt-4">
-                    ¿Solo tienes el código de UNA boleta (XXXX-XXXX-XXXX)?
-                    <a href="<?= BASE_PATH ?>/public/comprobar-boleta.php" class="text-amber-400 hover:text-amber-300 font-bold">Compruébala aquí</a>
+                    ¿Quieres verificar la <strong>autenticidad</strong> de una boleta?
+                    <a href="<?= BASE_PATH ?>/public/comprobar-boleta.php" class="text-amber-400 hover:text-amber-300 font-bold">Verifícala aquí</a>
                 </p>
             </div>
 
             <div id="loading" class="hidden text-center py-8">
                 <div class="spinner"></div>
-                <p class="text-slate-400 mt-4">Buscando tus boletos…</p>
+                <p class="text-slate-400 mt-4">Consultando resultados…</p>
             </div>
 
             <div id="no-results" class="hidden text-center py-8">
@@ -144,7 +132,7 @@ require_once __DIR__ . '/../config/database.php';
             <div id="tickets-container" class="hidden">
                 <div class="glass-card rounded-2xl shadow-md p-4 sm:p-6 mb-6">
                     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-2">
-                        <h2 class="text-xl font-bold">Tus Boletas</h2>
+                        <h2 class="text-xl font-bold">Resultados</h2>
                         <span id="user-info" class="text-xs sm:text-sm text-slate-400"></span>
                     </div>
                     <div id="tickets-list" class="space-y-4"></div>
@@ -160,7 +148,7 @@ require_once __DIR__ . '/../config/database.php';
 
     <footer class="bg-black/30 text-white py-8 mt-12 border-t border-white/5">
         <div class="container mx-auto px-4 text-center">
-            <p class="mb-2"><a href="<?= BASE_PATH ?>/public/comprobar-boleta.php" class="text-primary font-bold hover:underline text-sm">🎟️ Comprobar una boleta</a></p>
+            <p class="mb-2"><a href="<?= BASE_PATH ?>/public/comprobar-boleta.php" class="text-primary font-bold hover:underline text-sm">🎟️ Verificar una boleta</a></p>
             <p class="text-sm text-slate-400">&copy; 2026 MisRifas Colombia. Todos los derechos reservados.</p>
         </div>
     </footer>
@@ -217,10 +205,34 @@ require_once __DIR__ . '/../config/database.php';
 
     let ticketsById = {};
 
+    // Veredicto del sorteo por boleto (§ buscador de resultados).
+    function resultadoHtml(t) {
+        if (t.resultado === 'ganador') {
+            return '<div class="mt-3 p-3 rounded-xl text-center font-black" style="background:rgba(34,197,94,.14);border:1px solid rgba(34,197,94,.4);color:#4ade80;">🏆 ¡FELICIDADES, ESTE BOLETO GANÓ!' +
+                (t.winning_number ? '<div class="text-xs font-bold mt-1" style="color:#86efac;">Número ganador: ' + Utils.esc(t.winning_number) + '</div>' : '') +
+                '</div>';
+        }
+        if (t.resultado === 'no_ganador') {
+            return '<div class="mt-3 p-3 rounded-xl text-center text-sm font-bold" style="background:rgba(148,163,184,.1);border:1px solid rgba(148,163,184,.25);color:#cbd5e1;">Sorteo realizado — no fue el ganador' +
+                (t.winning_number ? ' · número ganador: <strong>' + Utils.esc(t.winning_number) + '</strong>' : '') +
+                '</div>';
+        }
+        if (t.resultado === 'reprogramada') {
+            return '<div class="mt-3 p-3 rounded-xl text-center text-sm font-bold" style="background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);color:#fbbf24;">🔁 El número ganador (' + Utils.esc(t.winning_number || '—') + ') no estaba vendido: el sorteo se reprogramó' +
+                (t.draw_date ? ' para el ' + Utils.formatDate(t.draw_date) : '') + '. Tu boleto sigue participando.</div>';
+        }
+        if (t.resultado === 'cancelada') {
+            return '<div class="mt-3 p-3 rounded-xl text-center text-sm font-bold" style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:#f87171;">La rifa fue cancelada — contacta al organizador por tu devolución.</div>';
+        }
+        return '<div class="mt-3 p-3 rounded-xl text-center text-sm font-bold" style="background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.25);color:#93c5fd;">⏳ Sorteo pendiente' +
+            (t.draw_date ? ': ' + Utils.formatDate(t.draw_date) : '') + '</div>';
+    }
+
     function renderTickets(data) {
         const container = document.getElementById('tickets-list');
-        document.getElementById('user-info').textContent = (data.user?.name || '') + ' — ' + (data.user?.phone || '');
+        document.getElementById('user-info').textContent = data.user?.name ? ((data.user.name || '') + ' — ' + (data.user.phone || '')) : '';
         document.getElementById('unique-id-display').textContent = data.user?.unique_id || '';
+        document.getElementById('unique-id-display').parentElement.style.display = data.user?.unique_id ? '' : 'none';
 
         ticketsById = {};
         data.tickets.forEach(t => { ticketsById[t.id] = t; });
@@ -252,6 +264,7 @@ require_once __DIR__ . '/../config/database.php';
                     (ticket.draw_date ? '<div>Sorteo: ' + Utils.formatDate(ticket.draw_date) + '</div>' : '') +
                     reservedHtml +
                 '</div>' +
+                resultadoHtml(ticket) +
                 (ticket.status === 'reserved' ? '<button type="button" data-pay-ticket-id="' + ticket.id + '" class="mt-3 block w-full text-center py-2 bg-emerald-500 text-white rounded-lg font-bold text-sm hover:bg-emerald-600 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300">Pagar Ahora</button>' : '') +
                 (ticket.status === 'paid' && ticket.ticket_code ? (function () {
                     const fmt = ticket.ticket_code.replace(/(.{4})(?=.)/g, '$1-');
@@ -264,13 +277,27 @@ require_once __DIR__ . '/../config/database.php';
         }).join('');
     }
 
+    // Un solo buscador: detecta qué escribió el usuario.
+    //  - 10 dígitos empezando por 3        → WhatsApp
+    //  - 12 alfanuméricos (con o sin -)    → código de boleta (Crockford)
+    //  - más largo (formato UUID)          → código único de comprador
+    function classifyQuery(q) {
+        const digits = q.replace(/\D/g, '');
+        if (/^3\d{9}$/.test(digits) && q.replace(/[\s\-+]/g, '') === digits) return { phone: digits };
+        const alnum = q.toUpperCase().replace(/[^A-Z0-9]/g, '')
+            .replace(/[IL]/g, '1').replace(/O/g, '0').replace(/U/g, 'V');
+        if (alnum.length === 12) return { ticket_code: alnum };
+        if (q.replace(/[^A-Za-z0-9-]/g, '').length >= 16) return { unique_id: q.trim() };
+        return null;
+    }
+
     document.getElementById('lookup-form').addEventListener('submit', async (e) => {
         e.preventDefault();
-        const phone = document.getElementById('phone').value.trim();
-        const uniqueId = document.getElementById('unique-id').value.trim();
+        const q = document.getElementById('query').value.trim();
+        const params = q ? classifyQuery(q) : null;
 
-        if (!phone && !uniqueId) {
-            Utils.showNotification('Ingresa al menos un dato para buscar', 'error');
+        if (!params) {
+            Utils.showNotification('Ingresa tu WhatsApp (10 dígitos), el código de una boleta (12 caracteres) o tu código único', 'error');
             return;
         }
 
@@ -279,7 +306,7 @@ require_once __DIR__ . '/../config/database.php';
         document.getElementById('tickets-container').classList.add('hidden');
 
         try {
-            const response = await API.get('/user/tickets.php', { phone, unique_id: uniqueId });
+            const response = await API.get('/user/tickets.php', params);
             if (response.success && response.data.tickets.length > 0) {
                 renderTickets(response.data);
                 document.getElementById('tickets-container').classList.remove('hidden');

@@ -11,7 +11,7 @@ require_once __DIR__ . '/../config/app.php';
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Comprobar boleta | MisRifas</title>
+    <title>Verificar boleta | MisRifas</title>
     <meta name="theme-color" content="#0f172a">
     <script>const BASE_PATH = "<?= BASE_PATH ?>";</script>
     <style>
@@ -68,11 +68,11 @@ require_once __DIR__ . '/../config/app.php';
 </header>
 <div class="stage">
 <div class="card">
-    <span class="badge">Verificación oficial</span>
-    <h1>🎟️ Comprobar boleta</h1>
+    <span class="badge">Verificación de autenticidad</span>
+    <h1>🎟️ Verificar boleta</h1>
     <p>Digita el código de la boleta (formato <strong>XXXX-XXXX-XXXX</strong>) o escanea su QR con la cámara.</p>
     <input type="text" id="code" placeholder="XXXX-XXXX-XXXX" maxlength="14" autocomplete="off" autocapitalize="characters" aria-label="Código de la boleta">
-    <button class="btn btn-go" onclick="go()">Comprobar</button>
+    <button class="btn btn-go" onclick="go()">Verificar</button>
     <button class="btn btn-cam" id="cam-btn" onclick="scan()">📷 Escanear QR</button>
     <video id="video" playsinline muted></video>
     <p class="msg" id="msg" aria-live="polite"></p>

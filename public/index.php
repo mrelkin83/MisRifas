@@ -384,6 +384,18 @@ $page_description = "La plataforma más confiable para crear y participar en rif
             #como-funciona { padding-top: 48px; padding-bottom: 48px; }
             #como-funciona .grid { gap: 32px; }
             #como-funciona h2 { font-size: 26px; }
+
+            /* Footer estilo app: compacto y centrado. Las columnas de enlaces
+               duplican la tab bar/hamburguesa en móvil — se ocultan. */
+            #site-footer { padding-top: 26px; padding-bottom: 6px; }
+            #site-footer .grid { grid-template-columns: 1fr; gap: 16px; padding-bottom: 12px; text-align: center; }
+            #site-footer .grid > div:nth-child(2),
+            #site-footer .grid > div:nth-child(3) { display: none; }
+            #site-footer .grid > div:first-child > div:first-child { justify-content: center; }
+            #site-footer .grid h4 { margin-bottom: 8px; }
+            #site-footer .flex.flex-wrap { justify-content: center; }
+            #site-footer .pt-8 { padding-top: 12px; }
+            #site-footer .pt-8 p { font-size: 12px; margin-bottom: 4px; }
         }
     </style>
 </head>
@@ -409,7 +421,7 @@ $page_description = "La plataforma más confiable para crear y participar en rif
                     <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 3h11l-1 15a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 3Zm11 4h2.5a2 2 0 0 1 2 2.2l-.4 4A2 2 0 0 1 18.1 15H16"/></svg>
                     El Tapazo
                 </a>
-                <a href="<?= BASE_PATH ?>/public/mis-boletos.php" class="text-slate-300 hover:text-white font-medium transition-colors">Consultar Boletas</a>
+                <a href="<?= BASE_PATH ?>/public/mis-boletos.php" class="text-slate-300 hover:text-white font-medium transition-colors">Resultados</a>
                 <a href="<?= BASE_PATH ?>/public/ganadores.php" class="flex items-center gap-1.5 text-slate-300 hover:text-white font-medium transition-colors">
                     <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 21h8M12 17v4M7 4h10v4a5 5 0 0 1-10 0V4Zm0 1H4.5a1.5 1.5 0 0 0 0 3H7M17 5h2.5a1.5 1.5 0 0 1 0 3H17"/></svg>
                     Ganadores
@@ -440,7 +452,7 @@ $page_description = "La plataforma más confiable para crear y participar en rif
                             <p id="user-dd-name" style="font-size:14px;font-weight:700;color:#fff;margin:2px 0 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Usuario</p>
                         </div>
                         <a href="<?= BASE_PATH ?>/public/dashboard.php" class="udd-item">📊 Mi Panel</a>
-                        <a href="<?= BASE_PATH ?>/public/mis-boletos.php" class="udd-item">🎟️ Mis Boletos</a>
+                        <a href="<?= BASE_PATH ?>/public/mis-boletos.php" class="udd-item">🔎 Mis resultados</a>
                         <a href="<?= BASE_PATH ?>/public/ganadores.php" class="udd-item">🏆 Ganadores</a>
                         <a href="<?= BASE_PATH ?>/public/perfil.php" class="udd-item">⚙️ Configuración</a>
                         <button type="button" onclick="logout()" class="udd-item" style="color:#f87171;width:100%;text-align:left;background:none;border:none;cursor:pointer;">↪ Cerrar sesión</button>
@@ -492,7 +504,7 @@ $page_description = "La plataforma más confiable para crear y participar en rif
                     <p class="hero-slide__desc">Transfieres directo al organizador, subes tu comprobante y tu número queda asegurado.</p>
                     <div class="hero-slide__actions">
                         <a href="#rifas" class="hero-slide__btn hero-slide__btn--primary">Ver rifas</a>
-                        <a href="<?= BASE_PATH ?>/public/mis-boletos.php" class="hero-slide__btn hero-slide__btn--ghost">Consultar boletas</a>
+                        <a href="<?= BASE_PATH ?>/public/mis-boletos.php" class="hero-slide__btn hero-slide__btn--ghost">Ver resultados</a>
                     </div>
                 </div>
             </div>
@@ -777,7 +789,7 @@ $page_description = "La plataforma más confiable para crear y participar en rif
         </div>
     </section>
 
-    <footer class="bg-slate-950 border-t border-white/5 text-white pt-16 pb-8">
+    <footer class="bg-slate-950 border-t border-white/5 text-white pt-16 pb-8" id="site-footer">
         <div class="container mx-auto px-4">
             <div class="grid grid-cols-1 md:grid-cols-4 gap-10 pb-12">
                 <div>
@@ -793,7 +805,7 @@ $page_description = "La plataforma más confiable para crear y participar en rif
                     <h4 class="text-xs font-black uppercase tracking-widest text-slate-500 mb-4">Explorar</h4>
                     <ul class="space-y-2.5 text-sm">
                         <li><a href="<?= BASE_PATH ?>/public/index.php" class="text-slate-400 hover:text-amber-400 transition-colors">Inicio</a></li>
-                        <li><a href="<?= BASE_PATH ?>/public/mis-boletos.php" class="text-slate-400 hover:text-amber-400 transition-colors">Consultar boletas</a></li>
+                        <li><a href="<?= BASE_PATH ?>/public/mis-boletos.php" class="text-slate-400 hover:text-amber-400 transition-colors">Resultados de sorteos</a></li>
                         <li><a href="<?= BASE_PATH ?>/public/ganadores.php" class="text-slate-400 hover:text-amber-400 transition-colors">Ganadores</a></li>
                         <li><a href="<?= BASE_PATH ?>/public/que-es.php" class="text-slate-400 hover:text-amber-400 transition-colors">¿Qué es MisRifas?</a></li>
                     </ul>
@@ -816,7 +828,7 @@ $page_description = "La plataforma más confiable para crear y participar en rif
                 </div>
             </div>
             <div class="pt-8 border-t border-white/5 text-center">
-                <p class="mb-2"><a href="<?= BASE_PATH ?>/public/comprobar-boleta.php" class="text-slate-300 hover:text-white font-medium text-sm">🎟️ Comprobar una boleta</a></p>
+                <p class="mb-2"><a href="<?= BASE_PATH ?>/public/comprobar-boleta.php" class="text-slate-300 hover:text-white font-medium text-sm">🎟️ Verificar una boleta</a></p>
                 <p class="text-sm text-slate-500">&copy; 2026 MisRifas Colombia. Todos los derechos reservados.</p>
             </div>
         </div>

@@ -209,7 +209,7 @@ if ($user) {
     <?php endif; ?>
 
     <section>
-        <h2 class="text-xl font-bold mb-4 flex items-center gap-2"><svg class="w-5 h-5 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v1a2 2 0 0 0 0 4v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1a2 2 0 0 0 0-4Z"/></svg>Mis Boletos</h2>
+        <h2 class="text-xl font-bold mb-4 flex items-center gap-2"><svg class="w-5 h-5 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v1a2 2 0 0 0 0 4v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1a2 2 0 0 0 0-4Z"/></svg>Historial de compras</h2>
 
         <?php if (empty($tickets)): ?>
         <div class="bg-slate-800/50 border border-white/10 rounded-xl p-8 text-center">

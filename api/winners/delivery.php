@@ -37,7 +37,7 @@ try {
     }
 
     $stmt = $db->prepare("
-        SELECT rw.id, rw.delivery_status, rw.raffle_id,
+        SELECT rw.id, rw.delivery_status, rw.raffle_id, rw.delivery_vendor_photo_path,
                r.name AS raffle_name, r.image_url,
                COALESCE(r.vendor_id, r.created_by) AS vendor_id,
                v.business_name AS vendor_name, v.phone AS vendor_phone, v.email AS vendor_email,
@@ -57,11 +57,24 @@ try {
     }
 
     if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+        // Evidencia OBLIGATORIA que subió el vendedor al reportar: el ganador
+        // la ve ANTES de confirmar o disputar. Vive fuera del webroot; se
+        // entrega embebida (data URI) — el token de este enlace es la
+        // autorización.
+        $vendorPhoto = null;
+        if (!empty($w['delivery_vendor_photo_path'])
+            && preg_match('/^vendor_[a-z0-9_]+\.jpg$/', $w['delivery_vendor_photo_path'])) {
+            $path = __DIR__ . '/../../storage/entregas/' . $w['delivery_vendor_photo_path'];
+            if (is_file($path) && filesize($path) < 6 * 1024 * 1024) {
+                $vendorPhoto = 'data:image/jpeg;base64,' . base64_encode((string)file_get_contents($path));
+            }
+        }
         Response::success([
             'raffle_name' => $w['raffle_name'],
             'ticket_number' => $w['ticket_number'],
             'winner_name' => $w['winner_name'],
             'vendor_name' => $w['vendor_name'],
+            'vendor_photo' => $vendorPhoto,
         ]);
     }
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {

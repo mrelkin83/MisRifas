@@ -14,7 +14,7 @@ $tabs = [
      'icon' => '<path d="M3 11l9-8 9 8"/><path d="M5 9v11a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9"/>'],
     ['id' => 'tapazo',    'label' => 'Tapazo',    'href' => BASE_PATH . '/tapazo/index.php',
      'icon' => '<path d="M5 3h11l-1 15a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 3Zm11 4h2.5a2 2 0 0 1 2 2.2l-.4 4A2 2 0 0 1 18.1 15H16"/>'],
-    ['id' => 'boletas',   'label' => 'Boletas',   'href' => BASE_PATH . '/public/mis-boletos.php',
+    ['id' => 'boletas',   'label' => 'Resultados',   'href' => BASE_PATH . '/public/mis-boletos.php',
      'icon' => '<path d="M3 9a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v1a2 2 0 0 0 0 4v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1a2 2 0 0 0 0-4Z"/><path d="M13 5v14" stroke-dasharray="2 3"/>'],
     ['id' => 'ganadores', 'label' => 'Ganadores', 'href' => BASE_PATH . '/public/ganadores.php',
      'icon' => '<path d="M8 21h8M12 17v4M7 4h10v4a5 5 0 0 1-10 0V4Z"/><path d="M7 5H4.5a1.5 1.5 0 0 0 0 3H7M17 5h2.5a1.5 1.5 0 0 1 0 3H17"/>'],

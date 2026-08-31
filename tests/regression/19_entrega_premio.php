@@ -38,11 +38,26 @@ $ok = assertHttp(200, $res, 'El ganador acepta su premio');
 $aviso = (int)$db->query("SELECT COUNT(*) FROM message_queue WHERE raffle_id = $raffle AND subject LIKE '%aceptó su premio%'")->fetchColumn();
 check($aviso >= 1, 'El vendedor recibe aviso con los datos del ganador', "avisos=$aviso");
 
-// ── 3. Reportar entrega: token DISTINTO + mensaje NUEVO al ganador ──
+// ── 3. Reportar entrega: EVIDENCIA obligatoria + token DISTINTO + mensaje NUEVO ──
+// Sin foto → 422 (la evidencia del vendedor es obligatoria).
 $res = httpPost('/api/vendor/delivery.php', ['raffle_id' => $raffle], $token);
-$ok = assertHttp(200, $res, 'Reportar entrega funciona tras la aceptación');
-$w = $db->query("SELECT delivery_status, delivery_token, acceptance_token FROM raffle_winners WHERE id = $wid")->fetch(PDO::FETCH_ASSOC);
+check($res['code'] === 422 && ($res['json']['errors'] ?? '') === 'EVIDENCE_REQUIRED',
+    'Reportar entrega SIN foto de evidencia → 422 EVIDENCE_REQUIRED', 'HTTP ' . $res['code']);
+
+// Foto de evidencia real (GD) → 200.
+$im = imagecreatetruecolor(80, 60);
+imagestring($im, 5, 8, 20, 'ENTREGA', imagecolorallocate($im, 255, 255, 255));
+ob_start();
+imagejpeg($im);
+$evidencia = 'data:image/jpeg;base64,' . base64_encode(ob_get_clean());
+imagedestroy($im);
+$res = httpPost('/api/vendor/delivery.php', ['raffle_id' => $raffle, 'photo' => $evidencia], $token);
+$ok = assertHttp(200, $res, 'Reportar entrega CON evidencia funciona tras la aceptación');
+$w = $db->query("SELECT delivery_status, delivery_token, acceptance_token, delivery_vendor_photo_path FROM raffle_winners WHERE id = $wid")->fetch(PDO::FETCH_ASSOC);
 check($w['delivery_status'] === 'delivery_reported', 'Estado delivery_reported', $w['delivery_status']);
+check(!empty($w['delivery_vendor_photo_path']) && is_file(__DIR__ . '/../../storage/entregas/' . $w['delivery_vendor_photo_path']),
+    'La evidencia del vendedor queda re-codificada en storage/entregas', $w['delivery_vendor_photo_path'] ?? 'NULL');
+onTeardown(function () use ($w) { @unlink(__DIR__ . '/../../storage/entregas/' . ($w['delivery_vendor_photo_path'] ?? 'x')); });
 check(!empty($w['delivery_token']) && $w['delivery_token'] !== $w['acceptance_token'],
     'delivery_token existe y es DISTINTO al acceptance_token', '');
 $msgGanador = (int)$db->query("SELECT COUNT(*) FROM message_queue WHERE raffle_id = $raffle AND subject LIKE '%Recibiste tu premio%'")->fetchColumn();
@@ -56,6 +71,8 @@ check($res['code'] === 409, 'Reportar dos veces → 409', 'HTTP ' . $res['code']
 $dToken = (string)$w['delivery_token'];
 $res = httpGet('/api/winners/delivery.php?t=' . $dToken);
 assertHttp(200, $res, 'La página de confirmación carga con el token');
+check(strpos((string)($res['json']['data']['vendor_photo'] ?? ''), 'data:image/jpeg') === 0,
+    'El ganador VE la evidencia del vendedor antes de confirmar', '');
 $res = httpPost('/api/winners/delivery.php', ['token' => $dToken, 'action' => 'confirm']);
 $ok = assertHttp(200, $res, 'El ganador confirma la entrega');
 $w2 = $db->query("SELECT delivery_status, delivery_token, delivery_confirmed_at FROM raffle_winners WHERE id = $wid")->fetch(PDO::FETCH_ASSOC);

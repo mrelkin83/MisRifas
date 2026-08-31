@@ -21,9 +21,12 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
 try {
     $phone = $_GET['phone'] ?? '';
     $uniqueId = $_GET['unique_id'] ?? '';
+    // Código de UNA boleta (Crockford 12): con él se responde SOLO ese boleto
+    // (poseer el código autoriza ver ese boleto, no el historial completo).
+    $ticketCode = strtoupper(preg_replace('/[^A-Za-z0-9]/', '', (string)($_GET['ticket_code'] ?? '')));
 
-    if (empty($phone) && empty($uniqueId)) {
-        Response::error('Teléfono o código único requerido', null, 400);
+    if (empty($phone) && empty($uniqueId) && $ticketCode === '') {
+        Response::error('Teléfono, código único o código de boleta requerido', null, 400);
     }
 
     // Consulta de invitado deliberada (sin cuenta), pero el telefono es de
@@ -37,29 +40,58 @@ try {
     }
 
     $db = Database::getInstance()->getConnection();
-    $userRepo = new UserRepository();
 
-    if ($phone) {
-        $user = $userRepo->findByPhone($phone);
-    } else {
-        $user = $userRepo->findByUniqueId($uniqueId);
-    }
-
-    if (!$user) {
-        Response::notFound('Usuario no encontrado');
-    }
-
-    $stmt = $db->prepare("
-        SELECT t.*, r.name as raffle_name, r.draw_date, r.image_url, r.ticket_price
+    // El SELECT incluye el RESULTADO del sorteo por boleto (§ buscador de
+    // resultados): si es GANADOR (fila en raffle_winners), el número ganador
+    // del último intento registrado (raffle_draws) y el estado de la rifa.
+    $baseSelect = "
+        SELECT t.*, r.name as raffle_name, r.draw_date, r.image_url, r.ticket_price,
+               r.status AS raffle_status,
+               rw.id AS winner_id, rw.winning_number AS winner_number,
+               rw.acceptance_status, rw.delivery_status,
+               (SELECT d.winning_number FROM raffle_draws d
+                 WHERE d.raffle_id = r.id ORDER BY d.attempt DESC LIMIT 1) AS last_winning_number
         FROM tickets t
         INNER JOIN raffles r ON t.raffle_id = r.id
-        WHERE t.user_id = ? AND t.status IN ('reserved', 'paid')
-        ORDER BY t.created_at DESC
-    ");
-    $stmt->execute([$user['id']]);
-    $tickets = $stmt->fetchAll();
+        LEFT JOIN raffle_winners rw ON rw.ticket_id = t.id
+    ";
+
+    if ($ticketCode !== '') {
+        $stmt = $db->prepare($baseSelect . " WHERE t.ticket_code = ? LIMIT 1");
+        $stmt->execute([$ticketCode]);
+        $tickets = $stmt->fetchAll();
+        if (!$tickets) {
+            Response::notFound('No existe una boleta con ese código');
+        }
+        $user = ['unique_id' => '', 'name' => '', 'phone_whatsapp' => ''];
+    } else {
+        $userRepo = new UserRepository();
+        $user = $phone ? $userRepo->findByPhone($phone) : $userRepo->findByUniqueId($uniqueId);
+        if (!$user) {
+            Response::notFound('Usuario no encontrado');
+        }
+        $stmt = $db->prepare($baseSelect . "
+            WHERE t.user_id = ? AND t.status IN ('reserved', 'paid')
+            ORDER BY t.created_at DESC
+        ");
+        $stmt->execute([$user['id']]);
+        $tickets = $stmt->fetchAll();
+    }
 
     $formatted = array_map(function($ticket) {
+        // Desenlace por boleto: ganador / no_ganador / pendiente / cancelada.
+        if (!empty($ticket['winner_id'])) {
+            $resultado = 'ganador';
+        } elseif ($ticket['raffle_status'] === 'cancelled') {
+            $resultado = 'cancelada';
+        } elseif ($ticket['raffle_status'] === 'completed') {
+            $resultado = 'no_ganador';
+        } elseif (!empty($ticket['last_winning_number']) && in_array($ticket['raffle_status'], ['active', 'pending_reschedule'], true)) {
+            // Hubo intento sin ganador y la rifa sigue viva → reprogramada.
+            $resultado = 'reprogramada';
+        } else {
+            $resultado = 'pendiente';
+        }
         return [
             'id' => $ticket['id'],
             'raffle_id' => $ticket['raffle_id'],
@@ -72,6 +104,11 @@ try {
             'image_url' => $ticket['image_url'],
             'ticket_price' => $ticket['ticket_price'],
             'reserved_until' => $ticket['reserved_until'],
+            'raffle_status' => $ticket['raffle_status'],
+            'resultado' => $resultado,
+            'winning_number' => $ticket['winner_number'] ?: ($ticket['last_winning_number'] ?: null),
+            'acceptance_status' => $ticket['acceptance_status'],
+            'delivery_status' => $ticket['delivery_status'],
         ];
     }, $tickets);
 
