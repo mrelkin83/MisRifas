@@ -392,5 +392,6 @@ $page_title = "Pago - MisRifas";
 
     loadReservation();
     </script>
+<?php $tabActive = 'inicio'; include __DIR__ . '/partials/tabbar.php'; ?>
 </body>
 </html>
