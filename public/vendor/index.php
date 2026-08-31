@@ -1638,9 +1638,9 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                                 <div id="vcfg-phone" class="text-sm text-gray-500">—</div>
                             </div>
                             <div style="padding:16px;border:1px solid #e2e8f0;border-radius:14px;min-width:0;">
-                                <div style="font-size:11px;font-weight:800;text-transform:uppercase;color:#94a3b8;letter-spacing:.5px;">💰 Cobro de la plataforma</div>
+                                <div style="font-size:11px;font-weight:800;text-transform:uppercase;color:#94a3b8;letter-spacing:.5px;">💰 Costos</div>
                                 <div id="vcfg-billing" class="font-bold mt-1">—</div>
-                                <div class="text-sm text-gray-500">Se cobra por rifa publicada; el pago de tus compradores va directo a tus llaves.</div>
+                                <div class="text-sm text-gray-500">El dinero de tus compradores va <strong>directo a tus llaves de cobro</strong> — la plataforma nunca lo toca.</div>
                             </div>
                             <div style="padding:16px;border:1px solid #e2e8f0;border-radius:14px;min-width:0;">
                                 <div style="font-size:11px;font-weight:800;text-transform:uppercase;color:#94a3b8;letter-spacing:.5px;">⏱️ Reservas</div>
@@ -2967,7 +2967,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                 // Tarjeta "Mi configuración" del vendedor (lectura).
                 if (document.getElementById('vcfg-billing')) {
                     if (d.commission_enabled !== '1') {
-                        document.getElementById('vcfg-billing').textContent = 'Gratis por ahora 🎉';
+                        document.getElementById('vcfg-billing').textContent = '¡100% gratis! 🎉';
                     } else if (d.billing_mode === 'talonario') {
                         document.getElementById('vcfg-billing').textContent = 'Tarifa por talonario: $' + parseFloat(d.talonario_fee || 0).toLocaleString('es-CO');
                     } else {
