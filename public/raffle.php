@@ -307,6 +307,7 @@ header("Expires: 0");
                     El Tapazo
                 </a>
                 <a href="<?= BASE_PATH ?>/public/mis-boletos.php" class="shrink-0 whitespace-nowrap text-slate-300 hover:text-white font-medium transition-colors">Resultados</a>
+                <a href="<?= BASE_PATH ?>/public/comprobar-boleta.php" class="shrink-0 whitespace-nowrap text-slate-300 hover:text-white font-medium transition-colors">Verificar Boleta</a>
                 <a href="<?= BASE_PATH ?>/public/ganadores.php" class="shrink-0 whitespace-nowrap flex items-center gap-1.5 text-slate-300 hover:text-white font-medium transition-colors">
                     <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 21h8M12 17v4M7 4h10v4a5 5 0 0 1-10 0V4Zm0 1H4.5a1.5 1.5 0 0 0 0 3H7M17 5h2.5a1.5 1.5 0 0 1 0 3H17"/></svg>
                     Ganadores

@@ -41,6 +41,7 @@ $basePath = defined('BASE_PATH') ? BASE_PATH : '';
                 <ul class="space-y-2.5">
                     <li><a href="<?= $basePath ?>/public/index.php" class="text-slate-400 hover:text-white transition-colors text-sm">Inicio</a></li>
                     <li><a href="<?= $basePath ?>/public/mis-boletos.php" class="text-slate-400 hover:text-white transition-colors text-sm">Resultados</a></li>
+                    <li><a href="<?= $basePath ?>/public/comprobar-boleta.php" class="text-slate-400 hover:text-white transition-colors text-sm">Verificar Boleta</a></li>
                     <li><a href="<?= $basePath ?>/public/ganadores.php" class="text-slate-400 hover:text-white transition-colors text-sm">Ganadores</a></li>
                     <li><a href="<?= $basePath ?>/public/que-es.php" class="text-slate-400 hover:text-white transition-colors text-sm">¿Qué es MisRifas?</a></li>
                 </ul>

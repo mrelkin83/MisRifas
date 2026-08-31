@@ -108,6 +108,7 @@ $page_title = "Ganadores - MisRifas";
                 <a href="<?= BASE_PATH ?>/public/index.php" class="text-slate-300 hover:text-white font-medium transition-colors">Inicio</a>
                 <a href="<?= BASE_PATH ?>/tapazo/index.php" class="text-slate-300 hover:text-white font-medium transition-colors">🍺 El Tapazo</a>
                 <a href="<?= BASE_PATH ?>/public/mis-boletos.php" class="text-slate-300 hover:text-white font-medium transition-colors">Resultados</a>
+                <a href="<?= BASE_PATH ?>/public/comprobar-boleta.php" class="text-slate-300 hover:text-white font-medium transition-colors">Verificar Boleta</a>
                 <a href="<?= BASE_PATH ?>/public/ganadores.php" class="text-white font-bold transition-colors border-b-2 border-primary pb-1 flex items-center gap-1.5">
                     <svg class="w-4 h-4 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4Z"/><path d="M7 5H4a1 1 0 0 0-1 1 4 4 0 0 0 4 4M17 5h3a1 1 0 0 1 1 1 4 4 0 0 1-4 4"/></svg>
                     Ganadores
