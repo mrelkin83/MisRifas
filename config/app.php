@@ -51,7 +51,7 @@ require_once __DIR__ . '/paths.php';
 // Configuración global
 return [
     'app' => [
-        'name' => 'MisRifas',
+        'name' => getenv('APP_NAME') ?: 'MisRifas',
         'env' => getenv('APP_ENV') ?: 'development',
         'debug' => filter_var(getenv('APP_DEBUG') ?: false, FILTER_VALIDATE_BOOLEAN),
         'url' => getenv('APP_URL') ?: 'http://localhost',
@@ -121,8 +121,10 @@ return [
             'smtp_encryption' => getenv('SMTP_ENCRYPTION') ?: 'tls',
             'smtp_user' => getenv('SMTP_USER') ?: '',
             'smtp_password' => getenv('SMTP_PASS') ?: '',
-            'from_address' => getenv('EMAIL_FROM_ADDRESS') ?: 'no-reply@misrifas.online',
-            'from_name' => getenv('EMAIL_FROM_NAME') ?: 'MisRifas',
+            // Sin dominio quemado: el respaldo se deriva del host de APP_URL
+            // (el dominio final de producción aún no existe; el actual es de pruebas).
+            'from_address' => getenv('EMAIL_FROM_ADDRESS') ?: ('no-reply@' . (parse_url(getenv('APP_URL') ?: '', PHP_URL_HOST) ?: 'localhost')),
+            'from_name' => getenv('EMAIL_FROM_NAME') ?: '',
         ],
     ],
 
@@ -162,7 +164,7 @@ return [
     ],
 
     'meta' => [
-        'title' => getenv('META_TITLE') ?: 'MisRifas - Rifas Digitales Colombia',
+        'title' => getenv('META_TITLE') ?: ((getenv('APP_NAME') ?: 'MisRifas') . ' - Rifas Digitales'),
         'description' => getenv('META_DESCRIPTION') ?: 'Plataforma de rifas digitales',
         'keywords' => getenv('META_KEYWORDS') ?: 'rifas,colombia,sorteos',
         'image' => getenv('META_IMAGE') ?: 'assets/images/og-default.jpg',

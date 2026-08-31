@@ -1,7 +1,8 @@
 <?php
-$page_title = "Mi Perfil - MisRifas";
 require_once __DIR__ . '/../config/app.php';
 require_once __DIR__ . '/../config/paths.php';
+require_once __DIR__ . '/../config/brand.php';
+$page_title = "Mi Perfil - " . plataforma('nombre');
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -40,7 +41,7 @@ require_once __DIR__ . '/../config/paths.php';
     <header class="h-20 flex items-center justify-between px-6 border-b border-white/5 sticky top-0 bg-[#0f172a]/80 backdrop-blur-md z-50">
         <a href="<?= BASE_PATH ?>/public/index.php" class="text-2xl font-black text-primary flex items-center gap-2">
             <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v1a2 2 0 0 0 0 4v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1a2 2 0 0 0 0-4Z"/><path d="M13 5v14" stroke-dasharray="2 3"/></svg>
-            MisRifas
+            <?= plataforma_e() ?>
         </a>
         <div class="flex items-center gap-4">
             <a href="<?= BASE_PATH ?>/public/index.php" class="text-slate-400 hover:text-white text-sm hidden sm:block">Inicio</a>

@@ -5,6 +5,7 @@
  */
 
 require_once __DIR__ . '/../../config/database.php';
+require_once __DIR__ . '/../../config/brand.php';
 require_once __DIR__ . '/../../api/utils/Logger.php';
 
 class MailService {
@@ -71,8 +72,11 @@ class MailService {
         $port = (int)($this->settings['mailing_smtp_port'] ?? 587);
         $user = $this->settings['mailing_smtp_user'] ?? '';
         $pass = $this->settings['mailing_smtp_pass'] ?? '';
-        $from = $this->settings['mailing_smtp_from'] ?? 'no-reply@misrifas.online';
-        $fromName = $this->settings['mailing_from_name'] ?? 'MisRifas';
+        // Remitente/nombre: settings → .env (ya resueltos en loadSettings) →
+        // identidad administrable de la plataforma. NUNCA un dominio quemado:
+        // el dominio y el nombre finales se definen en el panel/.env.
+        $from = ($this->settings['mailing_smtp_from'] ?? '') ?: plataforma('email');
+        $fromName = ($this->settings['mailing_from_name'] ?? '') ?: plataforma('nombre');
 
         // Solo el host es obligatorio: los relays sin autenticación (Mailpit
         // de pruebas, Postal por puerto 25) no llevan usuario/contraseña.
@@ -221,13 +225,14 @@ class MailService {
         $stmt->execute([$raffleId]);
         $buyers = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+        $marca = htmlspecialchars(plataforma('nombre'), ENT_QUOTES, 'UTF-8');
         foreach ($buyers as $buyer) {
             $isWinner = (trim($buyer['ticket_number']) === trim($winningNumber));
             $subject = $isWinner ? "¡FELICIDADES! Eres Ganador de {$raffle['name']}" : "Resultados de la Rifa: {$raffle['name']}";
             
             $body = "
                 <div style='font-family: sans-serif; max-width: 600px; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px;'>
-                    <h2 style='color: #2563eb;'>Resultados de MisRifas</h2>
+                    <h2 style='color: #2563eb;'>Resultados de {$marca}</h2>
                     <p>Hola <strong>{$buyer['name']}</strong>,</p>
                     <p>Se han publicado los resultados de la rifa: <strong>{$raffle['name']}</strong>.</p>
                     
@@ -249,7 +254,7 @@ class MailService {
 
             $body .= "
                     <hr style='border: none; border-top: 1px solid #e2e8f0; margin: 30px 0;'>
-                    <p style='font-size: 11px; color: #94a3b8; text-align: center;'>MisRifas Colombia - Rifa Digital Segura</p>
+                    <p style='font-size: 11px; color: #94a3b8; text-align: center;'>{$marca} - Rifa Digital Segura</p>
                 </div>";
 
             $this->queue($buyer['email'], $subject, $body, null, $buyer['name']);

@@ -5,6 +5,7 @@
 
 // ─── 1. Datos de la rifa (para OG tags) ──────────────────────
 require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../config/brand.php';
 
 // Detectar dominio
 $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
@@ -30,7 +31,7 @@ if (!$raffleId && preg_match('/^[0-9A-Z]{10}$/', $publicCode)) {
 }
 
 // Meta defaults
-$ogTitle       = 'MisRifas — Rifas digitales en Colombia';
+$ogTitle       = plataforma('nombre') . ' — Rifas digitales en Colombia';
 $ogDescription = 'Participa en las mejores rifas digitales de Colombia. Pago fácil con Nequi o tarjeta. Sorteos verificados con loterías oficiales.';
 $ogImage       = $baseUrl . '/img/og_default.jpg';
 $ogUrl         = $baseUrl . '/raffle.php' . ($raffleId ? '?id=' . $raffleId : '');
@@ -92,7 +93,7 @@ if ($raffleId) {
             // Imagen OG dinámica generada por PHP GD
             $ogImage = $apiBase . '/og/generate.php?raffle_id=' . $raffleId;
 
-            $page_title = "{$name} — \${$price} COP | MisRifas";
+            $page_title = "{$name} — \${$price} COP | " . plataforma('nombre');
             $ogPrice    = $price;
             $ogDate     = $drawDate;
         }
@@ -114,15 +115,15 @@ header("Expires: 0");
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <script>const BASE_PATH = "<?= BASE_PATH ?>";</script>
+    <script>const BASE_PATH = "<?= BASE_PATH ?>"; const SITE_NAME = <?= json_encode(plataforma('nombre')) ?>;</script>
 
     <!-- SEO base -->
     <meta name="description" content="<?= htmlspecialchars($ogDescription) ?>">
-    <title><?= $page_title ?? 'Rifa | MisRifas' ?></title>
+    <title><?= $page_title ?? 'Rifa | ' . plataforma_e() ?></title>
 
     <!-- Open Graph (WhatsApp, Facebook, Telegram) -->
     <meta property="og:type"        content="website">
-    <meta property="og:site_name"   content="MisRifas">
+    <meta property="og:site_name"   content="<?= plataforma_e() ?>">
     <meta property="og:title"       content="<?= htmlspecialchars($ogTitle) ?>">
     <meta property="og:description" content="<?= htmlspecialchars($ogDescription) ?>">
     <meta property="og:image"       content="<?= htmlspecialchars($ogImage) ?>">
@@ -356,7 +357,7 @@ header("Expires: 0");
                     <path stroke-linecap="round" stroke-linejoin="round" d="M3 8.5V6a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v2.5a1.5 1.5 0 0 0 0 3V14a1.5 1.5 0 0 0 0 3v2.5a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V17a1.5 1.5 0 0 0 0-3v-2.5a1.5 1.5 0 0 0 0-3Z"/>
                     <path stroke-linecap="round" d="M15 5v14" stroke-dasharray="2 3"/>
                 </svg>
-                <span class="hidden xs:inline">MisRifas</span>
+                <span class="hidden xs:inline"><?= plataforma_e() ?></span>
             </a>
             <button id="mobile-menu-btn" class="lg:hidden text-white p-2 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500" aria-label="Menu">
                 <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -376,7 +377,7 @@ header("Expires: 0");
                     <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 21h8M12 17v4M7 4h10v4a5 5 0 0 1-10 0V4Zm0 1H4.5a1.5 1.5 0 0 0 0 3H7M17 5h2.5a1.5 1.5 0 0 1 0 3H17"/></svg>
                     Ganadores
                 </a>
-                <a href="<?= BASE_PATH ?>/public/que-es.php" class="shrink-0 whitespace-nowrap text-slate-300 hover:text-white font-medium transition-colors">¿Qué es MisRifas?</a>
+                <a href="<?= BASE_PATH ?>/public/que-es.php" class="shrink-0 whitespace-nowrap text-slate-300 hover:text-white font-medium transition-colors">¿Qué es <?= plataforma_e() ?>?</a>
 
                 <div id="auth-buttons" class="flex items-center gap-4 shrink-0">
                     <a href="<?= BASE_PATH ?>/public/admin/index.php?auth=login" class="shrink-0 whitespace-nowrap px-4 py-2 bg-white/5 border border-white/10 text-white rounded-xl hover:bg-white/10 transition-all font-medium text-sm backdrop-blur-sm shadow-lg shadow-black/20">Iniciar Sesión</a>
@@ -643,7 +644,7 @@ header("Expires: 0");
     <footer class="bg-[#0b1120] text-slate-500 py-10 border-t border-slate-800 mt-20">
         <div class="container mx-auto px-4 text-center">
             <svg class="w-10 h-10 mx-auto mb-4 text-slate-600" fill="none" stroke="currentColor" stroke-width="1.25" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8.5V6a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v2.5a1.5 1.5 0 0 0 0 3V14a1.5 1.5 0 0 0 0 3v2.5a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V17a1.5 1.5 0 0 0 0-3v-2.5a1.5 1.5 0 0 0 0-3Z"/></svg>
-            <p class="font-medium">&copy; 2026 MisRifas Colombia. Todos los derechos reservados.</p>
+            <p class="font-medium">&copy; <?= date('Y') ?> <?= plataforma_e() ?>. Todos los derechos reservados.</p>
         </div>
     </footer>
 
@@ -833,7 +834,7 @@ header("Expires: 0");
         document.getElementById('sold-percentage-badge').textContent = soldPct + '% vendido';
         document.getElementById('progress-fill').style.width = soldPct + '%';
         document.getElementById('sold-count').textContent = (r.sold_tickets || 0) + ' / ' + (r.total_tickets || 0);
-        document.title = (r.name || 'Rifa') + ' - MisRifas';
+        document.title = (r.name || 'Rifa') + ' - ' + SITE_NAME;
     }
 
     async function loadTickets() {
@@ -1170,7 +1171,7 @@ document.getElementById('pay-selected-btn').addEventListener('click', async () =
         if (e) e.preventDefault();
         const url     = window.location.href;
         const name    = document.getElementById('raffle-title')?.textContent?.trim()
-                        || document.title.replace(' | MisRifas', '').replace('🎫 ', '');
+                        || document.title.replace(' | ' + SITE_NAME, '').replace(' - ' + SITE_NAME, '').replace('🎫 ', '');
         const message = '🎉 ¡Participa en esta rifa!\n\n' + name + '\n\n' + url;
         window.open('https://wa.me/?text=' + encodeURIComponent(message), '_blank');
     }

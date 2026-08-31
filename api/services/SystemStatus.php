@@ -9,45 +9,61 @@ declare(strict_types=1);
  *
  * Cada check: ['key','nombre','estado' => ok|warn|fail,'detalle','arreglo'].
  */
+require_once __DIR__ . '/../../config/brand.php';
+
 class SystemStatus
 {
     public static function checks(PDO $db): array
     {
         $out = [];
 
+        // ── Identidad de la plataforma (nombre/correo/dominio administrables) ──
+        // El dominio y hasta el nombre pueden cambiar en el despliegue final:
+        // NADA de esto está quemado; sale de Configuración → General y de
+        // APP_URL en el .env. Este check muestra lo que está vigente HOY.
+        $pn = plataforma('nombre');
+        $peCfg = plataforma('email_config');
+        $host = plataforma('dominio');
+        $out[] = self::c('identidad', 'Identidad de la plataforma', $peCfg !== '' ? 'ok' : 'warn',
+            "Nombre: «{$pn}» · Correo de contacto: " . ($peCfg !== '' ? $peCfg : "SIN definir (mientras tanto se deriva no-reply@{$host})")
+            . " · Dominio (APP_URL): {$host}. Correos, mensajes, boletas y páginas usan estos valores en vivo.",
+            $peCfg !== '' ? '' : 'Define nombre y correo en Configuración → General. El dominio se cambia con APP_URL en el .env del servidor.');
+
         // ── SMTP (correo del sistema) ──
         $cfg = [];
         foreach ($db->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key LIKE 'mailing_%'") as $r) {
             $cfg[$r['setting_key']] = $r['setting_value'];
         }
-        $host = $cfg['mailing_smtp_host'] ?: (getenv('SMTP_HOST') ?: '');
+        $smtpHost = $cfg['mailing_smtp_host'] ?: (getenv('SMTP_HOST') ?: '');
         $port = (int)(($cfg['mailing_smtp_port'] ?? '') !== '' ? $cfg['mailing_smtp_port'] : (getenv('SMTP_PORT') ?: 587));
-        $from = $cfg['mailing_smtp_from'] ?: (getenv('EMAIL_FROM_ADDRESS') ?: '');
-        if ($host === '') {
+        // Remitente EFECTIVO: el mismo que usará MailService (nada supuesto).
+        $from = $cfg['mailing_smtp_from'] ?: (getenv('EMAIL_FROM_ADDRESS') ?: plataforma('email'));
+        if ($smtpHost === '') {
             $out[] = self::c('smtp', 'Correo (SMTP)', 'fail', 'Sin servidor configurado: NINGÚN correo sale (resultados, boletas, OTP).',
                 'Configura host/puerto en Configuración → Correo del sistema.');
         } else {
-            $target = ($port === 465) ? "ssl://$host" : $host;
+            $target = ($port === 465) ? "ssl://$smtpHost" : $smtpHost;
             $s = @fsockopen($target, $port, $en, $er, 4);
             if (!$s) {
-                $out[] = self::c('smtp', 'Correo (SMTP)', 'fail', "No responde: $host:$port ($er).",
+                $out[] = self::c('smtp', 'Correo (SMTP)', 'fail', "No responde: $smtpHost:$port ($er).",
                     'Revisa host/puerto o el servicio de correo.');
             } else {
                 fclose($s);
-                $esCaptura = in_array($host, ['127.0.0.1', 'localhost'], true) && in_array($port, [1025, 8025], true);
+                $esCaptura = in_array($smtpHost, ['127.0.0.1', 'localhost'], true) && in_array($port, [1025, 8025], true);
                 if ($esCaptura) {
-                    $out[] = self::c('smtp', 'Correo (SMTP)', 'warn', "Conectado a $host:$port — es MAILPIT (captura de pruebas): los correos se guardan en una bandeja local y NO llegan a destinatarios reales.",
-                        'Para producción real: apunta a tu Postal (Contabo) o a smtp.hostinger.com:465.');
+                    $out[] = self::c('smtp', 'Correo (SMTP)', 'warn', "Conectado a $smtpHost:$port — es MAILPIT (captura de pruebas): los correos se guardan en una bandeja local y NO llegan a destinatarios reales.",
+                        'Para producción real: configura el SMTP de tu proveedor definitivo en Configuración → Correo del sistema (host, puerto y credenciales que te dé tu servicio de correo).');
                 } else {
-                    $out[] = self::c('smtp', 'Correo (SMTP)', 'ok', "Conectado a $host:$port. Remitente: " . ($from ?: '(sin remitente)') . '.', '');
+                    $out[] = self::c('smtp', 'Correo (SMTP)', 'ok', "Conectado a $smtpHost:$port. Remitente: $from.", '');
                 }
             }
         }
 
         // ── OTP por correo (depende del SMTP) ──
-        $smtpOk = $out[0]['estado'] !== 'fail';
-        $out[] = self::c('otp_email', 'OTP por correo', $smtpOk ? $out[0]['estado'] : 'fail',
-            $smtpOk ? "Envía el código VERIFY-XXXXX desde " . ($from ?: 'no-reply@misrifas.online') . " usando el SMTP de arriba (hereda su estado)."
+        $smtp = end($out);
+        $smtpOk = $smtp['estado'] !== 'fail';
+        $out[] = self::c('otp_email', 'OTP por correo', $smtpOk ? $smtp['estado'] : 'fail',
+            $smtpOk ? "Envía el código VERIFY-XXXXX desde $from usando el SMTP de arriba (hereda su estado)."
                     : 'Sin SMTP no hay OTP por correo: los registros nuevos no pueden verificarse por este canal.',
             $smtpOk ? '' : 'Configura el SMTP.');
 
@@ -117,7 +133,7 @@ class SystemStatus
         $out[] = self::c('cron', 'Tareas programadas (cron)', ($edad !== null && $edad < 600) ? 'ok' : 'warn',
             $edad === null ? 'logs/cron.log no existe: el cron nunca ha corrido aquí.'
                 : 'Última actividad hace ' . round($edad / 60) . ' min' . ($edad < 600 ? ' (vivo: expiración, notificaciones y sorteos girando).' : ' — parece detenido.'),
-            ($edad !== null && $edad < 600) ? '' : 'Revisa /etc/cron.d/misrifas.');
+            ($edad !== null && $edad < 600) ? '' : 'Revisa la tarea programada del servidor (archivo en /etc/cron.d).');
 
         return $out;
     }

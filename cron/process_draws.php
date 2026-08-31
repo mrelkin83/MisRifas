@@ -3,6 +3,7 @@
 require_once __DIR__ . '/../config/app.php';
 require_once __DIR__ . '/../config/constants.php';
 require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../config/brand.php';
 require_once __DIR__ . '/../api/utils/Logger.php';
 require_once __DIR__ . '/../api/services/MessageBuilderService.php';
 
@@ -199,7 +200,7 @@ function cancelarPorTope(PDO $db, array $raffle, array $vendor, array $paidTicke
         'subject' => 'Rifa "' . $raffle['name'] . '" CANCELADA — lista de devoluciones',
         'body_text' => "La rifa \"{$raffle['name']}\" agotó sus 3 reprogramaciones sin ganador y quedó CANCELADA públicamente.\n\n"
             . "Debes devolver el dinero a estos compradores:\n\n" . ($lineas ?: "(sin boletos pagados)\n")
-            . "\nLa cancelación queda registrada en tu historial. — MisRifas",
+            . "\nLa cancelación queda registrada en tu historial. — " . plataforma('nombre'),
         'body_html' => null,
     ], $scheduledAt);
 
@@ -211,7 +212,7 @@ function cancelarPorTope(PDO $db, array $raffle, array $vendor, array $paidTicke
             'body_text' => 'Hola ' . ($t['buyer_name'] ?: '') . ", la rifa \"{$raffle['name']}\" se canceló tras 4 sorteos sin ganador (número que salió: {$digits}).\n"
                 . 'El organizador (' . $vendor['business_name'] . ', cel ' . $vendor['phone'] . ') debe devolverte $'
                 . number_format((float)$raffle['ticket_price'], 0, ',', '.') . ' de tu boleto #' . $t['ticket_number'] . ".\n"
-                . 'La cancelación es pública en la página de la rifa. — MisRifas',
+                . 'La cancelación es pública en la página de la rifa. — ' . plataforma('nombre'),
             'body_html' => null,
         ], $scheduledAt);
     }
@@ -229,7 +230,7 @@ function avisarVendedorReprogramar(PDO $db, array $raffle, array $vendor, string
         'subject' => 'Tu rifa "' . $raffle['name'] . '" necesita reprogramación',
         'body_text' => "Tu rifa \"{$raffle['name']}\" jugó: el número {$digits} {$estado}, así que NO hay ganador (solo un boleto pagado gana).\n\n"
             . "Entra a tu panel y elige la nueva fecha del sorteo (misma lotería). Te quedan {$restantes} reprogramación(es); si se agotan, la rifa se cancela y deberás devolver lo cobrado.\n"
-            . 'Los boletos pagados se conservan tal cual. — MisRifas',
+            . 'Los boletos pagados se conservan tal cual. — ' . plataforma('nombre'),
         'body_html' => null,
     ], $scheduledAt);
 }

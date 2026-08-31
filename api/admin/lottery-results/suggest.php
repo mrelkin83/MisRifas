@@ -131,6 +131,7 @@ function cargarLlmDelSuperAdmin(PDO $pdo, int $vendorId)
     require_once __DIR__ . '/../../whatsapp/MisRifasSecret.php';
     require_once __DIR__ . '/../../whatsapp/MisRifasStorage.php';
     require_once __DIR__ . '/../../whatsapp/RaffleDomainAdapter.php';
+    require_once __DIR__ . '/../../../config/brand.php';
 
     try {
         \ElkinLinan\WhatsappAiEngine\Engine::arrancar([
@@ -138,7 +139,7 @@ function cargarLlmDelSuperAdmin(PDO $pdo, int $vendorId)
             'dominio' => new RaffleDomainAdapter($vendorId),
             'archivo' => new MisRifasStorage($vendorId),
             'secreto' => new MisRifasSecret(),
-            'negocio' => new MisRifasTenant($vendorId, 'MisRifas'),
+            'negocio' => new MisRifasTenant($vendorId, plataforma('nombre')),
             'formato' => new \ElkinLinan\WhatsappAiEngine\Defecto\PesosColombianos(),
             'funcion' => new \ElkinLinan\WhatsappAiEngine\Defecto\TodoPermitido(),
             'config'  => new \ElkinLinan\WhatsappAiEngine\Defecto\SinUrl(),

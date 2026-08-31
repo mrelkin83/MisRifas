@@ -51,22 +51,24 @@ try {
     $sent = false;
     try {
         require_once __DIR__ . '/../../services/MailService.php';
+        require_once __DIR__ . '/../../../config/brand.php';
+        $marca = htmlspecialchars(plataforma('nombre'), ENT_QUOTES, 'UTF-8');
         $nombre = htmlspecialchars($acct['name'] ?: 'Hola', ENT_QUOTES, 'UTF-8');
         $html = '<!DOCTYPE html><html><head><meta charset="UTF-8"></head>'
             . '<body style="margin:0;padding:0;background:#0f172a;font-family:sans-serif;">'
             . '<div style="max-width:600px;margin:0 auto;background:#1e293b;border-radius:12px;overflow:hidden;">'
-            . '<div style="background:#2563eb;padding:24px;text-align:center;"><h1 style="color:#fff;margin:0;font-size:24px;">MisRifas</h1></div>'
+            . '<div style="background:#2563eb;padding:24px;text-align:center;"><h1 style="color:#fff;margin:0;font-size:24px;">' . $marca . '</h1></div>'
             . '<div style="padding:32px;color:#94a3b8;line-height:1.6;">'
             . '<h2 style="color:#f1f5f9;margin:0 0 16px;">¡Ya casi, ' . $nombre . '!</h2>'
             . '<p>Para activar tu cuenta y proteger la comunidad de perfiles falsos, usa este código de verificación:</p>'
             . '<p style="text-align:center;margin:24px 0;"><span style="display:inline-block;background:#0f172a;color:#fbbf24;font-size:28px;font-weight:800;letter-spacing:2px;padding:14px 28px;border-radius:12px;">' . $code . '</span></p>'
             . '<p>El código vence en ' . OTP_TTL_MINUTES . ' minutos. Si no creaste esta cuenta, ignora este mensaje.</p>'
             . '</div>'
-            . '<div style="padding:16px;text-align:center;color:#64748b;font-size:12px;">MisRifas - Rifas Digitales Colombia</div>'
+            . '<div style="padding:16px;text-align:center;color:#64748b;font-size:12px;">' . $marca . ' - Rifas digitales</div>'
             . '</div></body></html>';
-        $text = "Tu codigo de verificacion de MisRifas es: {$code}\nVence en " . OTP_TTL_MINUTES . " minutos.";
+        $text = "Tu codigo de verificacion de " . plataforma('nombre') . " es: {$code}\nVence en " . OTP_TTL_MINUTES . " minutos.";
         $mail = new MailService();
-        $sent = (bool)$mail->sendDirect($acct['email'], 'Tu código de verificación — MisRifas', $html, $text);
+        $sent = (bool)$mail->sendDirect($acct['email'], 'Tu código de verificación — ' . plataforma('nombre'), $html, $text);
     } catch (Exception $e) {
         Logger::error('OTP email send failed', ['error' => $e->getMessage()]);
     }

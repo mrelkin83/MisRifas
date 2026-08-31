@@ -1,5 +1,7 @@
 <?php
 
+require_once __DIR__ . '/../../config/brand.php';
+
 class MessageBuilderService
 {
     /**
@@ -12,43 +14,43 @@ class MessageBuilderService
         'winner' => [
             'nombre' => '🏆 Al ganador del sorteo',
             'descripcion' => 'WhatsApp y correo al ganador. El enlace de aceptación {confirm_url} es obligatorio: si lo quitas, el sistema lo agrega al final.',
-            'vars' => ['nombre', 'raffle_name', 'ticket_number', 'lottery_name', 'winning_number', 'draw_date', 'confirm_url'],
+            'vars' => ['nombre', 'raffle_name', 'ticket_number', 'lottery_name', 'winning_number', 'draw_date', 'confirm_url', 'platform'],
             'default' => "Felicitaciones {nombre}! Ganaste la rifa *{raffle_name}* con el numero *{ticket_number}*. El numero ganador de la {lottery_name} del {draw_date} fue *{full_number}*. Confirma que aceptas tu premio aqui: {confirm_url} . Pronto te contactaremos para la entrega del premio.",
         ],
         'participant_result' => [
             'nombre' => '🎟️ A los participantes (hubo ganador)',
             'descripcion' => 'A cada comprador que no ganó: resultado, ganador y sus boletos.',
-            'vars' => ['nombre', 'raffle_name', 'tickets', 'lottery_name', 'winning_number', 'draw_date', 'winner_name', 'winner_ticket'],
-            'default' => "Hola {nombre}, gracias por participar en la rifa *{raffle_name}*. El numero ganador de la {lottery_name} del {draw_date} fue *{winning_number}*. Felicitaciones a *{winner_name}*, quien gano con el boleto *{winner_ticket}*. Tu participacion: boleto(s) {tickets}. Esta vez no fue, pero sigue participando en misrifas.online!",
+            'vars' => ['nombre', 'raffle_name', 'tickets', 'lottery_name', 'winning_number', 'draw_date', 'winner_name', 'winner_ticket', 'platform'],
+            'default' => "Hola {nombre}, gracias por participar en la rifa *{raffle_name}*. El numero ganador de la {lottery_name} del {draw_date} fue *{winning_number}*. Felicitaciones a *{winner_name}*, quien gano con el boleto *{winner_ticket}*. Tu participacion: boleto(s) {tickets}. Esta vez no fue, pero sigue participando en {platform}!",
         ],
         'resorteo' => [
             'nombre' => '🔁 Reprogramación (nadie ganó)',
             'descripcion' => 'El número no estaba vendido/pagado: los boletos siguen y hay nueva fecha {next_date} (si la quitas, el sistema la agrega).',
-            'vars' => ['nombre', 'raffle_name', 'tickets', 'lottery_name', 'winning_number', 'draw_date', 'next_date'],
+            'vars' => ['nombre', 'raffle_name', 'tickets', 'lottery_name', 'winning_number', 'draw_date', 'next_date', 'platform'],
             'default' => "Hola {nombre}, la rifa *{raffle_name}* jugo el {draw_date} con la {lottery_name}: el numero fue *{winning_number}* y ningun boleto vendido resulto ganador. Tu(s) boleto(s) {tickets} SIGUEN participando: el sorteo se reprogramo para el *{next_date}*. Mucha suerte!",
         ],
         'vendor_winner' => [
             'nombre' => '📢 Al organizador (su rifa tuvo ganador)',
             'descripcion' => 'Aviso al organizador con los datos del ganador para coordinar la entrega.',
-            'vars' => ['raffle_name', 'winner_name', 'winner_phone', 'ticket_number', 'winning_number'],
+            'vars' => ['raffle_name', 'winner_name', 'winner_phone', 'ticket_number', 'winning_number', 'platform'],
             'default' => "Tu rifa *{raffle_name}* tuvo ganador! Ganador: *{winner_name}* ({winner_phone}) con boleto *{ticket_number}*. Numero ganador: *{winning_number}*. Contacta al ganador para entregar el premio.",
         ],
         'no_winner' => [
             'nombre' => '📄 Resultado individual (sin ganador para ese boleto)',
             'descripcion' => 'Resultado a un comprador puntual.',
-            'vars' => ['nombre', 'raffle_name', 'ticket_number', 'lottery_name', 'winning_number', 'draw_date'],
-            'default' => "Hola {nombre}, la rifa *{raffle_name}* ya tuvo sorteo. El numero ganador de la {lottery_name} fue *{winning_number}*. Tu boleto fue *{ticket_number}*. Sigue participando en misrifas.com!",
+            'vars' => ['nombre', 'raffle_name', 'ticket_number', 'lottery_name', 'winning_number', 'draw_date', 'platform'],
+            'default' => "Hola {nombre}, la rifa *{raffle_name}* ya tuvo sorteo. El numero ganador de la {lottery_name} fue *{winning_number}*. Tu boleto fue *{ticket_number}*. Sigue participando en {platform}!",
         ],
         'reservation' => [
             'nombre' => '⏳ Boleto reservado',
             'descripcion' => 'Confirmación de reserva con el valor y el WhatsApp del organizador.',
-            'vars' => ['nombre', 'raffle_name', 'ticket_number', 'price', 'whatsapp'],
+            'vars' => ['nombre', 'raffle_name', 'ticket_number', 'price', 'whatsapp', 'platform'],
             'default' => "Hola {nombre}, tu boleto *{ticket_number}* para la rifa *{raffle_name}* esta reservado. Valor: {price}. Envía el comprobante de pago al WhatsApp {whatsapp}. Reserva valida por 4 horas.",
         ],
         'payment_confirmed' => [
             'nombre' => '✅ Pago confirmado',
             'descripcion' => 'Al comprador cuando el organizador confirma su pago.',
-            'vars' => ['nombre', 'raffle_name', 'ticket_number', 'draw_date'],
+            'vars' => ['nombre', 'raffle_name', 'ticket_number', 'draw_date', 'platform'],
             'default' => "Hola {nombre}, tu pago para la rifa *{raffle_name}* fue confirmado. Boleto: *{ticket_number}*. Sorteo: {draw_date}. Mucha suerte!",
         ],
     ];
@@ -361,6 +363,7 @@ class MessageBuilderService
     /** Escapa los valores (nombres de compradores, etc.) para plantillas HTML. */
     private static function escapeVars(array $vars): array
     {
+        $vars += ['platform' => plataforma('nombre')];
         return array_map(
             fn($v) => htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'),
             $vars
@@ -369,6 +372,11 @@ class MessageBuilderService
 
     private static function replaceVars(string $template, array $vars): string
     {
+        // {platform} disponible en TODAS las plantillas (nombre administrable
+        // desde Configuración → General; puede cambiar en el despliegue final).
+        if (!isset($vars['platform'])) {
+            $vars['platform'] = plataforma('nombre');
+        }
         return str_replace(
             array_map(fn($k) => '{' . $k . '}', array_keys($vars)),
             array_values($vars),
@@ -379,19 +387,20 @@ class MessageBuilderService
     private static function buildEmailHtml(string $subject, string $bodyTemplate, array $vars): string
     {
         $body = self::replaceVars($bodyTemplate, $vars);
+        $marca = htmlspecialchars(plataforma('nombre'), ENT_QUOTES, 'UTF-8');
 
         return '<!DOCTYPE html><html><head><meta charset="UTF-8"></head>'
             . '<body style="margin:0;padding:0;background:#0f172a;font-family:sans-serif;">'
             . '<div style="max-width:600px;margin:0 auto;background:#1e293b;border-radius:12px;overflow:hidden;">'
             . '<div style="background:#2563eb;padding:24px;text-align:center;">'
-            . '<h1 style="color:#fff;margin:0;font-size:24px;">MisRifas</h1>'
+            . '<h1 style="color:#fff;margin:0;font-size:24px;">' . $marca . '</h1>'
             . '</div>'
             . '<div style="padding:32px;">'
             . '<h2 style="color:#f1f5f9;margin:0 0 16px;">' . htmlspecialchars($subject, ENT_QUOTES, 'UTF-8') . '</h2>'
             . '<div style="color:#94a3b8;line-height:1.6;">' . $body . '</div>'
             . '</div>'
             . '<div style="padding:16px;text-align:center;color:#64748b;font-size:12px;">'
-            . 'MisRifas - Rifas Digitales Colombia'
+            . $marca . ' - Rifas digitales'
             . '</div></div></body></html>';
     }
 }

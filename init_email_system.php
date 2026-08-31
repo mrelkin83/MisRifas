@@ -53,8 +53,10 @@ try {
         ['mailing_smtp_port', '587', 'string'],
         ['mailing_smtp_user', '', 'string'],
         ['mailing_smtp_pass', '', 'string'],
-        ['mailing_smtp_from', 'noreply@misrifas.com', 'string'],
-        ['mailing_from_name', 'MisRifas Colombia', 'string'],
+        // Vacíos a propósito: sin valor, MailService usa la identidad
+        // administrable (platform_name/platform_email) — nunca un dominio supuesto.
+        ['mailing_smtp_from', '', 'string'],
+        ['mailing_from_name', '', 'string'],
         ['mailing_batch_size', '50', 'string'], // Cuántos correos por minuto
     ];
 

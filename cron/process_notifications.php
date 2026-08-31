@@ -2,6 +2,7 @@
 require_once __DIR__ . '/../config/app.php';
 require_once __DIR__ . '/../config/constants.php';
 require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../config/brand.php';
 require_once __DIR__ . '/../api/utils/Logger.php';
 require_once __DIR__ . '/../api/services/SMSService.php';
 
@@ -122,7 +123,7 @@ function whatsAppTextoDeMensaje($msg) {
         return $msg['body_text'];
     }
     $vars = json_decode($msg['variables'] ?? '{}', true) ?: [];
-    return $vars['texto'] ?? 'Tienes una notificacion de MisRifas.';
+    return $vars['texto'] ?? ('Tienes una notificacion de ' . plataforma('nombre') . '.');
 }
 
 /**
@@ -134,7 +135,7 @@ function whatsAppTextoDeMensaje($msg) {
  */
 function processEmail($msg) {
     $toEmail = $msg['recipient_email'] ?? '';
-    $subject = !empty($msg['subject']) ? $msg['subject'] : 'Notificación de MisRifas';
+    $subject = !empty($msg['subject']) ? $msg['subject'] : ('Notificación de ' . plataforma('nombre'));
 
     if (!filter_var($toEmail, FILTER_VALIDATE_EMAIL)) {
         return false;
@@ -164,18 +165,19 @@ function processEmail($msg) {
 }
 
 function buildEmailHtml($subject, $body) {
+    $marca = htmlspecialchars(plataforma('nombre'), ENT_QUOTES, 'UTF-8');
     return '<!DOCTYPE html><html><head><meta charset="UTF-8"></head>'
         . '<body style="margin:0;padding:0;background:#0f172a;font-family:sans-serif;">'
         . '<div style="max-width:600px;margin:0 auto;background:#1e293b;border-radius:12px;overflow:hidden;">'
         . '<div style="background:#2563eb;padding:24px;text-align:center;">'
-        . '<h1 style="color:#fff;margin:0;font-size:24px;">MisRifas</h1>'
+        . '<h1 style="color:#fff;margin:0;font-size:24px;">' . $marca . '</h1>'
         . '</div>'
         . '<div style="padding:32px;">'
         . '<h2 style="color:#f1f5f9;margin:0 0 16px;">' . htmlspecialchars($subject, ENT_QUOTES, 'UTF-8') . '</h2>'
         . '<div style="color:#94a3b8;line-height:1.6;">' . nl2br(htmlspecialchars($body, ENT_QUOTES, 'UTF-8')) . '</div>'
         . '</div>'
         . '<div style="padding:16px;text-align:center;color:#64748b;font-size:12px;">'
-        . 'MisRifas - Rifas Digitales Colombia'
+        . $marca . ' - Rifas digitales'
         . '</div></div></body></html>';
 }
 

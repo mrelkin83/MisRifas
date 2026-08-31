@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../config/paths.php';
-$page_title = "Recuperar Contrasena - MisRifas";
+require_once __DIR__ . '/../config/brand.php';
+$page_title = "Recuperar Contrasena - " . plataforma('nombre');
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -58,7 +59,7 @@ $page_title = "Recuperar Contrasena - MisRifas";
             <div class="text-center mb-10">
                 <a href="<?= BASE_PATH ?>/public/index.php" class="inline-flex items-center gap-2 text-3xl font-black mb-4">
                     <span aria-hidden="true">🎟️</span>
-                    <span class="bg-clip-text text-transparent bg-gradient-to-r from-amber-300 to-amber-500">MisRifas</span>
+                    <span class="bg-clip-text text-transparent bg-gradient-to-r from-amber-300 to-amber-500"><?= plataforma_e() ?></span>
                 </a>
                 <h1 class="text-2xl font-bold text-white">Recuperar Contraseña</h1>
                 <p class="text-slate-400 mt-2">Ingresa tu email y te enviaremos un enlace para restaurar tu contraseña.</p>

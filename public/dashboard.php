@@ -14,6 +14,7 @@ header("Expires: 0");
 
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../config/paths.php';
+require_once __DIR__ . '/../config/brand.php';
 
 $current_page = 'dashboard';
 $basePath = defined('BASE_PATH') ? BASE_PATH : '';
@@ -94,7 +95,7 @@ if ($user) {
     <script>const BASE_PATH = "<?= $basePath ?>";</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mi Panel - MisRifas</title>
+    <title>Mi Panel - <?= plataforma_e() ?></title>
     <meta name="theme-color" content="#0f172a">
     <link rel="stylesheet" href="<?= $basePath ?>/public/css/tailwind.min.css">
     <style>

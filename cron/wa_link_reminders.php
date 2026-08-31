@@ -20,6 +20,7 @@
 require_once __DIR__ . '/../config/app.php';
 require_once __DIR__ . '/../config/constants.php';
 require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../config/brand.php';
 require_once __DIR__ . '/../api/utils/Logger.php';
 
 if (php_sapi_name() !== 'cli') {
@@ -83,7 +84,7 @@ try {
             . "¿Quieres que ADEMAS les llegue por WhatsApp desde TU numero? Solo tienes que vincularlo escaneando un codigo QR (2 minutos):\n"
             . "{$perfilUrl}\n\n"
             . "El dia del sorteo, el sistema verificara el numero ganador y enviara a todos tus clientes el resultado, felicitando al ganador y agradeciendo la participacion. Despues del sorteo puedes desvincularlo (o se desvincula solo).\n\n"
-            . "— MisRifas";
+            . "— " . plataforma('nombre');
         $ins->execute([
             $v['raffle_id'],
             $v['id'],
@@ -133,7 +134,7 @@ try {
             . "Tienes {$c['cantidad']} numero(s) APARTADOS sin cobrar en \"{$c['raffle_name']}\" por un total de \${$total}:\n"
             . $c['lista'] . "\n\n"
             . 'El corte es el ' . date('d/m/Y', strtotime((string)$c['cutoff_at'])) . ': lo que siga sin cobrar volvera a la venta.'
-            . "\nDesde tu panel puedes marcar pagados, enviar recordatorios o liberar numeros.\n\n— MisRifas";
+            . "\nDesde tu panel puedes marcar pagados, enviar recordatorios o liberar numeros.\n\n— " . plataforma('nombre');
         // Email siempre; WhatsApp además si hay teléfono (lo entrega
         // process_notifications por la instancia del vendedor).
         if (!empty($c['email'])) {

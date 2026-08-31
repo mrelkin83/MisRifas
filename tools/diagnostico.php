@@ -28,7 +28,7 @@ if (in_array('--json', $argv, true)) {
     echo json_encode($checks, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) . "\n";
 } else {
     $icons = ['ok' => '✅', 'warn' => '⚠️ ', 'fail' => '❌'];
-    echo "═══ Diagnóstico MisRifas — " . date('Y-m-d H:i:s') . " ═══\n\n";
+    echo "═══ Diagnóstico " . plataforma('nombre') . " — " . date('Y-m-d H:i:s') . " ═══\n\n";
     foreach ($checks as $c) {
         echo $icons[$c['estado']] . ' ' . $c['nombre'] . "\n";
         echo '   ' . $c['detalle'] . "\n";

@@ -10,6 +10,7 @@
 require_once __DIR__ . '/../config/app.php';
 require_once __DIR__ . '/../config/constants.php';
 require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../config/brand.php';
 require_once __DIR__ . '/../api/utils/Logger.php';
 require_once __DIR__ . '/../api/repositories/TicketRepository.php';
 
@@ -81,7 +82,7 @@ try {
                     'Se liberaron ' . count($info['items']) . ' apartado(s) por el corte',
                     "Hola {$v['business_name']},\n\nLlego el corte de apartados y estos numeros sin cobrar volvieron a la venta:\n\n"
                     . implode("\n", $info['items'])
-                    . "\n\nSi alguno ya te habia pagado, puedes registrarlo como venta en efectivo desde tu panel.\n\n— MisRifas",
+                    . "\n\nSi alguno ya te habia pagado, puedes registrarlo como venta en efectivo desde tu panel.\n\n— " . plataforma('nombre'),
                 ]);
             }
         }

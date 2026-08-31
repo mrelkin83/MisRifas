@@ -16,7 +16,7 @@ if (empty($key)) {
 }
 
 // Lista blanca de llaves públicas
-$allowed_keys = ['home_banners', 'site_name', 'contact_whatsapp', 'contact_email'];
+$allowed_keys = ['home_banners', 'site_name', 'contact_whatsapp', 'contact_email', 'platform_name', 'platform_email'];
 
 if (!in_array($key, $allowed_keys)) {
     Response::error('Llave no permitida', null, 403);

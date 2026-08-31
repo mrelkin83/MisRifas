@@ -28,6 +28,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/../config/app.php';
 require_once __DIR__ . '/../config/constants.php';
 require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../config/brand.php';
 require_once __DIR__ . '/../api/utils/Logger.php';
 
 if (php_sapi_name() !== 'cli') {
@@ -133,7 +134,7 @@ try {
             . "Recordatorio de pago a la plataforma por tu rifa \"{$r['name']}\":\n"
             . "• Concepto: {$concepto}\n• Monto: \${$monto}\n• Fecha límite: {$fecha} (en {$daysLeft} día(s))\n\n"
             . "Cómo pagar: {$comoPagar}\n\n"
-            . "Si no se paga antes de la fecha límite, se suspenden las ventas nuevas de la rifa y la creación de rifas nuevas. El sorteo y los boletos ya pagados NUNCA se afectan.\n\n— MisRifas {$tag}";
+            . "Si no se paga antes de la fecha límite, se suspenden las ventas nuevas de la rifa y la creación de rifas nuevas. El sorteo y los boletos ya pagados NUNCA se afectan.\n\n— " . plataforma('nombre') . " {$tag}";
         $enviar($r, "Pago a la plataforma — \"{$r['name']}\" vence el {$fecha} {$tag}", $texto);
         $avisos++;
     }
@@ -164,7 +165,7 @@ try {
         $monto = number_format((float)$r['commission_amount'], 0, ',', '.');
         $texto = "⚠️ Tu rifa \"{$r['name']}\" entró en MORA con la plataforma ({$concepto}: \${$monto}).\n\n"
             . "Desde hoy:\n• Las VENTAS NUEVAS de esa rifa quedan suspendidas\n• No puedes crear rifas nuevas\n• La rifa muestra públicamente el saldo pendiente\n\n"
-            . "El sorteo se realizará igual y los boletos ya pagados no se afectan.\n\nCómo pagar: {$comoPagar}\nAl pagar, todo se reactiva. — MisRifas [cobro:mora]";
+            . "El sorteo se realizará igual y los boletos ya pagados no se afectan.\n\nCómo pagar: {$comoPagar}\nAl pagar, todo se reactiva. — " . plataforma('nombre') . " [cobro:mora]";
         $enviar($r, "⚠️ Rifa \"{$r['name']}\" en mora — ventas suspendidas [cobro:mora]", $texto);
     }
 

@@ -4,7 +4,8 @@ header("Pragma: no-cache");
 header("Expires: 0");
 
 require_once __DIR__ . '/../../config/database.php';
-$page_title = "Panel de Administración - MisRifas";
+require_once __DIR__ . '/../../config/brand.php';
+$page_title = "Panel de Administración - " . plataforma('nombre');
 $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'register']);
 ?>
 <!DOCTYPE html>
@@ -264,7 +265,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
             <?php if (isset($_GET['auth']) && $_GET['auth'] === 'login'): ?>
             <div class="text-center mb-8">
                 <svg class="w-12 h-12 mx-auto text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v1a2 2 0 0 0 0 4v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1a2 2 0 0 0 0-4Z"/><path d="M13 5v14" stroke-dasharray="2 3"/></svg>
-                <h1 class="text-2xl font-bold mt-4" style="color:#111827">MisRifas</h1>
+                <h1 class="text-2xl font-bold mt-4" style="color:#111827"><?= plataforma_e() ?></h1>
                 <p class="text-gray-500">Inicia sesión en tu cuenta</p>
             </div>
             <form id="login-form" class="space-y-4">
@@ -619,7 +620,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
             <div class="sidebar-header">
                 <div class="logo">
                     <svg class="logo__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v1a2 2 0 0 0 0 4v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1a2 2 0 0 0 0-4Z"/><path d="M13 5v14" stroke-dasharray="2 3"/></svg>
-                    <span class="logo__text">MisRifas</span>
+                    <span class="logo__text"><?= plataforma_e() ?></span>
                 </div>
             </div>
             <nav class="sidebar-nav">
@@ -1830,11 +1831,11 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                                 </div>
                                 <div class="form-group">
                                     <label>Email Remitente (From)</label>
-                                    <input type="email" id="smtp-from" class="w-full px-4 py-2 border rounded-lg" placeholder="noreply@misrifas.com">
+                                    <input type="email" id="smtp-from" class="w-full px-4 py-2 border rounded-lg" placeholder="no-reply@tudominio.com">
                                 </div>
                                 <div class="form-group">
                                     <label>Nombre Remitente</label>
-                                    <input type="text" id="smtp-from-name" class="w-full px-4 py-2 border rounded-lg" placeholder="MisRifas">
+                                    <input type="text" id="smtp-from-name" class="w-full px-4 py-2 border rounded-lg" placeholder="Nombre visible del remitente">
                                 </div>
                             </div>
                             <button type="submit" class="btn btn--primary px-8 h-12">Guardar Configuración SMTP</button>
@@ -1844,15 +1845,19 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                     <!-- Configuración General (solo super_admin) -->
                     <div class="section-card" id="section-platform-settings">
                         <h2 class="text-lg font-bold mb-2 flex items-center gap-2"><svg class="w-5 h-5 text-primary shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18 14 14 0 0 1 0-18Z"/></svg>Configuración General de la Plataforma</h2>
-                        <p style="color:#94a3b8;font-size:13px;margin-bottom:20px;">Ajusta los par&aacute;metros globales de la plataforma.</p>
+                        <p style="color:#94a3b8;font-size:13px;margin-bottom:20px;">Ajusta los par&aacute;metros globales. El nombre y el correo se usan EN TODO: t&iacute;tulos, correos, plantillas, boletas y p&aacute;ginas p&uacute;blicas — c&aacute;mbialos aqu&iacute; cuando definas la marca/dominio finales.</p>
                         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px;">
                             <div class="form-group">
                                 <label for="cfg-platform-name">Nombre de la Plataforma</label>
-                                <input type="text" id="cfg-platform-name" value="MisRifas" class="w-full px-4 py-2 border rounded-lg">
+                                <input type="text" id="cfg-platform-name" value="<?= plataforma_e() ?>" class="w-full px-4 py-2 border rounded-lg">
                             </div>
                             <div class="form-group">
                                 <label for="cfg-platform-email">Email de la Plataforma</label>
-                                <input type="email" id="cfg-platform-email" value="no-reply@misrifas.com" class="w-full px-4 py-2 border rounded-lg">
+                                <input type="email" id="cfg-platform-email" value="<?= plataforma_e('email_config') ?>" placeholder="vac&iacute;o = no-reply@<?= plataforma_e('dominio') ?>" class="w-full px-4 py-2 border rounded-lg">
+                            </div>
+                            <div class="form-group">
+                                <label for="cfg-contact-whatsapp">WhatsApp de soporte</label>
+                                <input type="text" id="cfg-contact-whatsapp" value="<?= plataforma_e('whatsapp') ?>" placeholder="57300XXXXXXX (vac&iacute;o = sin bot&oacute;n de soporte)" class="w-full px-4 py-2 border rounded-lg">
                             </div>
                             <div class="form-group">
                                 <label for="cfg-min-ticket-price">Precio M&iacute;nimo Boleto (COP)</label>
@@ -3040,7 +3045,8 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                 const d = response.data;
                 // General
                 if (d.platform_name) document.getElementById('cfg-platform-name').value = d.platform_name;
-                if (d.platform_email) document.getElementById('cfg-platform-email').value = d.platform_email;
+                if (d.platform_email !== undefined) document.getElementById('cfg-platform-email').value = d.platform_email;
+                if (d.contact_whatsapp !== undefined && document.getElementById('cfg-contact-whatsapp')) document.getElementById('cfg-contact-whatsapp').value = d.contact_whatsapp;
                 if (d.min_ticket_price) document.getElementById('cfg-min-ticket-price').value = d.min_ticket_price;
                 if (d.max_ticket_price) document.getElementById('cfg-max-ticket-price').value = d.max_ticket_price;
                 if (d.reservation_minutes) document.getElementById('cfg-reservation-minutes').value = d.reservation_minutes;
@@ -3101,6 +3107,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
             await API.post('/admin/settings.php', {
                 platform_name: document.getElementById('cfg-platform-name').value,
                 platform_email: document.getElementById('cfg-platform-email').value,
+                contact_whatsapp: (document.getElementById('cfg-contact-whatsapp') || {}).value || '',
                 min_ticket_price: document.getElementById('cfg-min-ticket-price').value,
                 max_ticket_price: document.getElementById('cfg-max-ticket-price').value,
                 reservation_minutes: document.getElementById('cfg-reservation-minutes').value,
@@ -3235,7 +3242,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                 if (prevBtn) {
                     const det = prevBtn.closest('details');
                     const pre = det.querySelector('.tpl-prev');
-                    const ejemplo = { nombre: 'Camila', raffle_name: 'iPhone 15', ticket_number: '0007', lottery_name: 'Lotería de Bogotá', winning_number: '7307', full_number: '7307', draw_date: '31/08/2026', confirm_url: 'https://misrifas.online/…', tickets: '0003, 0011', winner_name: 'Camila T.', winner_ticket: '0007', next_date: '07/09/2026', price: '$10.000', whatsapp: '3001234567', winner_phone: '3102000008' };
+                    const ejemplo = { nombre: 'Camila', raffle_name: 'iPhone 15', ticket_number: '0007', lottery_name: 'Lotería de Bogotá', winning_number: '7307', full_number: '7307', draw_date: '31/08/2026', confirm_url: 'https://tu-dominio/…', tickets: '0003, 0011', winner_name: 'Camila T.', winner_ticket: '0007', next_date: '07/09/2026', price: '$10.000', whatsapp: '3001234567', winner_phone: '3102000008' };
                     pre.textContent = det.querySelector('textarea').value.replace(/\{(\w+)\}/g, (m, v) => ejemplo[v] || m);
                     pre.style.display = 'block';
                     return;

@@ -3,13 +3,14 @@
  * Page: ¿Qué es MisRifas?
  */
 require_once __DIR__ . '/../config/app.php';
+require_once __DIR__ . '/../config/brand.php';
 ?>
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>¿Qué es MisRifas? - La plataforma #1 de Sorteos en Colombia</title>
+    <title>¿Qué es <?= plataforma_e() ?>? - La plataforma #1 de Sorteos en Colombia</title>
     <meta name="theme-color" content="#0f172a">
     <script>const BASE_PATH = "<?= BASE_PATH ?>";</script>
     <link rel="stylesheet" href="<?= BASE_PATH ?>/public/css/tailwind.min.css">
@@ -67,7 +68,7 @@ require_once __DIR__ . '/../config/app.php';
                 <span class="text-gradient">crear y ganar sorteos.</span>
             </h1>
             <p class="text-lg md:text-xl text-slate-400 max-w-2xl mx-auto leading-relaxed">
-                MisRifas es la infraestructura digital para que cualquier persona o empresa en Colombia lance sorteos profesionales, transparentes y fáciles de administrar.
+                <?= plataforma_e() ?> es la infraestructura digital para que cualquier persona o empresa en Colombia lance sorteos profesionales, transparentes y fáciles de administrar.
             </p>
         </header>
 
@@ -86,7 +87,7 @@ require_once __DIR__ . '/../config/app.php';
                 <svg class="w-10 h-10 mb-6 text-primary group-hover:scale-110 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0a2.25 2.25 0 0 0-2.25-2.25h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75"/></svg>
                 <h3 class="text-2xl font-bold mb-4">Notificaciones Automáticas WhatsApp + Email</h3>
                 <p class="text-slate-400 leading-relaxed">
-                    Se acabó el problema de los vendedores que nunca informan los resultados. En MisRifas, cada persona que compra un boleto recibe automáticamente una notificación por WhatsApp y Email a primera hora del día siguiente del sorteo, informándole los resultados y si fue uno de los afortunados ganadores. Transparencia total, sin depender de nadie.
+                    Se acabó el problema de los vendedores que nunca informan los resultados. En <?= plataforma_e() ?>, cada persona que compra un boleto recibe automáticamente una notificación por WhatsApp y Email a primera hora del día siguiente del sorteo, informándole los resultados y si fue uno de los afortunados ganadores. Transparencia total, sin depender de nadie.
                 </p>
             </div>
 
@@ -139,7 +140,7 @@ require_once __DIR__ . '/../config/app.php';
             <a href="<?= BASE_PATH ?>/public/vendor/index.php?auth=register" class="inline-block w-full sm:w-auto px-8 md:px-12 py-5 md:py-6 bg-primary text-slate-950 rounded-2xl md:rounded-3xl font-black text-lg md:text-xl hover:scale-105 active:scale-95 transition-transform shadow-2xl shadow-primary/20">
                 Empezar Ahora
             </a>
-            <p class="mt-8 text-slate-500 text-sm font-medium">Únete a cientos de emprendedores que ya usan MisRifas.</p>
+            <p class="mt-8 text-slate-500 text-sm font-medium">Únete a cientos de emprendedores que ya usan <?= plataforma_e() ?>.</p>
         </footer>
 
     </main>
@@ -154,7 +155,7 @@ require_once __DIR__ . '/../config/app.php';
     </script>
 
     <div class="py-12 border-t border-white/5 mt-12 text-center text-slate-600 text-xs font-bold uppercase tracking-widest">
-        MisRifas Colombia &copy; 2026 · Tecnología para Soñadores
+        <?= plataforma_e() ?> &copy; <?= date('Y') ?> · Tecnología para Soñadores
     </div>
 
 <?php $tabActive = ''; include __DIR__ . '/partials/tabbar.php'; ?>

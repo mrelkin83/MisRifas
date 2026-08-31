@@ -4,9 +4,10 @@ header("Pragma: no-cache");
 header("Expires: 0");
 
 require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../config/brand.php';
 
 $cache_bust = time();
-$page_title = "MisRifas - Rifas Digitales en Colombia";
+$page_title = plataforma('nombre') . " - Rifas Digitales en Colombia";
 $page_description = "La plataforma más confiable para crear y participar en rifas digitales en Colombia. 100% gratuita y segura.";
 ?>
 <!DOCTYPE html>
@@ -407,7 +408,7 @@ $page_description = "La plataforma más confiable para crear y participar en rif
                     <path stroke-linecap="round" stroke-linejoin="round" d="M3 8.5V6a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v2.5a1.5 1.5 0 0 0 0 3V14a1.5 1.5 0 0 0 0 3v2.5a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V17a1.5 1.5 0 0 0 0-3v-2.5a1.5 1.5 0 0 0 0-3Z"/>
                     <path stroke-linecap="round" d="M15 5v14" stroke-dasharray="2 3"/>
                 </svg>
-                MisRifas
+                <?= plataforma_e() ?>
             </a>
 
 <!-- El menú de usuario real vive AQUÍ (header), visible también en móvil
@@ -426,7 +427,7 @@ $page_description = "La plataforma más confiable para crear y participar en rif
                     <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 21h8M12 17v4M7 4h10v4a5 5 0 0 1-10 0V4Zm0 1H4.5a1.5 1.5 0 0 0 0 3H7M17 5h2.5a1.5 1.5 0 0 1 0 3H17"/></svg>
                     Ganadores
                 </a>
-                <a href="<?= BASE_PATH ?>/public/que-es.php" class="text-slate-300 hover:text-white font-medium transition-colors">¿Qué es MisRifas?</a>
+                <a href="<?= BASE_PATH ?>/public/que-es.php" class="text-slate-300 hover:text-white font-medium transition-colors">¿Qué es <?= plataforma_e() ?>?</a>
 
 
                 <div id="auth-buttons" class="flex items-center gap-4">
@@ -806,7 +807,7 @@ $page_description = "La plataforma más confiable para crear y participar en rif
                         <svg class="w-6 h-6 text-amber-400" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M3 8.5V6a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v2.5a1.5 1.5 0 0 0 0 3V14a1.5 1.5 0 0 0 0 3v2.5a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V17a1.5 1.5 0 0 0 0-3v-2.5a1.5 1.5 0 0 0 0-3Z"/>
                         </svg>
-                        MisRifas
+                        <?= plataforma_e() ?>
                     </div>
                     <p class="text-sm text-slate-400 leading-relaxed">Rifas digitales verificadas con lotería oficial colombiana.</p>
                 </div>
@@ -816,7 +817,7 @@ $page_description = "La plataforma más confiable para crear y participar en rif
                         <li><a href="<?= BASE_PATH ?>/public/index.php" class="text-slate-400 hover:text-amber-400 transition-colors">Inicio</a></li>
                         <li><a href="<?= BASE_PATH ?>/public/mis-boletos.php" class="text-slate-400 hover:text-amber-400 transition-colors">Resultados de sorteos</a></li>
                         <li><a href="<?= BASE_PATH ?>/public/ganadores.php" class="text-slate-400 hover:text-amber-400 transition-colors">Ganadores</a></li>
-                        <li><a href="<?= BASE_PATH ?>/public/que-es.php" class="text-slate-400 hover:text-amber-400 transition-colors">¿Qué es MisRifas?</a></li>
+                        <li><a href="<?= BASE_PATH ?>/public/que-es.php" class="text-slate-400 hover:text-amber-400 transition-colors">¿Qué es <?= plataforma_e() ?>?</a></li>
                     </ul>
                 </div>
                 <div>
@@ -838,7 +839,7 @@ $page_description = "La plataforma más confiable para crear y participar en rif
             </div>
             <div class="pt-8 border-t border-white/5 text-center">
                 <p class="mb-2"><a href="<?= BASE_PATH ?>/public/comprobar-boleta.php" class="text-slate-300 hover:text-white font-medium text-sm">🎟️ Verificar una boleta</a></p>
-                <p class="text-sm text-slate-500">&copy; 2026 MisRifas Colombia. Todos los derechos reservados.</p>
+                <p class="text-sm text-slate-500">&copy; <?= date('Y') ?> <?= plataforma_e() ?>. Todos los derechos reservados.</p>
             </div>
         </div>
     </footer>

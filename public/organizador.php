@@ -8,6 +8,7 @@
  */
 require_once __DIR__ . '/../config/app.php';
 require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../config/brand.php';
 require_once __DIR__ . '/../api/utils/RateLimiter.php';
 
 if (!RateLimiter::check('organizador_' . ($_SERVER['REMOTE_ADDR'] ?? 'x'), 40, 5)) {
@@ -125,7 +126,7 @@ $e = fn($s) => htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8');
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= $vendor ? $e($vendor['business_name']) : 'Organizador' ?> | MisRifas</title>
+    <title><?= $vendor ? $e($vendor['business_name']) : 'Organizador' ?> | <?= plataforma_e() ?></title>
     <meta name="theme-color" content="#0f172a">
     <style>
         * { margin:0; padding:0; box-sizing:border-box; }
@@ -207,7 +208,7 @@ $e = fn($s) => htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8');
             <span style="padding:3px 10px;border-radius:99px;background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.3);color:#93c5fd;font-size:11px;font-weight:800;">🪪 Documento en registro de la plataforma</span>
         </div>
         <?php if (!empty($vendor['phone'])): ?>
-        <a href="https://wa.me/57<?= $e(preg_replace('/\D/', '', (string)$vendor['phone'])) ?>?text=<?= rawurlencode('Hola, te escribo desde tu perfil en MisRifas 👋') ?>"
+        <a href="https://wa.me/57<?= $e(preg_replace('/\D/', '', (string)$vendor['phone'])) ?>?text=<?= rawurlencode('Hola, te escribo desde tu perfil en ' . plataforma('nombre') . ' 👋') ?>"
            target="_blank" rel="noopener"
            style="display:block;margin-top:12px;padding:12px;border-radius:12px;background:#25D366;color:#fff;font-weight:800;font-size:14px;text-align:center;text-decoration:none;">
             💬 Escribir por WhatsApp
@@ -307,7 +308,7 @@ $e = fn($s) => htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8');
     </script>
     <?php endif; ?>
 <?php endif; ?>
-    <p class="foot"><a href="<?= BASE_PATH ?>/public/index.php">← MisRifas</a> · <a href="<?= BASE_PATH ?>/public/ganadores.php">Hall de ganadores</a></p>
+    <p class="foot"><a href="<?= BASE_PATH ?>/public/index.php">← <?= plataforma_e() ?></a> · <a href="<?= BASE_PATH ?>/public/ganadores.php">Hall de ganadores</a></p>
 </div>
 </body>
 </html>

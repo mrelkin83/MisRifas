@@ -1,9 +1,10 @@
 <?php
 require_once __DIR__ . '/../config/paths.php';
+require_once __DIR__ . '/../config/brand.php';
 header("Cache-Control: no-cache, no-store, must-revalidate");
 header("Pragma: no-cache");
 header("Expires: 0");
-$page_title = "Pago - MisRifas";
+$page_title = "Pago - " . plataforma('nombre');
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -58,7 +59,7 @@ $page_title = "Pago - MisRifas";
         <nav class="container mx-auto px-4 h-16 flex items-center justify-between">
             <a href="<?= BASE_PATH ?>/public/index.php" class="flex items-center gap-2 text-xl font-bold text-primary">
                 <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v1a2 2 0 0 0 0 4v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1a2 2 0 0 0 0-4Z"/><path d="M13 5v14" stroke-dasharray="2 3"/></svg>
-                <span class="hidden xs:inline">MisRifas</span>
+                <span class="hidden xs:inline"><?= plataforma_e() ?></span>
             </a>
             <div class="flex items-center gap-4">
                 <a href="<?= BASE_PATH ?>/public/mis-boletos.php" class="text-slate-300 hover:text-primary font-medium text-xs sm:text-sm">Mis Boletas</a>
@@ -167,18 +168,21 @@ $page_title = "Pago - MisRifas";
                 </p>
             </div>
 
+            <?php $soporteWa = preg_replace('/\D/', '', plataforma('whatsapp')); // administrable: Configuración → General ?>
+            <?php if ($soporteWa !== ''): ?>
             <div class="mt-8 text-center">
                 <p class="text-sm text-slate-400">
                     ¿Necesitas ayuda?
-                    <a href="https://wa.me/573001234567?text=<?= rawurlencode('Hola, tengo un problema con mi pago en MisRifas.') ?>" target="_blank" rel="noopener" class="text-primary font-bold hover:underline">Contactar soporte</a>
+                    <a href="https://wa.me/<?= $soporteWa ?>?text=<?= rawurlencode('Hola, tengo un problema con mi pago en ' . plataforma('nombre') . '.') ?>" target="_blank" rel="noopener" class="text-primary font-bold hover:underline">Contactar soporte</a>
                 </p>
             </div>
+            <?php endif; ?>
         </div>
     </main>
 
     <footer class="bg-gray-900 text-white py-10 mt-12 border-t border-white/5">
         <div class="container mx-auto px-4 text-center">
-            <p class="text-xs opacity-50">&copy; 2026 MisRifas Colombia. Todos los derechos reservados.</p>
+            <p class="text-xs opacity-50">&copy; <?= date('Y') ?> <?= plataforma_e() ?>. Todos los derechos reservados.</p>
         </div>
     </footer>
 

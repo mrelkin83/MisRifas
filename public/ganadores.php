@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../config/database.php';
-$page_title = "Ganadores - MisRifas";
+require_once __DIR__ . '/../config/brand.php';
+$page_title = "Ganadores - " . plataforma('nombre');
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -95,7 +96,7 @@ $page_title = "Ganadores - MisRifas";
         <nav class="container mx-auto px-4 h-20 flex items-center justify-between">
             <a href="<?= BASE_PATH ?>/public/index.php" class="flex items-center gap-3 text-2xl font-black text-primary">
                 <svg class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v1a2 2 0 0 0 0 4v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1a2 2 0 0 0 0-4Z"/><path d="M13 5v14" stroke-dasharray="2 3"/></svg>
-                MisRifas
+                <?= plataforma_e() ?>
             </a>
 
             <button id="mobile-menu-btn" class="md:hidden text-white p-2 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500" aria-label="Menu">
@@ -113,7 +114,7 @@ $page_title = "Ganadores - MisRifas";
                     <svg class="w-4 h-4 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4Z"/><path d="M7 5H4a1 1 0 0 0-1 1 4 4 0 0 0 4 4M17 5h3a1 1 0 0 1 1 1 4 4 0 0 1-4 4"/></svg>
                     Ganadores
                 </a>
-                <a href="<?= BASE_PATH ?>/public/que-es.php" class="text-slate-300 hover:text-white font-medium transition-colors">¿Qué es MisRifas?</a>
+                <a href="<?= BASE_PATH ?>/public/que-es.php" class="text-slate-300 hover:text-white font-medium transition-colors">¿Qué es <?= plataforma_e() ?>?</a>
                 <a href="<?= BASE_PATH ?>/public/admin/index.php?auth=login" class="px-5 py-2.5 bg-white/5 border border-white/10 text-white rounded-xl hover:bg-white/10 transition-all font-medium backdrop-blur-sm">Iniciar Sesión</a>
             </div>
         </nav>
@@ -140,7 +141,7 @@ $page_title = "Ganadores - MisRifas";
 
     <footer class="bg-black/30 text-white py-12 border-t border-white/5 mt-20">
         <div class="container mx-auto px-4 text-center">
-            <p class="text-slate-500">&copy; 2026 MisRifas Colombia. Transparencia garantizada.</p>
+            <p class="text-slate-500">&copy; <?= date('Y') ?> <?= plataforma_e() ?>. Transparencia garantizada.</p>
         </div>
     </footer>
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/TicketCode.php';
 require_once __DIR__ . '/../lib/qrcode.php';
+require_once __DIR__ . '/../../config/brand.php';
 
 /**
  * Boleta digital en PNG (promt2.md §9.6).
@@ -93,7 +94,7 @@ final class BoletaImage
 
         // Cabecera
         $dark = imagecolorallocate($im, 28, 19, 5);
-        $text(30, $dark, 0, 88, 'MisRifas', true);
+        $text(30, $dark, 0, 88, plataforma('nombre'), true);
 
         // Nombre de la rifa
         $name = mb_strimwidth((string)$b['raffle_name'], 0, 36, '…', 'UTF-8');

@@ -62,7 +62,8 @@ if (!$vendorId) {
 $pdo = Database::getInstance()->getConnection();
 $stmtVendor = $pdo->prepare('SELECT business_name FROM vendors WHERE id = ? AND status = ?');
 $stmtVendor->execute([$vendorId, 'active']);
-$vendorName = (string)($stmtVendor->fetchColumn() ?: 'MisRifas');
+require_once __DIR__ . '/../../../config/brand.php';
+$vendorName = (string)($stmtVendor->fetchColumn() ?: plataforma('nombre'));
 
 Engine::arrancar([
     'db' => new MisRifasDb($pdo),

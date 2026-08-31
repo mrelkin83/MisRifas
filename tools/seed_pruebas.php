@@ -291,7 +291,7 @@ foreach ([['Pedro', 1, 7, 1], ['Diana', 2, 3, 2], ['Jorge', 3, 9, 3], ['Camila',
 $db->commit();
 
 // ──────────────────────────── RESUMEN ────────────────────────────
-$base = rtrim(getenv('APP_URL') ?: 'https://misrifas.online', '/');
+$base = rtrim(getenv('APP_URL') ?: 'http://localhost', '/');
 $fmt = fn(string $c) => substr($c, 0, 4) . '-' . substr($c, 4, 4) . '-' . substr($c, 8);
 echo "══════════════════ DATOS DE PRUEBA SEMBRADOS ══════════════════\n\n";
 echo "CONTRASEÑA de TODAS las cuentas: Pruebas2026*\n\n";

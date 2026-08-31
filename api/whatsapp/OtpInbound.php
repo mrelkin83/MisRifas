@@ -11,6 +11,7 @@
  */
 
 require_once __DIR__ . '/../../config/database.php';
+require_once __DIR__ . '/../../config/brand.php';
 require_once __DIR__ . '/../../api/utils/Logger.php';
 
 class OtpInbound
@@ -41,11 +42,11 @@ class OtpInbound
             $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
             if (!$row) {
-                self::responder($canal, $telefono, '❌ Ese código no es válido o ya fue usado. Vuelve a MisRifas y pide uno nuevo.');
+                self::responder($canal, $telefono, '❌ Ese código no es válido o ya fue usado. Vuelve a ' . plataforma('nombre') . ' y pide uno nuevo.');
                 return true;
             }
             if (!empty($row['expired'])) {
-                self::responder($canal, $telefono, '⌛ Ese código ya venció. Vuelve a MisRifas y pide uno nuevo.');
+                self::responder($canal, $telefono, '⌛ Ese código ya venció. Vuelve a ' . plataforma('nombre') . ' y pide uno nuevo.');
                 return true;
             }
 
@@ -71,7 +72,7 @@ class OtpInbound
                 'type' => $row['account_type'], 'channel' => 'whatsapp',
             ]);
 
-            self::responder($canal, $telefono, '✅ ¡Cuenta verificada! Ya puedes volver a MisRifas — la página avanzará sola. 🎟️');
+            self::responder($canal, $telefono, '✅ ¡Cuenta verificada! Ya puedes volver a ' . plataforma('nombre') . ' — la página avanzará sola. 🎟️');
             return true;
         } catch (\Throwable $e) {
             Logger::error('OTP inbound error: ' . $e->getMessage());

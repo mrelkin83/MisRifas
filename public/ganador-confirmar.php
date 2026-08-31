@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../config/database.php';
-$page_title = "Confirmar premio - MisRifas";
+require_once __DIR__ . '/../config/brand.php';
+$page_title = "Confirmar premio - " . plataforma('nombre');
 $token = preg_match('/^[a-f0-9]{16,64}$/', $_GET['t'] ?? '') ? $_GET['t'] : '';
 ?>
 <!DOCTYPE html>

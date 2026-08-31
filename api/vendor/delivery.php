@@ -16,6 +16,7 @@ header('Content-Type: application/json; charset=utf-8');
 require_once __DIR__ . '/../../config/app.php';
 require_once __DIR__ . '/../../config/constants.php';
 require_once __DIR__ . '/../../config/database.php';
+require_once __DIR__ . '/../../config/brand.php';
 require_once __DIR__ . '/../../api/utils/Response.php';
 require_once __DIR__ . '/../../api/utils/Logger.php';
 require_once __DIR__ . '/../../api/utils/Auth.php';
@@ -107,7 +108,7 @@ try {
     $confirmUrl = $appUrl . BASE_PATH . '/public/entrega-confirmar.php?t=' . $deliveryToken;
     $texto = "Hola {$w['winner_name']} 👋\n\nEl organizador reporta que TE ENTREGÓ el premio de la rifa \"{$w['raffle_name']}\" (boleto #{$w['ticket_number']}).\n\n"
         . "¿Lo recibiste? Confírmalo aquí (o repórtalo si NO lo has recibido):\n{$confirmUrl}\n\n"
-        . 'Tu confirmación queda pública en el hall de ganadores y protege a los próximos compradores. — MisRifas';
+        . 'Tu confirmación queda pública en el hall de ganadores y protege a los próximos compradores. — ' . plataforma('nombre');
     $ins = $db->prepare("
         INSERT INTO message_queue
             (raffle_id, vendor_id, recipient_phone, recipient_email, channel, message_type, subject, body_text, status, scheduled_at, created_at)

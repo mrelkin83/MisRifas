@@ -1,6 +1,7 @@
 <?php
 
 require_once __DIR__ . '/BaseRepository.php';
+require_once __DIR__ . '/../../config/brand.php';
 
 /**
  * NotificationRepository
@@ -148,7 +149,7 @@ class NotificationRepository extends BaseRepository
             'type' => NOTIFICATION_TYPE_PURCHASE_CONFIRMED,
             'channel' => NOTIFICATION_CHANNEL_WHATSAPP,
             'recipient' => $ticketData['user_phone'],
-            'subject' => 'Boleto Confirmado - MisRifas',
+            'subject' => 'Boleto Confirmado - ' . plataforma('nombre'),
             'message' => $message,
             'data' => $ticketData
         ]);
@@ -174,7 +175,7 @@ class NotificationRepository extends BaseRepository
             'type' => NOTIFICATION_TYPE_PAYMENT_REMINDER,
             'channel' => NOTIFICATION_CHANNEL_WHATSAPP,
             'recipient' => $reservationData['user_phone'],
-            'subject' => 'Recordatorio de Pago - MisRifas',
+            'subject' => 'Recordatorio de Pago - ' . plataforma('nombre'),
             'message' => $message,
             'data' => $reservationData
         ]);
@@ -201,7 +202,7 @@ class NotificationRepository extends BaseRepository
             'type' => NOTIFICATION_TYPE_DRAW_REMINDER,
             'channel' => NOTIFICATION_CHANNEL_WHATSAPP,
             'recipient' => $raffleData['user_phone'],
-            'subject' => 'Sorteo Próximo - MisRifas',
+            'subject' => 'Sorteo Próximo - ' . plataforma('nombre'),
             'message' => $message,
             'data' => $raffleData
         ]);
@@ -225,7 +226,7 @@ class NotificationRepository extends BaseRepository
             'type' => NOTIFICATION_TYPE_WINNER,
             'channel' => NOTIFICATION_CHANNEL_WHATSAPP,
             'recipient' => $winnerData['user_phone'],
-            'subject' => '¡GANASTE! - MisRifas',
+            'subject' => '¡GANASTE! - ' . plataforma('nombre'),
             'message' => $message,
             'data' => $winnerData
         ]);
@@ -236,7 +237,7 @@ class NotificationRepository extends BaseRepository
                 'type' => NOTIFICATION_TYPE_WINNER,
                 'channel' => NOTIFICATION_CHANNEL_EMAIL,
                 'recipient' => $winnerData['user_email'],
-                'subject' => '¡Felicidades, Ganaste! - MisRifas',
+                'subject' => '¡Felicidades, Ganaste! - ' . plataforma('nombre'),
                 'message' => $message,
                 'data' => $winnerData
             ]);
@@ -263,7 +264,7 @@ class NotificationRepository extends BaseRepository
             'type' => NOTIFICATION_TYPE_COMMISSION_DUE,
             'channel' => NOTIFICATION_CHANNEL_WHATSAPP,
             'recipient' => $commissionData['creator_phone'],
-            'subject' => 'Comisión Pendiente - MisRifas',
+            'subject' => 'Comisión Pendiente - ' . plataforma('nombre'),
             'message' => $message,
             'data' => $commissionData
         ]);
@@ -285,7 +286,7 @@ class NotificationRepository extends BaseRepository
             'type' => NOTIFICATION_TYPE_RAFFLE_BLOCKED,
             'channel' => NOTIFICATION_CHANNEL_WHATSAPP,
             'recipient' => $raffleData['creator_phone'],
-            'subject' => 'Rifa Bloqueada - MisRifas',
+            'subject' => 'Rifa Bloqueada - ' . plataforma('nombre'),
             'message' => $message,
             'data' => $raffleData
         ]);

@@ -7,13 +7,14 @@
  * Correo: se envía un código y se digita aquí.
  */
 require_once __DIR__ . '/../config/app.php';
+require_once __DIR__ . '/../config/brand.php';
 ?>
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Verifica tu cuenta | MisRifas</title>
+    <title>Verifica tu cuenta | <?= plataforma_e() ?></title>
     <meta name="theme-color" content="#0f172a">
     <script>const BASE_PATH = "<?= BASE_PATH ?>";</script>
     <style>
@@ -85,7 +86,7 @@ require_once __DIR__ . '/../config/app.php';
     <div id="success-view" class="success hidden">
         <div class="big">🎉</div>
         <h1>¡Cuenta verificada!</h1>
-        <p style="margin-top:8px;">Bienvenido a MisRifas. Entrando a tu panel…</p>
+        <p style="margin-top:8px;">Bienvenido a <?= plataforma_e() ?>. Entrando a tu panel…</p>
     </div>
 </div>
 

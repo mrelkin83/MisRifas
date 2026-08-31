@@ -17,6 +17,7 @@ session_start();
 
 require_once __DIR__ . '/../../../config/app.php';
 require_once __DIR__ . '/../../../config/database.php';
+require_once __DIR__ . '/../../../config/brand.php';
 
 // Gate: solo super_admin. El login de MisRifas guarda user_role en sesión.
 if (($_SESSION['user_role'] ?? '') !== 'super_admin') {
@@ -57,7 +58,7 @@ function waHeader(string $titulo, string $rutaActiva, string $subtitulo = ''): v
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#0f172a">
-    <title>WhatsApp IA — <?= htmlspecialchars($titulo) ?> | MisRifas</title>
+    <title>WhatsApp IA — <?= htmlspecialchars($titulo) ?> | <?= plataforma_e() ?></title>
     <link rel="stylesheet" href="<?= WA_BASE ?>/public/css/tailwind.min.css">
     <style>
         :root{ --primary-color:#f59e0b; --border-color:#334155; --text-muted:#94a3b8; --success-color:#34d399; }

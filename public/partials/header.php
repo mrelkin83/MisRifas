@@ -10,6 +10,7 @@ if (!defined('BASE_PATH') && function_exists('getBasePath')) {
 if (!defined('BASE_PATH')) {
     require_once __DIR__ . '/../../config/paths.php';
 }
+require_once __DIR__ . '/../../config/brand.php';
 
 // Detectar pagina actual para resaltar en nav
 $current_page = basename($_SERVER['PHP_SELF'] ?? '', '.php');
@@ -24,7 +25,7 @@ $basePath = defined('BASE_PATH') ? BASE_PATH : '';
             <span class="flex items-center justify-center w-10 h-10 bg-amber-500/10 rounded-xl group-hover:scale-110 transition-transform">
                 <svg class="w-6 h-6 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v1a2 2 0 0 0 0 4v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1a2 2 0 0 0 0-4Z"/><path d="M13 5v14" stroke-dasharray="2 3"/></svg>
             </span>
-            <span class="text-2xl font-black text-amber-400">MisRifas</span>
+            <span class="text-2xl font-black text-amber-400"><?= plataforma_e() ?></span>
         </a>
 
         <!-- Móvil: avatar (con sesión) junto a la hamburguesa -->
@@ -74,7 +75,7 @@ $basePath = defined('BASE_PATH') ? BASE_PATH : '';
             <a href="<?= $basePath ?>/public/vendor/index.php" data-nav="vendor" style="display:none" class="text-slate-300 hover:text-white font-medium py-3 px-3 rounded-lg hover:bg-white/5 transition-all">Panel Vendedor</a>
             <a href="<?= $basePath ?>/public/comprobar-boleta.php" class="text-slate-300 hover:text-white font-medium py-3 px-3 rounded-lg hover:bg-white/5 transition-all">Verificar Boleta</a>
             <a href="<?= $basePath ?>/public/ganadores.php" class="text-slate-300 hover:text-white font-medium py-3 px-3 rounded-lg hover:bg-white/5 transition-all"><svg class="w-4 h-4 inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4Z"/><path d="M7 5H4a1 1 0 0 0-1 1 4 4 0 0 0 4 4M17 5h3a1 1 0 0 1 1 1 4 4 0 0 1-4 4"/></svg> Ganadores</a>
-            <a href="<?= $basePath ?>/public/que-es.php" class="text-slate-300 hover:text-white font-medium py-3 px-3 rounded-lg hover:bg-white/5 transition-all">¿Qué es MisRifas?</a>
+            <a href="<?= $basePath ?>/public/que-es.php" class="text-slate-300 hover:text-white font-medium py-3 px-3 rounded-lg hover:bg-white/5 transition-all">¿Qué es <?= plataforma_e() ?>?</a>
             <a href="<?= $basePath ?>/public/admin/index.php?auth=login" data-nav="login" class="mt-2 px-5 py-3 bg-white/5 border border-white/10 text-white rounded-xl hover:bg-white/10 active:scale-[0.97] transition-all font-medium text-center">Iniciar Sesión</a>
             <button type="button" data-nav="logout" style="display:none" class="mt-2 px-5 py-3 bg-white/5 border border-white/10 text-white rounded-xl hover:bg-white/10 active:scale-[0.97] transition-all font-medium text-center">Salir</button>
         </div>

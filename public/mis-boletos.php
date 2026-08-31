@@ -2,8 +2,9 @@
 header("Cache-Control: no-cache, no-store, must-revalidate");
 header("Pragma: no-cache");
 header("Expires: 0");
-$page_title = "Resultados de sorteos - MisRifas";
 require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../config/brand.php';
+$page_title = "Resultados de sorteos - " . plataforma('nombre');
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -76,7 +77,7 @@ require_once __DIR__ . '/../config/database.php';
         <nav class="container mx-auto px-4 h-16 flex items-center justify-between">
             <a href="<?= BASE_PATH ?>/public/index.php" class="flex items-center gap-2 text-xl font-bold text-primary">
                 <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v1a2 2 0 0 0 0 4v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1a2 2 0 0 0 0-4Z"/><path d="M13 5v14" stroke-dasharray="2 3"/></svg>
-                <span>MisRifas</span>
+                <span><?= plataforma_e() ?></span>
             </a>
 
             <button id="mobile-menu-btn" class="md:hidden text-slate-300 p-2 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500" aria-label="Menu">
@@ -149,7 +150,7 @@ require_once __DIR__ . '/../config/database.php';
     <footer class="bg-black/30 text-white py-8 mt-12 border-t border-white/5">
         <div class="container mx-auto px-4 text-center">
             <p class="mb-2"><a href="<?= BASE_PATH ?>/public/comprobar-boleta.php" class="text-primary font-bold hover:underline text-sm">🎟️ Verificar una boleta</a></p>
-            <p class="text-sm text-slate-400">&copy; 2026 MisRifas Colombia. Todos los derechos reservados.</p>
+            <p class="text-sm text-slate-400">&copy; <?= date('Y') ?> <?= plataforma_e() ?>. Todos los derechos reservados.</p>
         </div>
     </footer>
 

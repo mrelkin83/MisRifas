@@ -12,6 +12,7 @@ error_reporting(0);
 
 require_once __DIR__ . '/../../config/app.php';
 require_once __DIR__ . '/../../config/database.php';
+require_once __DIR__ . '/../../config/brand.php';
 
 // ─── Constantes ────────────────────────────────────────────────
 define('OG_W', 1200);
@@ -215,9 +216,9 @@ $pw = OG_W - $px - 40; // Ancho disponible
 // === LOGO / MARCA ===
 $logoY = 48;
 if ($useTTF) {
-    imagettftext($img, 13, 0, $px, $logoY, $c['blue_light'], $fontBold, 'MisRifas.co');
+    imagettftext($img, 13, 0, $px, $logoY, $c['blue_light'], $fontBold, plataforma('nombre'));
 } else {
-    imagestring($img, 4, $px, $logoY - 12, 'MisRifas.co', $c['blue_light']);
+    imagestring($img, 4, $px, $logoY - 12, plataforma('nombre'), $c['blue_light']);
 }
 
 // Línea decorativa bajo el logo

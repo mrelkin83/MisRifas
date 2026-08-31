@@ -4,13 +4,14 @@
  * Enlace tokenizado, sin login. Distinto de ganador-confirmar.php (aceptación).
  */
 require_once __DIR__ . '/../config/app.php';
+require_once __DIR__ . '/../config/brand.php';
 ?>
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Confirmar entrega del premio | MisRifas</title>
+    <title>Confirmar entrega del premio | <?= plataforma_e() ?></title>
     <meta name="theme-color" content="#0f172a">
     <meta name="robots" content="noindex">
     <script>const BASE_PATH = "<?= BASE_PATH ?>";</script>

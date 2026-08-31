@@ -79,6 +79,9 @@ try {
     // sistema al enviar (guardas en MessageBuilderService::plantilla()).
     $faltantes = [];
     foreach (MessageBuilderService::PLANTILLAS[$key]['vars'] as $v) {
+        if ($v === 'platform') {
+            continue; // opcional: el nombre de la plataforma se inyecta solo si se usa
+        }
         if (strpos($body, '{' . $v . '}') === false) {
             $faltantes[] = '{' . $v . '}';
         }
