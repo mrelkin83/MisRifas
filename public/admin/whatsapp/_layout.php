@@ -18,6 +18,10 @@ session_start();
 require_once __DIR__ . '/../../../config/app.php';
 require_once __DIR__ . '/../../../config/database.php';
 require_once __DIR__ . '/../../../config/brand.php';
+// Autoloader del motor: voz.php (y cualquier pestaña futura) usa clases del
+// paquete whatsapp-engine directamente; sin esto, en Linux la página moría
+// con "Class …\Media\SttManager not found" y quedaba EN BLANCO.
+require_once __DIR__ . '/../../../vendor/autoload.php';
 
 // Gate: solo super_admin. El login de MisRifas guarda user_role en sesión.
 if (($_SESSION['user_role'] ?? '') !== 'super_admin') {

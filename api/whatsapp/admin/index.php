@@ -27,6 +27,7 @@ require_once __DIR__ . '/../MisRifasTenant.php';
 require_once __DIR__ . '/../MisRifasSecret.php';
 require_once __DIR__ . '/../MisRifasStorage.php';
 require_once __DIR__ . '/../RaffleDomainAdapter.php';
+require_once __DIR__ . '/../AgenteMisRifas.php';
 
 use ElkinLinan\WhatsappAiEngine\Engine;
 use ElkinLinan\WhatsappAiEngine\Channel\EvolutionClient;
@@ -185,21 +186,24 @@ try {
 
         case 'agente-get': {
             $am = new AgentManager($db);
+            // Normaliza identidad y herramientas al dominio de rifas: el motor
+            // trae defaults de comercio genérico (carta, pedidos, cocina) que
+            // no son la misión de esta plataforma.
+            $agente = AgenteMisRifas::normalizar($am);
             $catalogo = [];
             try {
                 $te = new ToolEngine($db, new RaffleDomainAdapter($vendorId), $log);
-                foreach ($te->catalogo() as $n => $d) {
-                    $catalogo[] = ['nombre' => $n, 'descripcion' => $d['description'] ?? '', 'siempre' => !empty($d['siempre'])];
-                }
+                $catalogo = AgenteMisRifas::catalogoPanel($te);
             } catch (Throwable $e) { /* catálogo opcional */ }
-            jsonResponse(['success' => true, 'agente' => $am->activo(), 'herramientas_disponibles' => $catalogo]);
+            jsonResponse(['success' => true, 'agente' => $agente, 'herramientas_disponibles' => $catalogo]);
         }
 
         case 'agente-save': {
             $am = new AgentManager($db);
-            if (isset($input['herramientas']) && is_array($input['herramientas'])) {
-                $input['herramientas'] = json_encode(array_values($input['herramientas']), JSON_UNESCAPED_UNICODE);
-            }
+            // Las herramientas siempre quedan acotadas al dominio de rifas:
+            // null ("todas las del motor") re-abriría cocina y garantías.
+            $lista = isset($input['herramientas']) && is_array($input['herramientas']) ? $input['herramientas'] : null;
+            $input['herramientas'] = json_encode(AgenteMisRifas::acotarHerramientas($lista), JSON_UNESCAPED_UNICODE);
             $am->guardar($input);
             $log->log('config', 'Agente actualizado');
             jsonResponse(['success' => true, 'agente' => $am->activo()]);
@@ -280,6 +284,21 @@ try {
 
         case 'tts-voces':
             jsonResponse(['success' => true, 'voces' => []]);
+
+        // Voz/visión: la pantalla guarda y carga su configuración vía
+        // config-get/config-save; el listado de modelos y las pruebas en vivo
+        // aún no están cableados a este router. Se responde con honestidad en
+        // vez de un 404 que la pantalla muestra como error críptico.
+        case 'stt-modelos':
+        case 'vision-modelos':
+            jsonResponse(['success' => true, 'modelos' => [],
+                'nota' => 'El listado automático aún no está disponible aquí: escribe el modelo a mano.']);
+
+        case 'stt-probar':
+        case 'tts-probar':
+        case 'vision-probar':
+            jsonResponse(['success' => true, 'ok' => false,
+                'error' => 'La prueba en vivo aún no está disponible en este panel. Guarda la configuración y pruébalo enviando un audio o una foto al WhatsApp vinculado.']);
 
         case 'llm-modelos-revisados':
             jsonResponse(['success' => true]);

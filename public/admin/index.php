@@ -1922,7 +1922,10 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
             return this.request(url, { method: 'GET' });
         },
         async post(endpoint, data = {}) {
-            return this.request(endpoint, { method: 'POST', body: JSON.stringify(data) });
+            // FormData pasa tal cual (subidas de archivos/perfil): pasarlo por
+            // JSON.stringify lo convertía en "{}" y el servidor recibía vacío.
+            const body = data instanceof FormData ? data : JSON.stringify(data);
+            return this.request(endpoint, { method: 'POST', body });
         }
     };
 
@@ -3768,7 +3771,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
             await API.post('/user/update_profile.php', formData);
             Utils.showNotification('¡Perfil actualizado con éxito! ✅', 'success');
             loadPerfilAPI();
-        } catch (err) { Utils.showNotification('Error al actualizar datos', 'error'); }
+        } catch (err) { Utils.showNotification(err.message || 'Error al actualizar datos', 'error'); }
         finally { btn.disabled = false; btn.textContent = 'Guardar Mis Datos'; }
     });
 
