@@ -54,7 +54,18 @@ class Database
             $initCommandKey = defined('Pdo\\Mysql::ATTR_INIT_COMMAND')
                 ? \Pdo\Mysql::ATTR_INIT_COMMAND
                 : PDO::MYSQL_ATTR_INIT_COMMAND;
-            $options[$initCommandKey] = "SET NAMES {$this->charset} COLLATE {$this->charset}_unicode_ci";
+            // CRÍTICO: un solo reloj para TODO el sistema. En el VPS, MySQL
+            // corre en UTC y PHP en America/Bogota (constants.php): las fechas
+            // escritas con date() (-05:00) quedaban "5 horas en el pasado"
+            // para NOW() de MySQL y el cron liberaba TODA reserva al minuto de
+            // creada (nadie podía comprar en producción). Se fija aquí — el
+            // único punto por el que pasa cualquier request con BD — la zona
+            // de PHP Y la de la sesión MySQL, sin depender de qué config se
+            // cargó antes.
+            $appTz = getenv('APP_TIMEZONE') ?: 'America/Bogota';
+            date_default_timezone_set($appTz);
+            $tzOffset = (new DateTime('now', new DateTimeZone($appTz)))->format('P');
+            $options[$initCommandKey] = "SET NAMES {$this->charset} COLLATE {$this->charset}_unicode_ci, time_zone = '{$tzOffset}'";
 
             $this->connection = new PDO($dsn, $this->username, $this->password, $options);
 
