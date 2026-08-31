@@ -283,12 +283,27 @@ $ogDesc = $tapazo
 
         /* Sound toggle */
         .sound-btn {
-            position: fixed; bottom: 20px; right: 20px; z-index: 100;
+            position: fixed; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); right: 20px; z-index: 100;
             width: 48px; height: 48px; border-radius: 50%;
             background: rgba(30, 41, 59, 0.8); border: 1px solid rgba(255,255,255,0.1);
             color: white; font-size: 20px; cursor: pointer;
             display: flex; align-items: center; justify-content: center;
         }
+        .sound-btn:active { transform: scale(.94); }
+
+        /* Header del sitio (mismo patrón glass-nav del resto de páginas) */
+        .site-nav {
+            position: sticky; top: 0; z-index: 90;
+            background: rgba(15, 23, 42, 0.7);
+            backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .site-nav__in { max-width: 1100px; margin: 0 auto; padding: 0 16px; height: 64px; display: flex; align-items: center; justify-content: space-between; }
+        .site-nav__brand { font-weight: 800; font-size: 20px; color: #fff; text-decoration: none; letter-spacing: -.5px; }
+        .site-nav__brand span { color: #f59e0b; }
+        .site-nav__links { display: flex; align-items: center; gap: 14px; }
+        .site-nav__links a { color: #94a3b8; font-size: 13px; font-weight: 700; text-decoration: none; }
+        .site-nav__links a:hover { color: #fff; }
 
         @media (max-width: 640px) {
             .glass-card { padding: 1.5rem !important; }
@@ -302,17 +317,20 @@ $ogDesc = $tapazo
 </head>
 <body>
     <div class="bg-blob"></div>
-    <button class="sound-btn" id="sound-toggle" onclick="toggleSound()">🔊</button>
+    <header class="site-nav">
+        <div class="site-nav__in">
+            <a class="site-nav__brand" href="<?= BASE_PATH ?>/public/index.php">MIS<span>RIFAS</span></a>
+            <div class="site-nav__links">
+                <a href="<?= BASE_PATH ?>/public/ganadores.php">🏆 Ganadores</a>
+                <a href="<?= BASE_PATH ?>/public/index.php">← Volver al inicio</a>
+            </div>
+        </div>
+    </header>
+    <button class="sound-btn" id="sound-toggle" onclick="toggleSound()" aria-label="Activar o silenciar sonido" title="Sonido">🔊</button>
 
     <?php if (!$tapazo): ?>
     <!-- ===== PANTALLA: CREAR TAPAZO ===== -->
     <div class="container mx-auto px-4 max-w-2xl py-6 md:py-10">
-        <div class="mb-4">
-            <a href="<?= BASE_PATH ?>/public/index.php" class="inline-flex items-center gap-1.5 text-slate-400 hover:text-white text-sm font-medium transition-colors">
-                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 12H5M12 19l-7-7 7-7"/></svg>
-                Volver al inicio
-            </a>
-        </div>
         <div class="text-center mb-6 md:mb-10">
             <a href="<?= BASE_PATH ?>/public/index.php" class="inline-flex items-center gap-2 text-2xl md:text-3xl font-black mb-2">
                 <span>🍺</span>
@@ -452,12 +470,6 @@ $ogDesc = $tapazo
     <?php else: ?>
     <!-- ===== PANTALLA PÚBLICA DEL TAPAZO ===== -->
     <div class="container mx-auto px-4 max-w-4xl py-6">
-        <div class="mb-4">
-            <a href="<?= BASE_PATH ?>/public/index.php" class="inline-flex items-center gap-1.5 text-slate-400 hover:text-white text-sm font-medium transition-colors">
-                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 12H5M12 19l-7-7 7-7"/></svg>
-                Volver al inicio
-            </a>
-        </div>
         <div class="text-center mb-6">
             <a href="<?= BASE_PATH ?>/tapazo/index.php" class="inline-flex items-center gap-2 text-2xl font-black mb-2">
                 <span>🍺</span>

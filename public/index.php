@@ -817,7 +817,15 @@ $page_description = "La plataforma más confiable para crear y participar en rif
                                 <div class="progress-bar group-hover:h-2 transition-all"><div class="progress-bar__fill" style="width: ${r.sold_percentage}%"></div></div>
                                 <div class="flex justify-between items-center mt-2">
                                     <span class="text-[10px] font-black text-slate-500 uppercase tracking-widest">${r.sold_tickets} / ${r.total_tickets} Vendidos</span>
-                                    <span class="text-[10px] font-black text-amber-500 uppercase tracking-widest">${(() => { const dd = Math.max(0, Math.floor((new Date(r.draw_date) - new Date()) / (1000 * 60 * 60 * 24))); return dd + (dd === 1 ? ' Día restante' : ' Días restantes'); })()}</span>
+                                    ${(() => {
+                                        // Chip semántico de tiempo: ámbar si es inminente, azul si falta.
+                                        const dd = Math.max(0, Math.floor((new Date(r.draw_date) - new Date()) / (1000 * 60 * 60 * 24)));
+                                        const label = dd === 0 ? '¡Sorteo HOY!' : (dd === 1 ? 'Sorteo mañana' : 'Faltan ' + dd + ' días');
+                                        const style = dd <= 1
+                                            ? 'background:rgba(245,158,11,.15);color:#fbbf24;border:1px solid rgba(245,158,11,.35);'
+                                            : 'background:rgba(59,130,246,.12);color:#93c5fd;border:1px solid rgba(59,130,246,.25);';
+                                        return '<span class="text-[10px] font-black uppercase tracking-widest" style="padding:3px 10px;border-radius:99px;' + style + '">' + label + '</span>';
+                                    })()}
                                 </div>
                                 <a href="${BASE_PATH}/public/raffle.php?id=${r.id}" class="btn btn--primary w-full mt-6 shadow-amber-500/20 group-hover:shadow-amber-500/40 group-hover:-translate-y-0.5 transition-all">Participar Ahora &rarr;</a>
                             </div>

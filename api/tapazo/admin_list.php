@@ -53,17 +53,32 @@ try {
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $input = json_decode(file_get_contents('php://input'), true) ?: [];
 
-        $name              = Validator::sanitize(trim($input['name'] ?? ''));
-        $description        = Validator::sanitize(trim($input['description'] ?? ''));
+        // El panel ahora usa el MISMO modelo/diseño que el flujo público
+        // (titulo/descripcion/valor_cupo/regla/imagen_url/fecha_hora_destape);
+        // se aceptan también los campos legados (name/prize/win_mode).
+        $name              = Validator::sanitize(trim($input['titulo'] ?? $input['name'] ?? ''));
+        $description       = Validator::sanitize(trim($input['descripcion'] ?? $input['description'] ?? ''));
         $prize             = Validator::sanitize(trim($input['prize'] ?? ''));
-        $totalParticipants = intval($input['total_participants'] ?? 6);
-        $winMode           = ($input['win_mode'] ?? 'highest') === 'lowest' ? 'lowest' : 'highest';
+        $totalParticipants = intval($input['cantidad_jugadores'] ?? $input['total_participants'] ?? 6);
+        $valorCupo         = max(0, floatval($input['valor_cupo'] ?? 0));
+        $imagenUrl         = trim((string)($input['imagen_url'] ?? ''));
+        $regla             = in_array($input['regla'] ?? '', ['alto_gana', 'bajo_gana'], true)
+            ? $input['regla']
+            : winModeToRegla($input['win_mode'] ?? 'highest');
 
         if ($name === '') {
-            Response::error('El nombre es requerido');
+            Response::error('El título es requerido');
         }
-        if ($totalParticipants < 2 || $totalParticipants > 100) {
-            Response::error('La cantidad de participantes debe estar entre 2 y 100');
+        if ($totalParticipants < 2 || $totalParticipants > 50) {
+            Response::error('La cantidad de jugadores debe estar entre 2 y 50');
+        }
+        if ($imagenUrl !== '' && !preg_match('#^(https?://|/)#', $imagenUrl)) {
+            Response::error('La URL de la imagen no es válida');
+        }
+        $fechaDestape = trim((string)($input['fecha_hora_destape'] ?? ''));
+        $fechaTs = $fechaDestape !== '' ? strtotime($fechaDestape) : false;
+        if ($fechaTs !== false && $fechaTs <= time()) {
+            Response::error('La fecha del destape debe ser futura');
         }
 
         // La tabla real no tiene columna "prize"; se conserva el premio dentro
@@ -81,10 +96,14 @@ try {
         // filas de tapazo_jugadores aparecen cuando alguien se une — no se
         // pre-crean slots vacíos (chocarían con el UNIQUE (tapazo_id, nombre)).
         $stmt = $db->prepare("
-            INSERT INTO tapazos (titulo, descripcion, cantidad_jugadores, regla, fecha_hora_destape, estado, codigo_unico, created_by, created_at)
-            VALUES (?, ?, ?, ?, DATE_ADD(NOW(), INTERVAL 7 DAY), 'creado', ?, ?, NOW())
+            INSERT INTO tapazos (titulo, descripcion, imagen_url, cantidad_jugadores, valor_cupo, regla, fecha_hora_destape, estado, codigo_unico, created_by, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, 'creado', ?, ?, NOW())
         ");
-        $stmt->execute([$name, $description, $totalParticipants, winModeToRegla($winMode), $codigoUnico, $adminUser['id']]);
+        $stmt->execute([
+            $name, $description, $imagenUrl !== '' ? $imagenUrl : null, $totalParticipants, $valorCupo, $regla,
+            $fechaTs !== false ? date('Y-m-d H:i:s', $fechaTs) : date('Y-m-d H:i:s', strtotime('+7 days')),
+            $codigoUnico, $adminUser['id'],
+        ]);
         $tapazoId = (int)$db->lastInsertId();
 
         Logger::activity('tapazo_created', $adminUser['id'], ['tapazo_id' => $tapazoId, 'name' => $name]);
@@ -121,11 +140,17 @@ try {
             // que es la experiencia de juego canónica.
             'codigo'             => $t['codigo_unico'],
             'name'               => $t['titulo'],
+            'descripcion'        => $t['descripcion'],
+            'imagen_url'         => $t['imagen_url'] ?? null,
+            'valor_cupo'         => (float)($t['valor_cupo'] ?? 0),
             'prize'              => '',
             'total_participants' => (int)$t['cantidad_jugadores'],
             'joined_count'       => (int)$t['joined_count'],
             'win_mode'           => reglaToWinMode($t['regla']),
+            'regla'              => $t['regla'],
             'status'             => estadoToStatus($t['estado']),
+            'estado'             => $t['estado'],
+            'fecha_hora_destape' => $t['fecha_hora_destape'],
             'created_at'         => $t['created_at'],
             'creator_name'       => $t['creator_name'] ?? null,
         ];

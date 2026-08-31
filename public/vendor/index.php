@@ -635,6 +635,10 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                 </a>
             </nav>
             <div class="sidebar-footer">
+                <a href="<?= BASE_PATH ?>/public/index.php" class="logout-btn" style="text-decoration:none;margin-bottom:6px;background:#334155;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 9v11a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9"/></svg>
+                    <span>Volver al sitio</span>
+                </a>
                 <button class="logout-btn" onclick="logout()">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/></svg>
                     <span>Salir</span>
@@ -658,6 +662,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                     </button>
                     <div class="user-dropdown hidden" id="user-dropdown" role="menu">
                         <button type="button" role="menuitem" onclick="switchTo('mi-perfil'); toggleUserMenu(false);">Mi Perfil</button>
+                        <button type="button" role="menuitem" onclick="window.location.href = BASE_PATH + '/public/index.php';">🌐 Volver al sitio</button>
                         <button type="button" role="menuitem" class="user-dropdown__logout" onclick="logout()">Salir</button>
                     </div>
                 </div>
@@ -1120,25 +1125,10 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                         <p id="wa-link-msg" class="text-sm mt-3" style="color:#94a3b8;"></p>
                     </div>
 
-                    <div class="section-card">
-                        <h2 class="text-lg font-bold mb-4">Bot WhatsApp Vendedor (EvolutionAPI)</h2>
-                        <p class="text-sm text-gray-500 mb-4">Si tienes una instancia propia de EvolutionAPI, ingresa los datos para notificar automáticamente a tus compradores desde TU número celular.</p>
-                        <form id="wa-config-form" class="space-y-4">
-                            <div class="form-group">
-                                <label>EvolutionAPI Base URL</label>
-                                <input type="text" id="cfg-wa-url" class="w-full px-4 py-2 border rounded" placeholder="http://tu-vps:8080">
-                            </div>
-                            <div class="form-group">
-                                <label>Global API Key</label>
-                                <input type="password" id="cfg-wa-apikey" class="w-full px-4 py-2 border rounded" placeholder="Tu Global ApiKey">
-                            </div>
-                            <div class="form-group">
-                                <label>Nombre Instancia (Instance Name)</label>
-                                <input type="text" id="cfg-wa-instance" class="w-full px-4 py-2 border rounded" placeholder="InstanciaX">
-                            </div>
-                            <button type="submit" class="btn" style="background:#25D366;color:white;" id="btn-save-wa">Guardar Bot WhatsApp</button>
-                        </form>
-                    </div>
+                    <!-- La configuración técnica del canal (URL de EvolutionAPI, API key,
+                         nombre de instancia) es 100% gestionada por la plataforma: viene
+                         por defecto del .env y la instancia se auto-genera con datos
+                         únicos del organizador. Aquí solo existe el QR de arriba. -->
                 </div>
 
                 <!-- SECCIÓN: GESTIÓN DE RIFAS (CRUD) -->
@@ -1548,80 +1538,150 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                     </div>
                 </div>
 
-                <!-- ===== SECCIÓN TAPAZO ===== -->
+                <!-- ===== SECCIÓN TAPAZO (diseño canónico de tapazo/index.php) ===== -->
                 <div id="section-tapazo" class="admin-section hidden">
-                    <div class="section-card">
-                        <div class="section-header">
-                            <h2 class="flex items-center gap-2"><svg class="w-5 h-5 text-primary shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h11l-1 15a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 3Zm11 4h2.5a2 2 0 0 1 2 2.2l-.4 4A2 2 0 0 1 18.1 15H16"/></svg>El Tapazo - Crear Nueva Rifa Rápida</h2>
-                            <a href="<?= BASE_PATH ?>/tapazo/index.php" target="_blank" class="btn btn--sm btn--outline" style="white-space:nowrap;">🍻 Pantalla pública del Tapazo</a>
+                    <style>
+                        .tpz-wrap { background:#0f172a; border-radius:20px; padding:22px 14px 26px; color:#f8fafc;
+                                    background-image:radial-gradient(circle at 20% 10%, rgba(245,158,11,.12) 0%, transparent 40%),
+                                                     radial-gradient(circle at 85% 90%, rgba(146,64,14,.12) 0%, transparent 40%); }
+                        .tpz-hero { text-align:center; margin-bottom:18px; }
+                        .tpz-hero h2 { font-size:26px; font-weight:900; display:inline-flex; align-items:center; gap:8px; color:#fff; }
+                        .tpz-grad { background:linear-gradient(90deg,#fbbf24,#f97316); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; color:transparent; }
+                        .tpz-hero p { color:#94a3b8; font-size:13px; margin-top:2px; }
+                        .tpz-card { background:rgba(30,41,59,.8); border:1px solid rgba(255,255,255,.06); border-radius:24px; padding:20px; margin:0 auto 18px; max-width:720px; }
+                        .tpz-label { display:block; font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.6px; color:#94a3b8; margin-bottom:6px; }
+                        .tpz-in { width:100%; padding:12px 16px; border-radius:12px; background:rgba(15,23,42,.6); border:1px solid #334155; color:#fff; outline:none; font-size:14px; }
+                        .tpz-in:focus { border-color:#f59e0b; }
+                        .tpz-in::placeholder { color:#64748b; }
+                        .tpz-field { margin-bottom:14px; }
+                        .tpz-row2 { display:grid; grid-template-columns:1fr; gap:14px; margin-bottom:14px; }
+                        @media (min-width:640px){ .tpz-row2 { grid-template-columns:1fr 1fr; } }
+                        .tpz-btn { width:100%; padding:14px; border:none; border-radius:16px; cursor:pointer;
+                                   background:linear-gradient(90deg,#f59e0b,#ea580c); color:#fff; font-weight:900; font-size:15px;
+                                   text-transform:uppercase; letter-spacing:.8px; box-shadow:0 10px 24px rgba(245,158,11,.28); transition:transform .15s; }
+                        .tpz-btn:active { transform:scale(.97); }
+                        .tpz-btn[disabled] { opacity:.6; cursor:not-allowed; }
+                        .tpz-link { display:inline-flex; align-items:center; gap:6px; padding:8px 14px; border-radius:10px;
+                                    background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12); color:#e2e8f0;
+                                    font-size:12px; font-weight:700; text-decoration:none; }
+                        .tpz-link:hover { background:rgba(255,255,255,.12); }
+                        .tpz-upl { width:100%; height:88px; border:2px dashed #334155; border-radius:12px; display:flex; align-items:center;
+                                   justify-content:center; color:#64748b; font-size:12px; cursor:pointer; overflow:hidden; }
+                        .tpz-upl:hover { border-color:#f59e0b; }
+                        .tpz-grid { display:grid; grid-template-columns:1fr; gap:14px; max-width:980px; margin:0 auto; }
+                        @media (min-width:640px){ .tpz-grid { grid-template-columns:repeat(2,1fr); } }
+                        @media (min-width:1100px){ .tpz-grid { grid-template-columns:repeat(3,1fr); } }
+                        .tpz-item { position:relative; background:rgba(30,41,59,.8); border:1px solid rgba(255,255,255,.08); border-radius:18px; overflow:hidden; display:flex; flex-direction:column; }
+                        .tpz-media { position:relative; aspect-ratio:16/9; background:linear-gradient(135deg,#78350f,#451a03); display:flex; align-items:center; justify-content:center; font-size:38px; }
+                        .tpz-media img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+                        .tpz-kebab { position:absolute; top:8px; right:8px; z-index:2; width:34px; height:34px; border-radius:50%; background:rgba(255,255,255,.94); color:#0f172a; border:none; cursor:pointer; font-size:18px; font-weight:700; box-shadow:0 2px 8px rgba(0,0,0,.35); }
+                        .tpz-kebab:active { transform:scale(.94); }
+                        .tpz-chip { position:absolute; top:8px; left:8px; z-index:2; padding:3px 10px; border-radius:99px; font-size:11px; font-weight:800; }
+                        .tpz-body { padding:14px 14px 16px; display:flex; flex-direction:column; gap:8px; }
+                        .tpz-name { font-weight:800; font-size:15px; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+                        .tpz-meta { display:flex; flex-wrap:wrap; gap:6px; font-size:11px; color:#94a3b8; font-weight:700; }
+                        .tpz-meta span { padding:2px 8px; border-radius:99px; background:rgba(255,255,255,.06); }
+                        .tpz-bar { height:6px; border-radius:99px; background:rgba(255,255,255,.1); overflow:hidden; }
+                        .tpz-bar i { display:block; height:100%; background:linear-gradient(90deg,#f59e0b,#fbbf24); }
+                        .tpz-bar i.tpz-full { background:#22c55e; }
+                        .tpz-empty { text-align:center; color:#94a3b8; padding:36px 10px; }
+                    </style>
+                    <div class="tpz-wrap">
+                        <div class="tpz-hero">
+                            <h2><span>🍺</span><span class="tpz-grad">El Tapazo</span></h2>
+                            <p>El ritual de la tapita de cerveza, ahora digital</p>
+                            <div style="margin-top:10px;"><a class="tpz-link" href="<?= BASE_PATH ?>/tapazo/index.php" target="_blank" rel="noopener">🍻 Pantalla pública del Tapazo</a></div>
                         </div>
-                        <form id="tapazo-form" class="form-stack">
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label>Nombre del Tapazo *</label>
-                                    <input type="text" id="tapazo-name" placeholder="Ej: Tapazo de Cerveza Corona" required class="w-full px-4 py-2 border rounded-lg">
-                                </div>
-                                <div class="form-group">
-                                    <label>Premio *</label>
-                                    <input type="text" id="tapazo-prize" placeholder="Ej: Caja de 6 cervezas" required class="w-full px-4 py-2 border rounded-lg">
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label>Descripción *</label>
-                                <textarea id="tapazo-desc" rows="3" placeholder="Describe el tapazo y cómo funciona" required class="w-full px-4 py-2 border rounded-lg"></textarea>
-                            </div>
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label>Total de Participantes *</label>
-                                    <input type="number" id="tapazo-total" min="2" max="100" value="10" required class="w-full px-4 py-2 border rounded-lg">
-                                    <small>Cantidad de personas que pueden participar</small>
-                                </div>
-                                <div class="form-group">
-                                    <label>Modo de Ganar *</label>
-                                    <select id="tapazo-mode" required class="w-full px-4 py-2 border rounded-lg">
-                                        <option value="highest">🔼 Número más alto gana</option>
-                                        <option value="lowest">🔽 Número más bajo gana</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label>WhatsApp de Contacto *</label>
-                                <input type="tel" id="tapazo-wa" placeholder="3001234567" pattern="[3][0-9]{9}" required class="w-full px-4 py-2 border rounded-lg">
-                                <small>Número de WhatsApp para coordinar la entrega del premio</small>
-                            </div>
-                            <button type="submit" class="btn btn--primary btn--lg">
-                                Crear Tapazo
-                            </button>
-                        </form>
-                    </div>
 
-                    <div class="section-card">
-                        <div class="section-header">
-                            <h2>Tapazos Creados</h2>
+                        <div class="tpz-card">
+                            <form id="tapazo-form">
+                                <div class="tpz-field">
+                                    <label class="tpz-label" for="tpz-titulo">Título del Tapazo *</label>
+                                    <input type="text" id="tpz-titulo" required maxlength="120" class="tpz-in" placeholder="ej: Tapazo del Viernes">
+                                </div>
+                                <div class="tpz-field">
+                                    <label class="tpz-label" for="tpz-desc">Descripción</label>
+                                    <input type="text" id="tpz-desc" maxlength="255" class="tpz-in" placeholder="ej: El que saque el número más alto invita las cervezas">
+                                </div>
+                                <div class="tpz-row2">
+                                    <div>
+                                        <label class="tpz-label" for="tpz-cantidad">Jugadores *</label>
+                                        <input type="number" id="tpz-cantidad" required min="2" max="50" value="6" class="tpz-in">
+                                    </div>
+                                    <div>
+                                        <label class="tpz-label" for="tpz-valor">Valor Cupo</label>
+                                        <input type="number" id="tpz-valor" min="0" step="500" class="tpz-in" placeholder="5000">
+                                    </div>
+                                </div>
+                                <div class="tpz-field">
+                                    <label class="tpz-label">Imagen (opcional)</label>
+                                    <div class="tpz-row2" style="margin-bottom:0;">
+                                        <label class="tpz-upl" id="tpz-imagen-prev">Click para subir imagen<input type="file" id="tpz-imagen" accept="image/*" class="sr-only" style="display:none;"></label>
+                                        <input type="text" id="tpz-imagen-url" class="tpz-in" placeholder="O pega una URL de imagen">
+                                    </div>
+                                </div>
+                                <div class="tpz-row2">
+                                    <div>
+                                        <label class="tpz-label" for="tpz-fecha">Fecha y Hora del Destape *</label>
+                                        <input type="datetime-local" id="tpz-fecha" required class="tpz-in" style="color-scheme:dark;">
+                                    </div>
+                                    <div>
+                                        <label class="tpz-label" for="tpz-regla">Regla del Juego *</label>
+                                        <select id="tpz-regla" required class="tpz-in">
+                                            <option value="alto_gana">🔼 El número más ALTO GANA</option>
+                                            <option value="bajo_gana">🔽 El número más BAJO GANA</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <button type="submit" class="tpz-btn">🍺 Crear El Tapazo</button>
+                            </form>
                         </div>
-                        <div class="table-responsive">
-                            <table class="data-table">
-                                <thead>
-                                    <tr>
-                                        <th>Nombre</th>
-                                        <th>Participantes</th>
-                                        <th>Premio</th>
-                                        <th>Modo</th>
-                                        <th>Estado</th>
-                                        <th>Fecha</th>
-                                        <th>Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="tapazos-table">
-                                    <tr><td colspan="7" class="text-center">Cargando…</td></tr>
-                                </tbody>
-                            </table>
-                        </div>
+
+                        <div id="tpz-loading" class="tpz-empty">Cargando tus tapazos…</div>
+                        <div id="tpz-empty" class="tpz-empty" style="display:none;">🍺 Aún no has creado tapazos.<br><span style="font-size:12px;">Crea el primero con el formulario de arriba.</span></div>
+                        <div id="tpz-grid" class="tpz-grid" style="display:none;" aria-live="polite"></div>
                     </div>
                 </div>
 
                 <!-- ===== SECCIÓN CONFIGURACIÓN ===== -->
                 <div id="section-configuracion" class="admin-section hidden">
+
+                    <!-- Configuración del ORGANIZADOR (vendedor): resumen de su cuenta,
+                         parámetros de la plataforma que le aplican (lectura) y accesos
+                         directos. La tarjeta de plataforma de abajo es solo super_admin. -->
+                    <div class="section-card hidden" id="vendor-settings-card">
+                        <h2 class="text-lg font-bold mb-2 flex items-center gap-2"><svg class="w-5 h-5 text-primary shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/></svg>Mi configuración</h2>
+                        <p class="text-sm text-gray-500 mb-5">Resumen de tu cuenta y de las reglas de la plataforma que aplican a tus rifas.</p>
+                        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;">
+                            <div style="padding:16px;border:1px solid #e2e8f0;border-radius:14px;min-width:0;">
+                                <div style="font-size:11px;font-weight:800;text-transform:uppercase;color:#94a3b8;letter-spacing:.5px;">👤 Cuenta</div>
+                                <div id="vcfg-nombre" class="font-bold mt-1" style="word-break:break-word;">—</div>
+                                <div id="vcfg-email" class="text-sm text-gray-500" style="word-break:break-word;">—</div>
+                                <div id="vcfg-phone" class="text-sm text-gray-500">—</div>
+                            </div>
+                            <div style="padding:16px;border:1px solid #e2e8f0;border-radius:14px;min-width:0;">
+                                <div style="font-size:11px;font-weight:800;text-transform:uppercase;color:#94a3b8;letter-spacing:.5px;">💰 Cobro de la plataforma</div>
+                                <div id="vcfg-billing" class="font-bold mt-1">—</div>
+                                <div class="text-sm text-gray-500">Se cobra por rifa publicada; el pago de tus compradores va directo a tus llaves.</div>
+                            </div>
+                            <div style="padding:16px;border:1px solid #e2e8f0;border-radius:14px;min-width:0;">
+                                <div style="font-size:11px;font-weight:800;text-transform:uppercase;color:#94a3b8;letter-spacing:.5px;">⏱️ Reservas</div>
+                                <div id="vcfg-ttl" class="font-bold mt-1">—</div>
+                                <div class="text-sm text-gray-500">Tiempo que un comprador tiene para reportar su pago antes de que el número se libere.</div>
+                            </div>
+                            <div style="padding:16px;border:1px solid #e2e8f0;border-radius:14px;min-width:0;">
+                                <div style="font-size:11px;font-weight:800;text-transform:uppercase;color:#94a3b8;letter-spacing:.5px;">📱 WhatsApp</div>
+                                <div id="vcfg-wa" class="font-bold mt-1">—</div>
+                                <div class="text-sm text-gray-500">La conexión es automática: solo escaneas un QR. La plataforma gestiona lo técnico.</div>
+                            </div>
+                        </div>
+                        <div class="flex gap-2 flex-wrap mt-5">
+                            <button type="button" class="btn btn--primary btn--sm" onclick="switchTo('mi-perfil')">💳 Llaves de cobro</button>
+                            <button type="button" class="btn btn--sm btn--outline" onclick="switchTo('mi-perfil')">📱 Vincular WhatsApp</button>
+                            <button type="button" class="btn btn--sm btn--outline" onclick="switchTo('crear')">➕ Crear rifa</button>
+                            <a href="<?= BASE_PATH ?>/public/index.php" class="btn btn--sm btn--outline" style="text-decoration:none;">🌐 Volver al sitio</a>
+                        </div>
+                    </div>
 
                     <!-- Configuración General (solo super_admin: la API no aplica cambios para vendedores) -->
                     <div class="section-card" id="section-platform-settings">
@@ -2086,31 +2146,84 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
     // ================================================================
     // EL TAPAZO - Rifas rápidas sin costo
     // ================================================================
+    // Estados reales del modelo público → etiqueta y color del chip.
+    const TPZ_ESTADOS = {
+        creado: ['Abierto', '#22c55e'], lleno: ['Completo', '#f59e0b'],
+        esperando: ['Esperando destape', '#f59e0b'], destapando: ['Destapando…', '#f97316'],
+        finalizado: ['Finalizado', '#94a3b8']
+    };
     async function loadTapazos() {
+        const loading = document.getElementById('tpz-loading');
+        const empty = document.getElementById('tpz-empty');
+        const grid = document.getElementById('tpz-grid');
+        loading.style.display = ''; empty.style.display = 'none'; grid.style.display = 'none';
         try {
             const res = await API.get('/tapazo/admin_list.php');
-            const tbody = document.getElementById('tapazos-table');
-            if (res.success && res.data && res.data.length > 0) {
-                const modeMap = { highest: '🔼 Más alto gana', lowest: '🔽 Más bajo gana' };
-                const statusMap = { draft: 'Borrador', active: 'Activo', completed: 'Completado', cancelled: 'Cancelado' };
-                const statusClass = { draft: 'pending', active: 'active', completed: 'completed', cancelled: 'cancelled' };
-                window.__tapazos = res.data;
-                tbody.innerHTML = res.data.map(t => {
-                    return '<tr>' +
-                        '<td class="font-bold">' + userEsc(t.name || '') + '</td>' +
-                        '<td>' + (t.joined_count || 0) + ' / ' + t.total_participants + '</td>' +
-                        '<td>' + userEsc(t.prize || '--') + '</td>' +
-                        '<td>' + (modeMap[t.win_mode] || t.win_mode) + '</td>' +
-                        '<td><span class="badge badge--' + (statusClass[t.status] || 'pending') + '">' + (statusMap[t.status] || t.status) + '</span></td>' +
-                        '<td>' + new Date(t.created_at).toLocaleDateString('es-CO') + '</td>' +
-                        '<td><button class="btn btn--sm" aria-label="Acciones" title="Acciones" onclick="openTapazoSheet(' + parseInt(t.id, 10) + ')" style="font-size:20px;line-height:1;padding:2px 10px;">⋮</button></td>' +
-                    '</tr>';
-                }).join('');
-            } else {
-                tbody.innerHTML = '<tr><td colspan="7" class="text-center text-gray-500 py-6">No hay tapazos creados</td></tr>';
-            }
-        } catch (e) { console.error('Error loading tapazos', e); }
+            loading.style.display = 'none';
+            const data = (res.success && res.data) ? res.data : [];
+            window.__tapazos = data;
+            if (!data.length) { empty.style.display = ''; return; }
+            grid.style.display = '';
+            grid.innerHTML = data.map(t => {
+                const est = TPZ_ESTADOS[t.estado] || [t.estado || '—', '#94a3b8'];
+                const pct = t.total_participants ? Math.round((t.joined_count || 0) * 100 / t.total_participants) : 0;
+                const fecha = t.fecha_hora_destape ? new Date(String(t.fecha_hora_destape).replace(' ', 'T')) : null;
+                return '<div class="tpz-item">' +
+                    '<div class="tpz-media">' +
+                        (t.imagen_url ? '<img src="' + userEsc(t.imagen_url) + '" alt="" loading="lazy" onerror="this.remove()">' : '🍺') +
+                        '<span class="tpz-chip" style="background:' + est[1] + '22;color:' + est[1] + ';border:1px solid ' + est[1] + '55;">' + est[0] + '</span>' +
+                        '<button class="tpz-kebab" aria-label="Acciones" title="Acciones" onclick="openTapazoSheet(' + parseInt(t.id, 10) + ')">⋮</button>' +
+                    '</div>' +
+                    '<div class="tpz-body">' +
+                        '<div class="tpz-name">' + userEsc(t.name || '') + '</div>' +
+                        '<div class="tpz-meta">' +
+                            '<span>👥 ' + (t.joined_count || 0) + ' / ' + t.total_participants + '</span>' +
+                            '<span>' + (t.regla === 'bajo_gana' ? '🔽 Más bajo gana' : '🔼 Más alto gana') + '</span>' +
+                            (t.valor_cupo > 0 ? '<span>💵 $' + parseFloat(t.valor_cupo).toLocaleString('es-CO') + '</span>' : '') +
+                            (fecha ? '<span>⏰ ' + fecha.toLocaleDateString('es-CO', { day: 'numeric', month: 'short' }) + ' ' + fecha.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' }) + '</span>' : '') +
+                        '</div>' +
+                        '<div class="tpz-bar"><i' + (pct >= 100 ? ' class="tpz-full"' : '') + ' style="width:' + Math.min(100, pct) + '%"></i></div>' +
+                    '</div>' +
+                '</div>';
+            }).join('');
+        } catch (e) {
+            loading.style.display = 'none'; empty.style.display = '';
+            console.error('Error loading tapazos', e);
+        }
     }
+
+    // Subida de imagen: mismo endpoint público que usa tapazo/index.php.
+    document.getElementById('tpz-imagen').addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const prev = document.getElementById('tpz-imagen-prev');
+        prev.textContent = 'Subiendo imagen…';
+        try {
+            const fd = new FormData();
+            fd.append('imagen', file);
+            const r = await fetch(BASE_PATH + '/api/tapazo/upload.php', { method: 'POST', body: fd });
+            const j = await r.json();
+            if (j.success) {
+                document.getElementById('tpz-imagen-url').value = j.data.url;
+                prev.innerHTML = '<img src="' + j.data.url + '" style="width:100%;height:100%;object-fit:cover;" alt="Imagen del tapazo">';
+            } else {
+                prev.textContent = 'Click para subir imagen';
+                Utils.showNotification(j.message || 'Error al subir imagen', 'error');
+            }
+        } catch (err) {
+            prev.textContent = 'Click para subir imagen';
+            Utils.showNotification('Error al subir imagen', 'error');
+        }
+    });
+
+    // Mínimo del selector de fecha: ahora (igual que la pantalla pública).
+    (function () {
+        const f = document.getElementById('tpz-fecha');
+        if (!f) return;
+        const now = new Date();
+        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+        f.min = now.toISOString().slice(0, 16);
+    })();
 
     document.getElementById('tapazo-form').addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -2118,15 +2231,17 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
         btn.disabled = true; btn.textContent = 'Creando…';
         try {
             const created = await API.post('/tapazo/admin_list.php', {
-                name: document.getElementById('tapazo-name').value,
-                description: document.getElementById('tapazo-desc').value,
-                prize: document.getElementById('tapazo-prize').value,
-                total_participants: parseInt(document.getElementById('tapazo-total').value),
-                win_mode: document.getElementById('tapazo-mode').value,
-                whatsapp: document.getElementById('tapazo-wa').value
+                titulo: document.getElementById('tpz-titulo').value,
+                descripcion: document.getElementById('tpz-desc').value,
+                cantidad_jugadores: parseInt(document.getElementById('tpz-cantidad').value, 10),
+                valor_cupo: parseFloat(document.getElementById('tpz-valor').value) || 0,
+                regla: document.getElementById('tpz-regla').value,
+                imagen_url: document.getElementById('tpz-imagen-url').value,
+                fecha_hora_destape: document.getElementById('tpz-fecha').value ? (document.getElementById('tpz-fecha').value + ':00') : ''
             });
             Utils.showNotification('🍺 Tapazo creado exitosamente', 'success');
             e.target.reset();
+            document.getElementById('tpz-imagen-prev').textContent = 'Click para subir imagen';
             loadTapazos();
             // Llevar al organizador a la pantalla pública original del Tapazo
             // (la experiencia de juego/compartir canónica) con su código.
@@ -2136,7 +2251,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
         } catch (error) {
             Utils.showNotification(error.message || 'Error al crear tapazo', 'error');
         } finally {
-            btn.disabled = false; btn.textContent = 'Crear Tapazo';
+            btn.disabled = false; btn.textContent = '🍺 Crear El Tapazo';
         }
     });
 
@@ -2785,8 +2900,35 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                 toggleCommissionUI();
                 toggleBillingModeUI();
                 updateCommissionPreview();
+
+                // Tarjeta "Mi configuración" del vendedor (lectura).
+                if (document.getElementById('vcfg-billing')) {
+                    if (d.commission_enabled !== '1') {
+                        document.getElementById('vcfg-billing').textContent = 'Gratis por ahora 🎉';
+                    } else if (d.billing_mode === 'talonario') {
+                        document.getElementById('vcfg-billing').textContent = 'Tarifa por talonario: $' + parseFloat(d.talonario_fee || 0).toLocaleString('es-CO');
+                    } else {
+                        document.getElementById('vcfg-billing').textContent = 'Comisión del ' + (d.commission_percentage || 5) + '% por rifa';
+                    }
+                    document.getElementById('vcfg-ttl').textContent = (d.reservation_ttl_minutes || d.reservation_minutes || 45) + ' minutos';
+                }
             }
         } catch (error) { console.error('Error loading settings:', error); }
+        // Datos de cuenta y estado del canal WA para la tarjeta del vendedor.
+        try {
+            if (document.getElementById('vcfg-nombre')) {
+                var vu = JSON.parse(localStorage.getItem('misrifas_user') || '{}');
+                document.getElementById('vcfg-nombre').textContent = vu.full_name || vu.name || vu.business_name || '—';
+                document.getElementById('vcfg-email').textContent = vu.email || '—';
+                document.getElementById('vcfg-phone').textContent = vu.phone ? ('📞 ' + vu.phone) : '';
+                const rw = await API.get('/vendor/whatsapp.php', { action: 'estado' });
+                const est = rw && rw.data ? rw.data.estado : '';
+                document.getElementById('vcfg-wa').textContent =
+                    est === 'conectado' ? 'Conectado ✓' + (rw.data.numero ? (' (+' + rw.data.numero + ')') : '')
+                    : est === 'no_disponible' ? 'Próximamente'
+                    : 'Sin vincular';
+            }
+        } catch (e) { console.error('vcfg', e); }
     }
 
     async function saveGeneralSettings() {
@@ -3258,10 +3400,6 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                     document.getElementById('pk-breb').value = p.breb_key || '';
                     document.getElementById('pk-cash').checked = !!p.accepts_cash;
                 }
-                const w = res.data.wa_config || {};
-                if (w.evo_api_url) document.getElementById('cfg-wa-url').value       = w.evo_api_url;
-                if (w.evo_api_key) document.getElementById('cfg-wa-apikey').value    = w.evo_api_key;
-                if (w.evo_instance) document.getElementById('cfg-wa-instance').value = w.evo_instance;
             }
 
             // 2. Datos Personales
@@ -3353,22 +3491,6 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
         finally { btn.disabled = false; btn.textContent = 'Cambiar Contraseña'; }
     });
 
-
-    document.getElementById('wa-config-form').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const btn = document.getElementById('btn-save-wa');
-        btn.disabled = true; btn.textContent = 'Guardando…';
-        try {
-            await API.post('/admin/profile_api.php', {
-                type: 'whatsapp',
-                evo_api_url:  document.getElementById('cfg-wa-url').value,
-                evo_api_key:  document.getElementById('cfg-wa-apikey').value,
-                evo_instance: document.getElementById('cfg-wa-instance').value
-            });
-            Utils.showNotification('Bot WhatsApp configurado ✅', 'success');
-        } catch (err) { Utils.showNotification('Error al guardar WhatsApp', 'error'); }
-        finally { btn.disabled = false; btn.textContent = 'Guardar Bot WhatsApp'; }
-    });
 
     // ================================================================
     // GESTIÓN DE BANNERS (SLIDES) - 10 SLIDES CONFIGURABLES
@@ -3630,6 +3752,9 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
             // un vendedor lo dejaba "guardar" cambios que nunca se aplicaban.
             var platformSettings = document.getElementById('section-platform-settings');
             if (platformSettings) platformSettings.style.display = 'none';
+            // En su lugar, el vendedor ve SU configuración (lectura + atajos).
+            var vendorSettings = document.getElementById('vendor-settings-card');
+            if (vendorSettings) vendorSettings.classList.remove('hidden');
         }
         var userName = user.full_name || user.name || user.email || 'Usuario';
         if (document.getElementById('user-name')) {
@@ -4069,9 +4194,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
             // §13.4 paso 3: el vendedor declara que entregó; el GANADOR es
             // quien confirma con SU enlace (token distinto al de aceptación).
             window.reportDelivery = async function(raffleId){
-                if (!confirm('¿Reportar que ya ENTREGASTE el premio?
-
-El ganador recibirá un enlace para confirmarlo — hasta entonces figura como "pendiente de confirmación".')) return;
+                if (!confirm('¿Reportar que ya ENTREGASTE el premio?\n\nEl ganador recibirá un enlace para confirmarlo — hasta entonces figura como "pendiente de confirmación".')) return;
                 try {
                     var r = await API.post('/vendor/delivery.php', { raffle_id: raffleId });
                     Utils.showNotification(r.message || 'Entrega reportada 📦', 'success');
@@ -4098,14 +4221,23 @@ El ganador recibirá un enlace para confirmarlo — hasta entonces figura como "
                 // La pantalla pública original (/tapazo) es la experiencia de juego
                 // canónica; el panel solo administra.
                 if (t.codigo) {
-                    items.push({ label: '🍻  Abrir Tapazo (pantalla de juego)', onClick: function(){ window.open(BASE_PATH + '/tapazo/index.php?codigo=' + encodeURIComponent(t.codigo), '_blank'); } });
+                    var link = window.location.origin + BASE_PATH + '/tapazo/index.php?codigo=' + encodeURIComponent(t.codigo);
+                    items.push({ label: '🍻  Abrir Tapazo (pantalla de juego)', onClick: function(){ window.open(link, '_blank'); } });
+                    items.push({ label: '🔗  Copiar link para compartir', onClick: function(){
+                        if (navigator.clipboard && navigator.clipboard.writeText) {
+                            navigator.clipboard.writeText(link).then(
+                                function(){ Utils.showNotification('Link copiado 🔗', 'success'); },
+                                function(){ window.prompt('Copia el link:', link); });
+                        } else { window.prompt('Copia el link:', link); }
+                    } });
                 }
                 items.push({ label: '👁️  Ver participantes', onClick: function(){ viewTapazo(t.id); } });
-                if (t.status === 'active') {
+                if (t.estado !== 'finalizado') {
                     items.push({ label: '✅  Completar (sortear ganador)', onClick: function(){ completeTapazo(t.id); } });
                 }
+                var estados = { creado: 'Abierto', lleno: 'Completo', esperando: 'Esperando destape', destapando: 'Destapando…', finalizado: 'Finalizado' };
                 openActionSheet(t.name || 'Tapazo',
-                    (t.joined_count || 0) + ' / ' + (t.total_participants || 0) + ' participantes · ' + (t.status || ''), items);
+                    (t.joined_count || 0) + ' / ' + (t.total_participants || 0) + ' jugadores · ' + (estados[t.estado] || t.estado || ''), items);
             };
 
             // ⋮ en "Usuarios": editar / activar-suspender / eliminar.

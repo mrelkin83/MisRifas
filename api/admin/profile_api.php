@@ -96,6 +96,12 @@ try {
         }
 
         if ($type === 'whatsapp') {
+            // Solo super_admin: la conexión del vendedor es 100% gestionada
+            // (URL/APIKEY de la plataforma vía .env + instancia auto-generada
+            // en api/vendor/whatsapp.php). El vendedor no ve ni toca esto.
+            if (($adminUser['role'] ?? '') !== 'super_admin') {
+                Response::error('La configuración técnica de WhatsApp es gestionada por la plataforma', null, 403);
+            }
             arrancarMotorPara((int)$adminUser['id']);
 
             $campos = [];

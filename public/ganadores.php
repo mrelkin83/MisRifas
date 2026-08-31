@@ -106,6 +106,8 @@ $page_title = "Ganadores - MisRifas";
 
             <div class="hidden md:flex items-center gap-6" id="nav-menu">
                 <a href="<?= BASE_PATH ?>/public/index.php" class="text-slate-300 hover:text-white font-medium transition-colors">Inicio</a>
+                <a href="<?= BASE_PATH ?>/tapazo/index.php" class="text-slate-300 hover:text-white font-medium transition-colors">🍺 El Tapazo</a>
+                <a href="<?= BASE_PATH ?>/public/comprobar-boleta.php" class="text-slate-300 hover:text-white font-medium transition-colors">Comprobar Boleta</a>
                 <a href="<?= BASE_PATH ?>/public/mis-boletos.php" class="text-slate-300 hover:text-white font-medium transition-colors">Consultar Boletas</a>
                 <a href="<?= BASE_PATH ?>/public/ganadores.php" class="text-white font-bold transition-colors border-b-2 border-primary pb-1 flex items-center gap-1.5">
                     <svg class="w-4 h-4 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4Z"/><path d="M7 5H4a1 1 0 0 0-1 1 4 4 0 0 0 4 4M17 5h3a1 1 0 0 1 1 1 4 4 0 0 1-4 4"/></svg>
@@ -116,17 +118,17 @@ $page_title = "Ganadores - MisRifas";
         </nav>
     </header>
 
-    <main class="container mx-auto px-4 py-20">
-        <div class="max-w-4xl mx-auto text-center mb-20">
-            <h1 class="text-5xl md:text-7xl font-black mb-6 tracking-tight">
+    <main class="container mx-auto px-4 py-10 md:py-20">
+        <div class="max-w-4xl mx-auto text-center mb-10 md:mb-20">
+            <h1 class="text-4xl md:text-7xl font-black mb-4 md:mb-6 tracking-tight" style="text-wrap:balance;">
                 Hall de la <span class="bg-clip-text text-transparent bg-gradient-to-r from-amber-400 to-orange-500">Fama</span>
             </h1>
-            <p class="text-slate-400 text-xl md:text-2xl font-medium leading-relaxed">
+            <p class="text-slate-400 text-lg md:text-2xl font-medium leading-relaxed">
                 Celebramos a nuestros ganadores. Cada sorteo es real, transparente y verificado.
             </p>
         </div>
 
-        <div id="winners-grid" class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-6xl mx-auto">
+        <div id="winners-grid" class="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-8 max-w-6xl mx-auto">
             <!-- Winners load here -->
             <div class="col-span-full text-center py-20">
                 <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-amber-500 mx-auto"></div>
@@ -177,7 +179,7 @@ $page_title = "Ganadores - MisRifas";
                                     <img src="${fixImageUrl(winner.image_url)}" alt="${esc(winner.raffle_name)}" width="400" height="300" loading="lazy" class="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
                                     <div class="absolute inset-0 bg-gradient-to-r from-slate-900/80 to-transparent sm:hidden"></div>
                                 </div>
-                                <div class="flex-1 p-8 flex flex-col justify-between">
+                                <div class="flex-1 p-5 sm:p-8 flex flex-col justify-between">
                                     <div>
                                         <div class="flex justify-between items-start mb-4">
                                             <span class="gold-badge px-3 py-1 rounded-lg text-[10px]">PREMIO ENTREGADO</span>

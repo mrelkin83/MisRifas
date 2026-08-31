@@ -87,11 +87,26 @@ try {
             Response::error('El motor de WhatsApp de la plataforma aún no está habilitado. Pronto podrás vincular tu número.', 'CHANNEL_UNAVAILABLE', 409);
         }
         // Auto-provisión: instancia propia del vendedor, credenciales de la
-        // plataforma por defecto (el vendedor no configura nada técnico).
+        // plataforma por defecto (el vendedor no configura NI VE nada técnico).
+        // El nombre se genera con datos únicos del vendedor (nombre + documento)
+        // y el prefijo mr{id} garantiza que jamás colisione con otra instancia.
         if (empty($cfg['evolution_instancia'])) {
+            $row = Database::getInstance()->getConnection()
+                ->prepare("SELECT business_name, document_number, phone FROM vendors WHERE id = ?");
+            $row->execute([$vendorId]);
+            $v = $row->fetch(PDO::FETCH_ASSOC) ?: [];
+            $slug = strtolower(trim((string)($v['business_name'] ?? '')));
+            $slug = strtr($slug, ['á'=>'a','é'=>'e','í'=>'i','ó'=>'o','ú'=>'u','ñ'=>'n','ü'=>'u']);
+            $slug = trim(preg_replace('/[^a-z0-9]+/', '-', $slug), '-');
+            $slug = substr($slug, 0, 24);
+            $doc = preg_replace('/\D+/', '', (string)($v['document_number'] ?? ''));
+            if ($doc === '') {
+                $doc = preg_replace('/\D+/', '', (string)($v['phone'] ?? ''));
+            }
+            $instancia = rtrim('mr' . $vendorId . '-' . $slug . ($doc !== '' ? '-' . $doc : ''), '-');
             WaConfig::guardar($db, [
                 'activo' => 1,
-                'evolution_instancia' => 'misrifas-v' . $vendorId,
+                'evolution_instancia' => $instancia,
                 'numero_whatsapp' => (string)($vendor['phone'] ?? ''),
             ]);
             WaConfig::cargar($db, true);
