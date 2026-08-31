@@ -67,7 +67,8 @@ $names = array_column($methods, 'method');
 sort($names);
 check($names === ['breb', 'nequi'], 'La reserva expone SOLO los métodos configurados', json_encode($names));
 
-// ── 5. Sufijo §6: varios números → aleatorio [1,999] incluido en el monto ──
+// ── 5. Varios números (decisión del dueño 2026-08-31): SIN sufijo — el
+// comprador paga el VALOR REAL y el vendedor identifica por la referencia ──
 $res = httpPost('/api/payments/create-reservation.php', [
     'raffle_id' => $raffle, 'numeros' => ['40', '41'], 'payment_gateway' => 'manual',
     'user' => ['name' => '__TEST__ Centavos', 'phone' => $buyerPhone, 'email' => 'centavos@test.local'],
@@ -75,10 +76,8 @@ $res = httpPost('/api/payments/create-reservation.php', [
 $ok = assertHttp(200, $res, 'Reserva múltiple funciona');
 $amount = (float)($res['json']['data']['amount'] ?? 0);
 $suffix = (int)($res['json']['data']['payment_suffix'] ?? -1);
-check($suffix >= 1 && $suffix <= 999, 'Sufijo múltiple en [1,999]', "suffix=$suffix");
-check($amount === 2000.0 + $suffix, 'Monto múltiple = precio×2 + sufijo', "amount=$amount suffix=$suffix");
-$guardado = (int)$db->query("SELECT COUNT(DISTINCT payment_suffix) FROM numero_reservas WHERE raffle_id = $raffle")->fetchColumn();
-check($guardado === 2, 'Cada orden guardó su sufijo en numero_reservas', "sufijos=$guardado");
+check($suffix === 0, 'Compra múltiple SIN sufijo (paga el valor real)', "suffix=$suffix");
+check($amount === 2000.0, 'Monto múltiple = precio×2 exacto, sin centavos', "amount=$amount");
 
 // ── 6. Venta en efectivo: sin nombre/celular se rechaza; completa va a paid ──
 $res = httpPost('/api/vendor/cash_sale.php', [

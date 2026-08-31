@@ -159,13 +159,16 @@ try {
         $ttlMin = TicketStateMachine::reservationTtlMinutes($db);
         $expiresAt = date('Y-m-d H:i:s', strtotime("+{$ttlMin} minutes"));
 
-        // §6 — Codificación de centavos: sufijo único entre las órdenes
-        // vigentes de la rifa para que el vendedor identifique el pago por el
-        // monto. Un solo número en talonario ≤100 → sufijo = el número de la
-        // boleta; si no, aleatorio [1,999] verificado contra las vigentes.
+        // §6 (ajustado por decisión del dueño, 2026-08-31) — Codificación de
+        // centavos SOLO para compras de UN número: el sufijo = el número de la
+        // boleta (autoexplicativo: pagas 10.050 por el 50). Para VARIOS
+        // números resultaba confuso pagar "de más": el comprador paga el VALOR
+        // REAL exacto (precio × cantidad) y el vendedor identifica el pago por
+        // la referencia de la transferencia y el comprobante adjunto.
         if (count($numeros) === 1 && (int)$raffle['total_tickets'] <= 100) {
             $paymentSuffix = (int)$numeros[0];
-        } else {
+        } elseif (count($numeros) === 1) {
+            // Talonarios grandes: sufijo aleatorio único entre las vigentes.
             $stmt = $db->prepare("
                 SELECT DISTINCT payment_suffix FROM numero_reservas
                 WHERE raffle_id = ? AND estado = 'RESERVADO' AND payment_suffix IS NOT NULL
@@ -175,6 +178,8 @@ try {
             do {
                 $paymentSuffix = random_int(1, 999);
             } while (in_array($paymentSuffix, $usados, true));
+        } else {
+            $paymentSuffix = 0;
         }
         $amount = $raffle['ticket_price'] * count($numeros) + $paymentSuffix;
 
@@ -223,11 +228,20 @@ try {
         }
 
         // 1. Insertar en numero_reservas (cada número individualmente; todas
-        // las filas de la orden comparten el sufijo de centavos)
+        // las filas de la orden comparten el sufijo de centavos).
+        // UPSERT obligatorio: cuando una reserva expira, el cron deja la fila
+        // en estado DISPONIBLE (no la borra) y el UNIQUE (raffle_id, numero)
+        // bloqueaba re-reservar ese número PARA SIEMPRE (1062 en producción).
+        // El candado FOR UPDATE sobre el ticket ya garantizó que el número
+        // está libre, así que pisar la fila huérfana es correcto.
         $stmt = $db->prepare("
             INSERT INTO numero_reservas
                 (raffle_id, numero, estado, user_id, reservation_id, reserved_at, expires_at, payment_suffix)
-            VALUES (?, ?, 'RESERVADO', ?, ?, NOW(), ?, ?)
+            VALUES (?, ?, 'RESERVADO', ?, ?, NOW(), ?, ?) AS nueva
+            ON DUPLICATE KEY UPDATE
+                estado = 'RESERVADO', user_id = nueva.user_id,
+                reservation_id = nueva.reservation_id, reserved_at = NOW(),
+                expires_at = nueva.expires_at, payment_suffix = nueva.payment_suffix
         ");
         foreach ($numeros as $numero) {
             $stmt->execute([$raffleId, $numero, $user['id'], $reservationId, $expiresAt, $paymentSuffix]);

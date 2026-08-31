@@ -108,7 +108,7 @@ $page_title = "Pago - MisRifas";
                         <p class="text-sm text-slate-300 mt-4">
                             Transfiere <strong class="text-primary">exactamente</strong>
                             <span id="exact-amount" class="font-black font-mono"></span>
-                            — los últimos dígitos identifican TU compra. Luego vuelve aquí y sube el comprobante.
+                            <span id="amount-hint"> — los últimos dígitos identifican TU compra. Luego vuelve aquí y sube el comprobante.</span>
                         </p>
                     </div>
                 </div>
@@ -317,6 +317,12 @@ $page_title = "Pago - MisRifas";
         document.getElementById('dest-value').textContent = m.destination;
         document.getElementById('exact-amount').textContent =
             '$' + Number(reservationData?.total_amount || 0).toLocaleString('es-CO');
+        // Con sufijo (1 número): el monto identifica la compra. Sin sufijo
+        // (varios números): identifica la referencia de la transferencia.
+        document.getElementById('amount-hint').textContent =
+            Number(reservationData?.payment_suffix || 0) > 0
+                ? ' — los últimos dígitos identifican TU compra. Luego vuelve aquí y sube el comprobante.'
+                : ' y sube aquí el comprobante: la referencia de la transferencia identifica tu pago.';
         document.getElementById('payment-instructions').classList.remove('hidden');
         checkCanConfirm();
     }

@@ -267,6 +267,32 @@ header("Expires: 0");
             #selected-info p { font-size: 14px !important; }
             #multi-selection-summary.sheet { padding: 14px 16px calc(16px + env(safe-area-inset-bottom, 0px)) !important; }
             #multi-selection-summary .text-3xl { font-size: 22px; }
+
+            /* Tarjeta de información: de "recuadros gigantes" a ficha de app */
+            #gallery-container { min-height: 180px !important; max-height: 210px !important; overflow: hidden; }
+            #gallery-container img { max-height: 210px !important; object-fit: cover; }
+            main .mb-8 { margin-bottom: 12px !important; }
+            main .pb-8 { padding-bottom: 12px !important; }
+            main .p-6 { padding: 12px !important; }
+            main .grid.grid-cols-3 { gap: 6px; }
+            main .grid.grid-cols-3 .text-xs { font-size: 9px; letter-spacing: .4px; margin-bottom: 2px !important; }
+            #ticket-price { font-size: 17px; }
+            #draw-date, #lottery-name { font-size: 12.5px; font-weight: 700; }
+            /* Contador: franja compacta de una línea */
+            .countdown-grid { gap: 6px !important; }
+            .countdown-box { padding: 6px 2px !important; border-radius: 10px !important; }
+            #days, #hours, #minutes, #seconds { font-size: 17px; }
+            .countdown-box .text-xs { font-size: 8.5px; margin-top: 0 !important; }
+            /* Progreso */
+            main .h-3 { height: 6px; }
+            main .flex.justify-between.mb-3 { margin-bottom: 6px !important; font-size: 12px; }
+            /* Descripción y compartir */
+            #raffle-description { font-size: 13.5px !important; line-height: 1.5; }
+            h3.text-xl { font-size: 15px !important; margin-bottom: 6px !important; padding-bottom: 4px !important; }
+            h3.text-sm { font-size: 11px !important; margin-bottom: 8px !important; }
+            main .flex.flex-wrap.gap-3 button { padding: 7px 12px !important; font-size: 12px !important; border-radius: 10px !important; }
+            /* Título de la rifa */
+            main h1 { font-size: 22px !important; line-height: 1.2 !important; margin-bottom: 6px !important; }
         }
 
         /* WhatsApp share button */
