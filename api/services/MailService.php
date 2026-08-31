@@ -74,7 +74,9 @@ class MailService {
         $from = $this->settings['mailing_smtp_from'] ?? 'no-reply@misrifas.online';
         $fromName = $this->settings['mailing_from_name'] ?? 'MisRifas';
 
-        if (empty($host) || empty($user)) {
+        // Solo el host es obligatorio: los relays sin autenticación (Mailpit
+        // de pruebas, Postal por puerto 25) no llevan usuario/contraseña.
+        if (empty($host)) {
             Logger::error("SMTP settings missing. Cannot send email to $to");
             return false;
         }
@@ -99,7 +101,7 @@ class MailService {
 
             $this->expect($socket, '220');
             fwrite($socket, "EHLO " . $hostname . "\r\n");
-            $this->expect($socket, '250');
+            $ehlo = $this->expect($socket, '250');
 
             // STARTTLS solo en 587 (465 ya viene cifrado desde el socket)
             if ($port == 587) {
@@ -109,16 +111,20 @@ class MailService {
                     throw new Exception("STARTTLS failed");
                 }
                 fwrite($socket, "EHLO " . $hostname . "\r\n");
-                $this->expect($socket, '250');
+                $ehlo = $this->expect($socket, '250');
             }
 
-            // Auth
-            fwrite($socket, "AUTH LOGIN\r\n");
-            $this->expect($socket, '334');
-            fwrite($socket, base64_encode($user) . "\r\n");
-            $this->expect($socket, '334');
-            fwrite($socket, base64_encode($pass) . "\r\n");
-            $this->expect($socket, '235');
+            // Auth SOLO si el servidor la anuncia Y hay credenciales: los
+            // relays locales sin auth (Mailpit en el VPS de pruebas, Postal en
+            // el puerto 25) rechazan AUTH LOGIN ("Expected 334, got 250-SIZE").
+            if ($user !== '' && stripos($ehlo, 'AUTH') !== false) {
+                fwrite($socket, "AUTH LOGIN\r\n");
+                $this->expect($socket, '334');
+                fwrite($socket, base64_encode($user) . "\r\n");
+                $this->expect($socket, '334');
+                fwrite($socket, base64_encode($pass) . "\r\n");
+                $this->expect($socket, '235');
+            }
 
             // Mail From
             fwrite($socket, "MAIL FROM:<$from>\r\n");
@@ -180,16 +186,20 @@ class MailService {
         // última un espacio. Leer solo una línea dejaba el resto en el buffer
         // y descuadraba todos los expects siguientes (fallaba el AUTH contra
         // cualquier servidor con EHLO multilínea — es decir, casi todos).
+        // Devuelve la respuesta COMPLETA (el EHLO dice si el servidor anuncia AUTH).
+        $full = '';
         do {
             $res = fgets($socket, 512);
             if ($res === false) {
                 throw new Exception("Connection closed while expecting $code");
             }
+            $full .= $res;
         } while (isset($res[3]) && $res[3] === '-');
 
         if (substr($res, 0, 3) !== $code) {
             throw new Exception("Expected code $code, got: " . $res);
         }
+        return $full;
     }
 
     /**
