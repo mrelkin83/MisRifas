@@ -131,6 +131,12 @@ try {
             }
 
             Logger::activity('payment_manual_approved', $adminUser['id'], ['ticket_id' => $ticketId, 'payment_id' => $ticket['payment_id']]);
+
+            // §9.6: boleta por WhatsApp al comprador — después del commit,
+            // best-effort (si el vendedor no tiene canal, queda descargable).
+            require_once __DIR__ . '/../../api/services/Boleta.php';
+            Boleta::enviarPorWhatsApp($db, (int)$ticketId, (int)$adminUser['id']);
+
             Response::success(['message' => 'Pago aprobado. El boleto ahora está vendido.']);
         }
 

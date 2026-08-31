@@ -63,6 +63,7 @@ try {
         return [
             'id' => $ticket['id'],
             'raffle_id' => $ticket['raffle_id'],
+            'ticket_code' => $ticket['ticket_code'] ?? null,
             'ticket_number' => $ticket['ticket_number'],
             'opportunities' => json_decode($ticket['opportunities']),
             'status' => $ticket['status'],

@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/DomainExceptions.php';
+require_once __DIR__ . '/TicketCode.php';
 
 /**
  * Máquina de estados de tickets (promt2.md §7).
@@ -141,6 +142,29 @@ final class TicketStateMachine
         }
 
         $detail = $ctx['detail'] ?? [];
+
+        // §9.1: la boleta se emite AL pasar a paid, en esta misma transacción,
+        // por cualquier vía (panel, WhatsApp, efectivo). El código nunca es
+        // secuencial (§9.3) y no se regenera si ya existe.
+        if ($to === 'paid') {
+            if (empty($row['ticket_code']) && empty($fields['ticket_code'])) {
+                $fields['ticket_code'] = TicketCode::generate();
+            }
+            if (empty($row['issued_at']) && empty($fields['issued_at'])) {
+                $fields['issued_at'] = date('Y-m-d H:i:s');
+            }
+            // Datos del comprador para la boleta: si el llamador no los pasó,
+            // se toman de su fila en users.
+            $userId = $fields['user_id'] ?? $row['user_id'] ?? null;
+            if ($userId && (empty($row['buyer_name']) && empty($fields['buyer_name']))) {
+                $u = $db->prepare('SELECT name, phone_whatsapp FROM users WHERE id = ?');
+                $u->execute([(int)$userId]);
+                if ($usr = $u->fetch(PDO::FETCH_ASSOC)) {
+                    $fields['buyer_name'] = $fields['buyer_name'] ?? $usr['name'];
+                    $fields['buyer_phone'] = $fields['buyer_phone'] ?? $usr['phone_whatsapp'];
+                }
+            }
+        }
 
         // Al volver a 'available' se limpian los campos transitorios del
         // ocupante anterior; si venía de 'paid', el código de boleta se

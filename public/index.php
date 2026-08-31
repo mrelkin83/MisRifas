@@ -686,6 +686,7 @@ $page_description = "La plataforma más confiable para crear y participar en rif
                 </div>
             </div>
             <div class="pt-8 border-t border-white/5 text-center">
+                <p class="mb-2"><a href="<?= BASE_PATH ?>/public/comprobar-boleta.php" class="text-slate-300 hover:text-white font-medium text-sm">🎟️ Comprobar una boleta</a></p>
                 <p class="text-sm text-slate-500">&copy; 2026 MisRifas Colombia. Todos los derechos reservados.</p>
             </div>
         </div>

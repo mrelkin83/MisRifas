@@ -119,6 +119,15 @@ try {
         'raffle_id' => $raffleId, 'ticket_number' => $number, 'buyer_phone' => $buyerPhone,
     ]);
 
+    // §9.6: boleta por WhatsApp — después del commit, best-effort.
+    $stmt = $db->prepare("SELECT id FROM tickets WHERE raffle_id = ? AND ticket_number = ?");
+    $stmt->execute([$raffleId, $number]);
+    $ticketId = (int)$stmt->fetchColumn();
+    if ($ticketId) {
+        require_once __DIR__ . '/../../api/services/Boleta.php';
+        Boleta::enviarPorWhatsApp($db, $ticketId, (int)$vendor['id']);
+    }
+
     Response::success([
         'raffle_id' => $raffleId,
         'ticket_number' => $number,

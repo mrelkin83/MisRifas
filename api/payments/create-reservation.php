@@ -136,7 +136,9 @@ try {
     $numerosNoDisponibles = $stmt->fetchAll(PDO::FETCH_COLUMN);
 
     if (count($numerosNoDisponibles) > 0) {
-        Response::error('Los siguientes números no están disponibles: ' . implode(', ', $numerosNoDisponibles) . '. Selecciona otros números para continuar.', null, 400);
+        // Mismo contrato que el candado de la transacción (TicketNotAvailable):
+        // 409, no 400 — el cliente trata ambos igual.
+        Response::error('Los siguientes números no están disponibles: ' . implode(', ', $numerosNoDisponibles) . '. Selecciona otros números para continuar.', 'TICKET_NOT_AVAILABLE', 409);
     }
 
     // ========================================

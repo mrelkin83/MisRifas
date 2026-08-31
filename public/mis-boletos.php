@@ -156,6 +156,7 @@ require_once __DIR__ . '/../config/database.php';
 
     <footer class="bg-black/30 text-white py-8 mt-12 border-t border-white/5">
         <div class="container mx-auto px-4 text-center">
+            <p class="mb-2"><a href="<?= BASE_PATH ?>/public/comprobar-boleta.php" class="text-primary font-bold hover:underline text-sm">🎟️ Comprobar una boleta</a></p>
             <p class="text-sm text-slate-400">&copy; 2026 MisRifas Colombia. Todos los derechos reservados.</p>
         </div>
     </footer>
@@ -248,6 +249,13 @@ require_once __DIR__ . '/../config/database.php';
                     reservedHtml +
                 '</div>' +
                 (ticket.status === 'reserved' ? '<button type="button" data-pay-ticket-id="' + ticket.id + '" class="mt-3 block w-full text-center py-2 bg-emerald-500 text-white rounded-lg font-bold text-sm hover:bg-emerald-600 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300">Pagar Ahora</button>' : '') +
+                (ticket.status === 'paid' && ticket.ticket_code ? (function () {
+                    const fmt = ticket.ticket_code.replace(/(.{4})(?=.)/g, '$1-');
+                    return '<div class="mt-3 flex gap-2">' +
+                        '<a href="' + BASE_PATH + '/public/boleta.php?c=' + fmt + '" class="flex-1 text-center py-2 bg-white/10 border border-white/15 rounded-lg font-bold text-sm hover:bg-white/20 transition-colors">🎟️ Ver boleta</a>' +
+                        '<a href="' + BASE_PATH + '/api/tickets/boleta_png.php?c=' + fmt + '" class="flex-1 text-center py-2 bg-primary/20 text-primary border border-primary/30 rounded-lg font-bold text-sm hover:bg-primary/30 transition-colors">⬇ Descargar</a>' +
+                    '</div>';
+                })() : '') +
             '</div>';
         }).join('');
     }

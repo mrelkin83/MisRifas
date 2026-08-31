@@ -51,6 +51,9 @@ SetEnvIf Request_URI "^/MisRifas/" IS_DEV
     # accesibles por HTTP, solo por CLI.
     RewriteRule ^tools/ - [F,L]
     RewriteRule ^tests/ - [F,L]
+    # storage/ guarda boletas y comprobantes FUERA del alcance web; se sirven
+    # solo por controladores (api/tickets/boleta_png.php).
+    RewriteRule ^storage/ - [F,L]
     RewriteRule ^composer-setup\.php$ - [F,L]
 
     # NO redireccionar si ya existe el archivo o directorio
