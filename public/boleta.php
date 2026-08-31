@@ -89,5 +89,6 @@ $e = fn($s) => htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8');
         <a href="<?= BASE_PATH ?>/public/index.php">MisRifas</a>
     </div>
 </div>
+<?php $tabActive = 'boletas'; include __DIR__ . '/partials/tabbar.php'; ?>
 </body>
 </html>
