@@ -356,5 +356,6 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
+<?php $tabActive = 'cuenta'; include __DIR__ . '/partials/tabbar.php'; ?>
 </body>
 </html>
