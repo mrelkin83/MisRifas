@@ -147,5 +147,6 @@ function stopCam() {
 }
 window.addEventListener('pagehide', stopCam);
 </script>
+<?php $tabActive = 'boletas'; include __DIR__ . '/partials/tabbar.php'; ?>
 </body>
 </html>

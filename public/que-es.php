@@ -156,5 +156,6 @@ require_once __DIR__ . '/../config/app.php';
         MisRifas Colombia &copy; 2026 · Tecnología para Soñadores
     </div>
 
+<?php $tabActive = ''; include __DIR__ . '/partials/tabbar.php'; ?>
 </body>
 </html>

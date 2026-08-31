@@ -249,5 +249,6 @@ $page_title = "Ganadores - MisRifas";
             }
         });
     </script>
+<?php $tabActive = 'ganadores'; include __DIR__ . '/partials/tabbar.php'; ?>
 </body>
 </html>

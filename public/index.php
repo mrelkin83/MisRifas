@@ -1210,5 +1210,6 @@ $page_description = "La plataforma más confiable para crear y participar en rif
         });
     });
     </script>
+<?php $tabActive = 'inicio'; include __DIR__ . '/partials/tabbar.php'; ?>
 </body>
 </html>

@@ -320,5 +320,6 @@ require_once __DIR__ . '/../config/database.php';
         }
     });
     </script>
+<?php $tabActive = 'boletas'; include __DIR__ . '/partials/tabbar.php'; ?>
 </body>
 </html>

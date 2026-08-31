@@ -290,6 +290,10 @@ $ogDesc = $tapazo
             display: flex; align-items: center; justify-content: center;
         }
         .sound-btn:active { transform: scale(.94); }
+        @media (max-width: 768px) {
+            /* Por encima de la tab bar inferior del sitio */
+            .sound-btn { bottom: calc(78px + env(safe-area-inset-bottom, 0px)); }
+        }
 
         /* Header del sitio (mismo patrón glass-nav del resto de páginas) */
         .site-nav {
@@ -1022,5 +1026,6 @@ $ogDesc = $tapazo
         });
     </script>
     <?php endif; ?>
+<?php $tabActive = 'tapazo'; include __DIR__ . '/../public/partials/tabbar.php'; ?>
 </body>
 </html>
