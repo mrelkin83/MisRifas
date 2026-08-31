@@ -25,7 +25,8 @@ try {
             rw.delivery_status,
             rw.delivery_confirmed_at,
             r.draw_rescheduled_count,
-            r.id AS raffle_id
+            r.id AS raffle_id,
+            r.public_code AS raffle_code
         FROM raffle_winners rw
         INNER JOIN raffles r ON rw.raffle_id = r.id
         INNER JOIN lotteries l ON r.lottery_id = l.id

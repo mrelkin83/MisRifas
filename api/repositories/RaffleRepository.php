@@ -161,6 +161,15 @@ class RaffleRepository extends BaseRepository
                 strtotime($data['draw_date'] . ' -8 days'));
         }
 
+        // Enlace público ENMASCARADO (v4.11): código opaco Crockford de 10
+        // chars — los enlaces compartibles no exponen el id enumerable.
+        $abc = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
+        $code = '';
+        for ($i = 0; $i < 10; $i++) {
+            $code .= $abc[random_int(0, 31)];
+        }
+        $data['public_code'] = $code;
+
         // Crear rifa
         return $this->create($data);
     }

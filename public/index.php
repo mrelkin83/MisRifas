@@ -21,7 +21,6 @@ $page_description = "La plataforma más confiable para crear y participar en rif
     <meta name="description" content="<?= $page_description ?>">
     <title><?= $page_title ?></title>
     <meta name="theme-color" content="#0f172a">
-    <link rel="preconnect" href="https://picsum.photos">
     <link rel="stylesheet" href="<?= BASE_PATH ?>/public/css/tailwind.min.css">
     <style>
         /* Fuente display para titulares - autohospedada (nunca <link> a
@@ -481,7 +480,7 @@ $page_description = "La plataforma más confiable para crear y participar en rif
             <!-- Slide 1 -->
             <!-- TODO: reemplazar por foto real de un premio entregado -->
             <div class="hero-slide is-active">
-                <div class="hero-slide__bg" style="background-image:url('https://picsum.photos/seed/misrifas-premio-mayor/1600/900');"></div>
+                <div class="hero-slide__bg" style="background-image:url('<?= BASE_PATH ?>/public/assets/images/hero/hero-1.jpg');"></div>
                 <div class="hero-slide__overlay"></div>
                 <div class="hero-slide__content">
                     <span class="hero-slide__tag">Rifa destacada del mes</span>
@@ -497,7 +496,7 @@ $page_description = "La plataforma más confiable para crear y participar en rif
             <!-- Slide 2 -->
             <!-- TODO: reemplazar por foto real del flujo de pago/entrega -->
             <div class="hero-slide">
-                <div class="hero-slide__bg" style="background-image:url('https://picsum.photos/seed/misrifas-pago-nequi/1600/900');"></div>
+                <div class="hero-slide__bg" style="background-image:url('<?= BASE_PATH ?>/public/assets/images/hero/hero-2.jpg');"></div>
                 <div class="hero-slide__overlay"></div>
                 <div class="hero-slide__content">
                     <span class="hero-slide__tag">Pago directo al organizador</span>
@@ -513,7 +512,7 @@ $page_description = "La plataforma más confiable para crear y participar en rif
             <!-- Slide 3 -->
             <!-- TODO: reemplazar por foto real de un carro/premio grande rifado -->
             <div class="hero-slide">
-                <div class="hero-slide__bg" style="background-image:url('https://picsum.photos/seed/misrifas-carro-0km/1600/900');"></div>
+                <div class="hero-slide__bg" style="background-image:url('<?= BASE_PATH ?>/public/assets/images/hero/hero-3.jpg');"></div>
                 <div class="hero-slide__overlay"></div>
                 <div class="hero-slide__content">
                     <span class="hero-slide__tag">Rifa de carros</span>
@@ -529,7 +528,7 @@ $page_description = "La plataforma más confiable para crear y participar en rif
             <!-- Slide 4 -->
             <!-- TODO: reemplazar por foto real de un equipo de tecnologia rifado -->
             <div class="hero-slide">
-                <div class="hero-slide__bg" style="background-image:url('https://picsum.photos/seed/misrifas-tecnologia/1600/900');"></div>
+                <div class="hero-slide__bg" style="background-image:url('<?= BASE_PATH ?>/public/assets/images/hero/hero-4.jpg');"></div>
                 <div class="hero-slide__overlay"></div>
                 <div class="hero-slide__content">
                     <span class="hero-slide__tag">Tecnología</span>
@@ -970,7 +969,7 @@ $page_description = "La plataforma más confiable para crear y participar en rif
                                         return '<span class="text-[10px] font-black uppercase tracking-widest" style="padding:3px 10px;border-radius:99px;' + style + '">' + label + '</span>';
                                     })()}
                                 </div>
-                                <a href="${BASE_PATH}/public/raffle.php?id=${r.id}" class="btn btn--primary w-full mt-6 shadow-amber-500/20 group-hover:shadow-amber-500/40 group-hover:-translate-y-0.5 transition-all">Participar Ahora &rarr;</a>
+                                <a href="${BASE_PATH}/public/raffle.php?${r.public_code ? 'c=' + encodeURIComponent(r.public_code) : 'id=' + r.id}" class="btn btn--primary w-full mt-6 shadow-amber-500/20 group-hover:shadow-amber-500/40 group-hover:-translate-y-0.5 transition-all">Participar Ahora &rarr;</a>
                             </div>
                         </div>
                     `).join('');

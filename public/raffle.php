@@ -16,6 +16,19 @@ $apiBase  = $protocol . '://' . $host . BASE_PATH . '/api';
 
 $raffleId = (int)($_GET['id'] ?? 0);
 
+// Enlace público ENMASCARADO (v4.11): ?c=<código opaco de 10 chars> — no
+// expone el id enumerable. ?id= sigue funcionando por compatibilidad.
+$publicCode = strtoupper(trim((string)($_GET['c'] ?? '')));
+if (!$raffleId && preg_match('/^[0-9A-Z]{10}$/', $publicCode)) {
+    try {
+        $lk = Database::getInstance()->getConnection()->prepare('SELECT id FROM raffles WHERE public_code = ?');
+        $lk->execute([$publicCode]);
+        $raffleId = (int)$lk->fetchColumn();
+    } catch (Exception $e) {
+        $raffleId = 0;
+    }
+}
+
 // Meta defaults
 $ogTitle       = 'MisRifas — Rifas digitales en Colombia';
 $ogDescription = 'Participa en las mejores rifas digitales de Colombia. Pago fácil con Nequi o tarjeta. Sorteos verificados con loterías oficiales.';
@@ -29,7 +42,7 @@ if ($raffleId) {
     try {
         $db   = Database::getInstance()->getConnection();
         $stmt = $db->prepare("
-            SELECT r.id, r.name, r.description, r.ticket_price, r.draw_date, r.total_tickets, r.image_url,
+            SELECT r.id, r.public_code, r.name, r.description, r.ticket_price, r.draw_date, r.total_tickets, r.image_url,
                    SUM(CASE WHEN t.status = 'paid' THEN 1 ELSE 0 END) AS sold_count
             FROM raffles r
             LEFT JOIN tickets t ON t.raffle_id = r.id
@@ -73,7 +86,8 @@ if ($raffleId) {
 
             $ogTitle       = "Gana {$name} por solo \${$price} COP";
             $ogDescription = "Sorteo el {$drawDate}. {$pct}% vendido ({$sold}/{$total} boletos). ¡Consigue el tuyo y participa!";
-            $ogUrl         = $baseUrl . '/raffle.php?id=' . $raffleId;
+            // Enlace canónico/compartible: el código opaco, no el id.
+            $ogUrl = $baseUrl . '/raffle.php?' . (!empty($raffle['public_code']) ? 'c=' . $raffle['public_code'] : 'id=' . $raffleId);
 
             // Imagen OG dinámica generada por PHP GD
             $ogImage = $apiBase . '/og/generate.php?raffle_id=' . $raffleId;
@@ -222,6 +236,8 @@ header("Expires: 0");
             box-shadow: 0 10px 25px rgba(245,158,11,0.45); cursor: pointer; border: none; font-size: 0.95rem;
         }
         #selection-fab:active { transform: translateX(-50%) scale(0.97); }
+        /* El display:flex del ID le gana a la utilidad .hidden: forzar. */
+        #selection-fab.hidden { display: none !important; }
         body.sheet-open { overflow: hidden; }
         /* Flechas de galería: en pantallas táctiles no hay hover, y con
            teclado deben aparecer al recibir foco. */
@@ -231,6 +247,28 @@ header("Expires: 0");
         }
         input[type="text"], input[type="tel"], input[type="email"], select { background: rgba(15,23,42,0.6); border: 1px solid rgba(255,255,255,0.1); color: white; transition: border-color 0.3s, box-shadow 0.3s; }
         input:focus, select:focus { border-color: #f59e0b; box-shadow: 0 0 0 4px rgba(245,158,11,0.2); outline: none; }
+        /* ===== Densidad móvil estilo app: la misma información, sin
+           recuadros gigantes ni espacios desproporcionados. ===== */
+        @media (max-width: 768px) {
+            .glass.rounded-3xl { padding: 16px !important; border-radius: 18px; }
+            main .mb-8 { margin-bottom: 16px !important; }
+            main .pb-8 { padding-bottom: 16px !important; }
+            main .p-6 { padding: 14px !important; }
+            #ticket-price { font-size: 20px; }
+            #draw-date, #lottery-name { font-size: 14px; }
+            #days, #hours, #minutes, #seconds { font-size: 22px; }
+            .countdown-box { padding: 10px 4px !important; }
+            .countdown-box .text-xs { font-size: 10px; }
+            #raffle-description { font-size: 14.5px !important; line-height: 1.55; }
+            h2.text-2xl, h2.lg\:text-3xl { font-size: 20px !important; }
+            #ticket-search { padding: 12px 12px 12px 42px !important; font-size: 15px !important; }
+            #tickets-grid { gap: 8px !important; padding: 10px !important; max-height: 420px; }
+            #selected-info { padding: 12px !important; }
+            #selected-info p { font-size: 14px !important; }
+            #multi-selection-summary.sheet { padding: 14px 16px calc(16px + env(safe-area-inset-bottom, 0px)) !important; }
+            #multi-selection-summary .text-3xl { font-size: 22px; }
+        }
+
         /* WhatsApp share button */
         .wa-share-btn {
             display: inline-flex; align-items: center; gap: 8px; flex-shrink: 0; white-space: nowrap;
@@ -496,7 +534,15 @@ header("Expires: 0");
                                         <p class="text-3xl font-black text-amber-400 font-mono" id="selected-total">$0</p>
                                     </div>
                                 </div>
-                                <div id="selected-numbers-display" class="flex flex-wrap gap-2 mb-4"></div>
+                                <div id="selected-numbers-display" class="flex flex-wrap gap-2 mb-3"></div>
+                                <!-- Agregar/buscar más números SIN salir de la hoja -->
+                                <div class="flex gap-2 mb-4">
+                                    <input type="text" id="sheet-add-number" inputmode="numeric" maxlength="5" aria-label="Agregar otro número"
+                                        placeholder="Agregar otro número (ej. 07)"
+                                        class="flex-1 min-w-0 px-4 py-3 rounded-xl bg-black/30 border border-white/10 text-white placeholder:text-slate-500 focus:outline-none focus:border-emerald-500">
+                                    <button id="sheet-add-btn" type="button" aria-label="Agregar número"
+                                        class="px-5 rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-black text-xl active:scale-95">＋</button>
+                                </div>
                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
                                     <input type="text" id="buyer-name" name="name" autocomplete="name" aria-label="Tu nombre" required placeholder="Tu nombre" class="w-full px-4 py-3 rounded-xl bg-black/30 border border-white/10 text-white placeholder:text-slate-500 focus:outline-none focus:border-amber-500">
                                     <input type="tel" id="buyer-phone" name="phone" autocomplete="tel" inputmode="numeric" aria-label="Número de WhatsApp" required placeholder="WhatsApp (3001234567)" pattern="[3][0-9]{9}" class="w-full px-4 py-3 rounded-xl bg-black/30 border border-white/10 text-white placeholder:text-slate-500 focus:outline-none focus:border-amber-500">
@@ -504,6 +550,9 @@ header("Expires: 0");
                                 </div>
                                 <button id="pay-selected-btn" class="w-full py-4 bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-black rounded-xl text-lg hover:brightness-110 active:scale-[0.97] disabled:opacity-50 disabled:grayscale transition-all shadow-[0_0_20px_rgba(245,158,11,0.3)] hover:shadow-[0_0_25px_rgba(245,158,11,0.5)]">
                                     Pagar números seleccionados →
+                                </button>
+                                <button id="keep-choosing-btn" type="button" class="w-full mt-2 py-3 rounded-xl bg-white/5 border border-white/10 text-slate-300 font-bold text-sm hover:bg-white/10 active:scale-[0.98]">
+                                    ← Seguir eligiendo en el tablero
                                 </button>
                             </div>
 
@@ -654,7 +703,8 @@ header("Expires: 0");
     let countdownInterval = null;
 
     const urlParams = new URLSearchParams(window.location.search);
-    const raffleId = urlParams.get('id');
+    // El id llega resuelto del servidor (soporta ?c= enmascarado y ?id= legado).
+    const raffleId = <?= (int)$raffleId ?> || urlParams.get('id');
 
     if (!raffleId) {
         window.location.href = BASE_PATH + '/public/index.php';
@@ -807,9 +857,10 @@ function toggleSelection(ticket) {
     updateSelectionSummary();
 }
 
-// Panel emergente de selección. En escritorio abre automáticamente como tarjeta
-// flotante; en móvil arranca minimizado (botón flotante) para no tapar la grilla
-// y poder elegir VARIOS números; el usuario lo abre cuando quiere pagar.
+// Panel emergente de selección: se ABRE al seleccionar el primer número (en
+// móvil y escritorio) y desde la MISMA hoja se agregan más números (campo
+// "Agregar otro número"), se quitan (tap en el chip) o se continúa al pago.
+// "Seguir eligiendo" la minimiza al botón flotante sin perder la selección.
 let sheetOpen = true;
 let hadSelection = false;
 function isMobileViewport() { return window.matchMedia('(max-width: 639px)').matches; }
@@ -863,17 +914,18 @@ function updateSelectionSummary() {
     document.getElementById('fab-total').textContent = Utils.formatPrice(total);
 
     const numbersDisplay = document.getElementById('selected-numbers-display');
+    // Chips REMOVIBLES: tap en un número lo quita de la selección.
     numbersDisplay.innerHTML = selectedTickets.map(t =>
-        `<span class="px-3 py-1 bg-amber-600/30 text-amber-300 rounded-lg font-mono text-sm border border-amber-500/30">${t.ticket_number}</span>`
+        `<button type="button" data-remove="${t.ticket_number}" title="Quitar ${t.ticket_number}" class="px-3 py-1 bg-amber-600/30 text-amber-300 rounded-lg font-mono text-sm border border-amber-500/30 active:scale-95">${t.ticket_number} ✕</button>`
     ).join('');
 
     payBtn.disabled = false;
 
-    // Primera selección: escritorio abre la tarjeta; móvil arranca minimizado
-    // (botón flotante) para seguir eligiendo varios números sin tapar la grilla.
+    // La hoja se abre con la PRIMERA selección (móvil incluido): desde ahí se
+    // agregan más números, se quitan o se continúa al pago.
     if (!hadSelection) {
         hadSelection = true;
-        sheetOpen = !isMobileViewport();
+        sheetOpen = true;
     }
 
     if (sheetOpen) {
@@ -895,6 +947,41 @@ function updateSelectionSummary() {
 document.getElementById('selection-close')?.addEventListener('click', closeSelectionSheet);
 document.getElementById('selection-backdrop')?.addEventListener('click', closeSelectionSheet);
 document.getElementById('selection-fab')?.addEventListener('click', openSelectionSheet);
+document.getElementById('keep-choosing-btn')?.addEventListener('click', closeSelectionSheet);
+
+// Agregar/buscar un número desde la MISMA hoja (sin volver al tablero).
+function addNumberFromSheet() {
+    const inp = document.getElementById('sheet-add-number');
+    const raw = (inp.value || '').replace(/\D/g, '');
+    if (!raw) { inp.focus(); return; }
+    const digits = parseInt(currentRaffle?.digits, 10) || 2;
+    const num = raw.padStart(digits, '0').slice(-digits);
+    const el = document.querySelector('[data-number="' + num + '"]');
+    if (!el) { Utils.showNotification('El número ' + num + ' no existe en esta rifa', 'error'); return; }
+    if (selectedTickets.some(t => String(t.ticket_number) === num)) {
+        Utils.showNotification('El ' + num + ' ya está en tu selección', 'info');
+        inp.value = ''; return;
+    }
+    if (el.dataset.status !== 'available') {
+        Utils.showNotification('El ' + num + ' ya está ' + (el.dataset.status === 'reserved' ? 'reservado' : 'vendido') + ' — prueba otro', 'error');
+        return;
+    }
+    toggleSelection({ id: el.dataset.id, ticket_number: num, opportunities: el.dataset.opportunities, status: 'available' });
+    inp.value = '';
+    inp.focus();
+}
+document.getElementById('sheet-add-btn')?.addEventListener('click', addNumberFromSheet);
+document.getElementById('sheet-add-number')?.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); addNumberFromSheet(); }
+});
+
+// Quitar un número tocando su chip.
+document.getElementById('selected-numbers-display')?.addEventListener('click', e => {
+    const chip = e.target.closest('[data-remove]');
+    if (!chip) return;
+    const t = selectedTickets.find(x => String(x.ticket_number) === String(chip.dataset.remove));
+    if (t) toggleSelection(t);
+});
 
 document.getElementById('pay-selected-btn').addEventListener('click', async () => {
     if (selectedTickets.length === 0) return;
