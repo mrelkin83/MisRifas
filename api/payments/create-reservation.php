@@ -234,14 +234,17 @@ try {
         // bloqueaba re-reservar ese número PARA SIEMPRE (1062 en producción).
         // El candado FOR UPDATE sobre el ticket ya garantizó que el número
         // está libre, así que pisar la fila huérfana es correcto.
+        // VALUES() y no el alias "AS nueva": producción corre MariaDB, que no
+        // soporta la sintaxis nueva de MySQL 8.0.19+ (en MySQL VALUES() sigue
+        // funcionando, solo está deprecado).
         $stmt = $db->prepare("
             INSERT INTO numero_reservas
                 (raffle_id, numero, estado, user_id, reservation_id, reserved_at, expires_at, payment_suffix)
-            VALUES (?, ?, 'RESERVADO', ?, ?, NOW(), ?, ?) AS nueva
+            VALUES (?, ?, 'RESERVADO', ?, ?, NOW(), ?, ?)
             ON DUPLICATE KEY UPDATE
-                estado = 'RESERVADO', user_id = nueva.user_id,
-                reservation_id = nueva.reservation_id, reserved_at = NOW(),
-                expires_at = nueva.expires_at, payment_suffix = nueva.payment_suffix
+                estado = 'RESERVADO', user_id = VALUES(user_id),
+                reservation_id = VALUES(reservation_id), reserved_at = NOW(),
+                expires_at = VALUES(expires_at), payment_suffix = VALUES(payment_suffix)
         ");
         foreach ($numeros as $numero) {
             $stmt->execute([$raffleId, $numero, $user['id'], $reservationId, $expiresAt, $paymentSuffix]);
