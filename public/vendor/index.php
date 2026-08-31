@@ -571,6 +571,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
         if (msgs[err]) showAuthNotification(msgs[err], 'error');
     })();
     </script>
+<?php $tabActive = 'cuenta'; include __DIR__ . '/../partials/tabbar.php'; ?>
 <?php else: ?>
     <div class="admin-layout">
         <aside class="sidebar">
