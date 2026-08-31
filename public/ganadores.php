@@ -184,7 +184,10 @@ $page_title = "Ganadores - MisRifas";
                                             <span class="text-[10px] font-black text-slate-500 uppercase tracking-widest">${new Date(winner.draw_date).toLocaleDateString('es-CO')}</span>
                                         </div>
                                         <h3 class="text-2xl font-black text-white mb-2">${esc(winner.raffle_name)}</h3>
-                                        <p class="text-slate-400 text-sm mb-6 uppercase tracking-wider font-bold">Lotería: ${esc(winner.lottery_name)}</p>
+                                        <p class="text-slate-400 text-sm mb-2 uppercase tracking-wider font-bold">Lotería: ${esc(winner.lottery_name)}</p>
+                                    ${parseInt(winner.draw_rescheduled_count || 0) > 0
+                                        ? '<p class="text-xs text-amber-400/80 mb-4">🔁 Sorteo reprogramado ' + winner.draw_rescheduled_count + ' vez/veces — <a href="' + BASE_PATH + '/public/raffle.php?id=' + winner.raffle_id + '" class="underline">ver historial público</a></p>'
+                                        : '<p class="mb-4"></p>'}
                                     </div>
                                     
                                     <div class="flex items-center gap-6 pt-6 border-t border-white/5">

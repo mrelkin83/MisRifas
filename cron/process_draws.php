@@ -24,6 +24,7 @@ try {
     $stmt = $db->query("
         SELECT r.id, r.name, r.lottery_id, r.vendor_id, r.winning_mode,
                r.draw_date, r.ticket_price, r.whatsapp_contact, r.image_url, r.auto_notify,
+               r.draw_rescheduled_count,
                lr.winning_number,
                l.name AS lottery_name
         FROM raffles r
@@ -82,44 +83,155 @@ function processRaffleDraw(array $raffle): array
     $db = Database::getInstance()->getConnection();
 
     $digitsToMatch = getWinningDigits($raffle['winning_number'], $raffle['winning_mode']);
+    $attempt = (int)$raffle['draw_rescheduled_count'] + 1;
 
+    // §12.1: el desenlace depende del ESTADO del ticket cuyo espacio de
+    // oportunidades contiene el número — se busca entre TODOS los tickets,
+    // no solo los pagados. Invariante 2.4: solo un 'paid' puede ganar.
     $stmt = $db->prepare("
-        SELECT t.id, t.raffle_id, t.user_id, t.ticket_number, t.opportunities,
+        SELECT t.id, t.raffle_id, t.user_id, t.ticket_number, t.opportunities, t.status,
                u.name AS buyer_name, u.phone_whatsapp AS buyer_phone, u.email AS buyer_email
         FROM tickets t
-        INNER JOIN users u ON t.user_id = u.id
+        LEFT JOIN users u ON t.user_id = u.id
         WHERE t.raffle_id = ?
-          AND t.status = 'paid'
     ");
     $stmt->execute([$raffle['id']]);
-    $tickets = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    $winningTicket = null;
-    foreach ($tickets as $ticket) {
+    $matching = null;
+    $paidTickets = [];
+    foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $ticket) {
         $opportunities = json_decode($ticket['opportunities'], true);
-        if (is_array($opportunities) && in_array($digitsToMatch, $opportunities, true)) {
-            $winningTicket = $ticket;
-            break;
+        if ($matching === null && is_array($opportunities) && in_array($digitsToMatch, $opportunities, true)) {
+            $matching = $ticket;
+        }
+        if ($ticket['status'] === 'paid') {
+            $paidTickets[] = $ticket;
         }
     }
 
-    $stmt = $db->prepare("
-        SELECT id, business_name, phone, email, wa_config
-        FROM vendors
-        WHERE id = ?
-    ");
+    $stmt = $db->prepare("SELECT id, business_name, phone, email FROM vendors WHERE id = ?");
     $stmt->execute([$raffle['vendor_id']]);
     $vendor = $stmt->fetch(PDO::FETCH_ASSOC);
 
     $scheduledAt = date('Y-m-d') . ' 05:00:00';
 
-    if ($winningTicket) {
-        registerWinner($raffle, $winningTicket, $digitsToMatch, $vendor, $scheduledAt, $tickets);
+    // ── Desenlace 1: hay ganador (ticket PAGADO) ──
+    if ($matching && $matching['status'] === 'paid') {
+        registrarIntento($db, $raffle, $attempt, $digitsToMatch, 'winner', 'paid', null);
+        registerWinner($raffle, $matching, $digitsToMatch, $vendor, $scheduledAt, $paidTickets);
         return ['has_winner' => true];
     }
 
-    scheduleResorteo($raffle, $vendor, $tickets, $digitsToMatch, $scheduledAt);
+    // ── Desenlaces 2 y 3: sin ganador ──
+    $outcome = $matching ? 'no_winner' : 'not_sold';
+    $ticketStatus = $matching['status'] ?? null;
+
+    // §12.3: máximo 3 reprogramaciones — al CUARTO desenlace sin ganador la
+    // rifa se cancela y arranca el flujo de devolución (§12.4).
+    if ((int)$raffle['draw_rescheduled_count'] >= 3) {
+        registrarIntento($db, $raffle, $attempt, $digitsToMatch, $outcome, $ticketStatus, null);
+        cancelarPorTope($db, $raffle, $vendor, $paidTickets, $digitsToMatch, $scheduledAt);
+        return ['has_winner' => false, 'reason' => 'Cancelada por tope de reprogramaciones'];
+    }
+
+    // Modo configurable (decisión aprobada): 'auto' reagenda el sistema;
+    // 'manual' deja la rifa en pending_reschedule y decide el VENDEDOR.
+    // Las guardas de §12.3 aplican a ambos.
+    $modeStmt = $db->prepare("SELECT setting_value FROM system_settings WHERE setting_key = 'reschedule_mode'");
+    $modeStmt->execute();
+    $mode = (string)$modeStmt->fetchColumn() === 'manual' ? 'manual' : 'auto';
+
+    if ($mode === 'manual') {
+        registrarIntento($db, $raffle, $attempt, $digitsToMatch, $outcome, $ticketStatus, null);
+        $db->prepare("UPDATE raffles SET status = 'pending_reschedule' WHERE id = ?")
+           ->execute([$raffle['id']]);
+        avisarVendedorReprogramar($db, $raffle, $vendor, $digitsToMatch, $ticketStatus, $scheduledAt);
+        return ['has_winner' => false, 'reason' => 'pending_reschedule (modo manual)'];
+    }
+
+    $nextDate = getNextDrawDate((int)$raffle['lottery_id'], (string)$raffle['draw_date']);
+    registrarIntento($db, $raffle, $attempt, $digitsToMatch, $outcome, $ticketStatus, $nextDate);
+    scheduleResorteo($raffle, $vendor, $paidTickets, $digitsToMatch, $scheduledAt, $nextDate);
     return ['has_winner' => false, 'reason' => 'Sin ganador'];
+}
+
+/**
+ * §12.2: TODO intento de sorteo queda registrado en raffle_draws — es el
+ * historial público que hace confiable la reprogramación.
+ */
+function registrarIntento(PDO $db, array $raffle, int $attempt, string $digits, string $outcome, ?string $ticketStatus, ?string $rescheduledTo): void
+{
+    $db->prepare("
+        INSERT INTO raffle_draws
+            (raffle_id, attempt, lottery_id, draw_date, winning_number, ticket_status, outcome, rescheduled_to)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        ON DUPLICATE KEY UPDATE winning_number = VALUES(winning_number),
+            ticket_status = VALUES(ticket_status), outcome = VALUES(outcome),
+            rescheduled_to = VALUES(rescheduled_to)
+    ")->execute([
+        $raffle['id'], $attempt, $raffle['lottery_id'], $raffle['draw_date'],
+        $digits, $ticketStatus, $outcome, $rescheduledTo,
+    ]);
+}
+
+/**
+ * §12.4: cancelación por agotar reprogramaciones. La plataforma no devuelve
+ * plata (nunca la tuvo): genera al vendedor la lista de compradores pagados
+ * para que él devuelva, y avisa a los compradores para que nadie quede
+ * atrapado en una rifa que nunca juega.
+ */
+function cancelarPorTope(PDO $db, array $raffle, array $vendor, array $paidTickets, string $digits, string $scheduledAt): void
+{
+    $db->prepare("UPDATE raffles SET status = 'cancelled' WHERE id = ?")->execute([$raffle['id']]);
+    Logger::activity('raffle_cancelled_cap', (int)$raffle['vendor_id'], [
+        'raffle_id' => $raffle['id'], 'paid_tickets' => count($paidTickets),
+    ]);
+
+    // Lista de devoluciones para el vendedor.
+    $lineas = '';
+    foreach ($paidTickets as $t) {
+        $lineas .= '- #' . $t['ticket_number'] . ' · ' . ($t['buyer_name'] ?: 'Sin nombre')
+            . ' · ' . ($t['buyer_phone'] ?: 's/cel') . ' · ' . ($t['buyer_email'] ?: 's/correo')
+            . ' · $' . number_format((float)$raffle['ticket_price'], 0, ',', '.') . "\n";
+    }
+    enqueueMessage((int)$raffle['id'], (int)$vendor['id'], null, $vendor['phone'], $vendor['email'], [
+        'message_type' => 'no_winner',
+        'subject' => 'Rifa "' . $raffle['name'] . '" CANCELADA — lista de devoluciones',
+        'body_text' => "La rifa \"{$raffle['name']}\" agotó sus 3 reprogramaciones sin ganador y quedó CANCELADA públicamente.\n\n"
+            . "Debes devolver el dinero a estos compradores:\n\n" . ($lineas ?: "(sin boletos pagados)\n")
+            . "\nLa cancelación queda registrada en tu historial. — MisRifas",
+        'body_html' => null,
+    ], $scheduledAt);
+
+    // Aviso a cada comprador pagado.
+    foreach ($paidTickets as $t) {
+        enqueueMessage((int)$raffle['id'], (int)$vendor['id'], (int)$t['user_id'], $t['buyer_phone'], $t['buyer_email'], [
+            'message_type' => 'no_winner',
+            'subject' => 'La rifa "' . $raffle['name'] . '" fue cancelada',
+            'body_text' => 'Hola ' . ($t['buyer_name'] ?: '') . ", la rifa \"{$raffle['name']}\" se canceló tras 4 sorteos sin ganador (número que salió: {$digits}).\n"
+                . 'El organizador (' . $vendor['business_name'] . ', cel ' . $vendor['phone'] . ') debe devolverte $'
+                . number_format((float)$raffle['ticket_price'], 0, ',', '.') . ' de tu boleto #' . $t['ticket_number'] . ".\n"
+                . 'La cancelación es pública en la página de la rifa. — MisRifas',
+            'body_html' => null,
+        ], $scheduledAt);
+    }
+}
+
+/**
+ * Modo manual: el vendedor decide la nueva fecha desde su panel.
+ */
+function avisarVendedorReprogramar(PDO $db, array $raffle, array $vendor, string $digits, ?string $ticketStatus, string $scheduledAt): void
+{
+    $restantes = 3 - (int)$raffle['draw_rescheduled_count'];
+    $estado = $ticketStatus ? "cayó en un boleto en estado '{$ticketStatus}'" : 'no cayó en ningún boleto vendido';
+    enqueueMessage((int)$raffle['id'], (int)$vendor['id'], null, $vendor['phone'], $vendor['email'], [
+        'message_type' => 'no_winner',
+        'subject' => 'Tu rifa "' . $raffle['name'] . '" necesita reprogramación',
+        'body_text' => "Tu rifa \"{$raffle['name']}\" jugó: el número {$digits} {$estado}, así que NO hay ganador (solo un boleto pagado gana).\n\n"
+            . "Entra a tu panel y elige la nueva fecha del sorteo (misma lotería). Te quedan {$restantes} reprogramación(es); si se agotan, la rifa se cancela y deberás devolver lo cobrado.\n"
+            . 'Los boletos pagados se conservan tal cual. — MisRifas',
+        'body_html' => null,
+    ], $scheduledAt);
 }
 
 function getWinningDigits(string $number, string $mode): string
@@ -257,18 +369,29 @@ function registerWinner(array $raffle, array $ticket, string $matchedDigits, arr
     }
 }
 
-function scheduleResorteo(array $raffle, array $vendor, array $tickets, string $digitsToMatch, string $scheduledAt): void
+function scheduleResorteo(array $raffle, array $vendor, array $tickets, string $digitsToMatch, string $scheduledAt, ?string $nextDate = null): void
 {
     $db = Database::getInstance()->getConnection();
 
-    $nextDate = getNextDrawDate($raffle['lottery_id'], $raffle['draw_date']);
+    $nextDate = $nextDate ?? getNextDrawDate((int)$raffle['lottery_id'], (string)$raffle['draw_date']);
 
+    // §12.2: los paid se conservan; cutoff_at se recalcula contra la nueva
+    // fecha; y el PNG cacheado de cada boleta se invalida (mostraba la fecha
+    // vieja — la página pública siempre fue dinámica).
     $stmt = $db->prepare("
         UPDATE raffles
-        SET draw_date = ?, draw_rescheduled_count = draw_rescheduled_count + 1
+        SET draw_date = ?, cutoff_at = DATE_SUB(?, INTERVAL 2 DAY),
+            draw_rescheduled_count = draw_rescheduled_count + 1
         WHERE id = ?
     ");
-    $stmt->execute([$nextDate, $raffle['id']]);
+    $stmt->execute([$nextDate, $nextDate, $raffle['id']]);
+
+    require_once __DIR__ . '/../api/services/BoletaImage.php';
+    $codes = $db->prepare("SELECT ticket_code FROM tickets WHERE raffle_id = ? AND ticket_code IS NOT NULL");
+    $codes->execute([$raffle['id']]);
+    foreach ($codes->fetchAll(PDO::FETCH_COLUMN) as $code) {
+        BoletaImage::invalidateCache((string)$code);
+    }
 
     Logger::info("Rifa re-programada para: $nextDate", ['raffle_id' => $raffle['id']]);
 

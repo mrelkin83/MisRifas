@@ -84,6 +84,7 @@ check(strpos((string)$ev, 'corte de apartados') !== false, 'La liberación por c
 $res = httpPost('/api/vendor/holds.php', ['action' => 'hold', 'raffle_id' => $raffle, 'ticket_number' => '06', 'holder_name' => '__TEST__ Amigo Fiado', 'holder_phone' => '3006660001'], $token);
 check($res['code'] === 409, 'Después del corte no se aparta (409)', 'HTTP ' . $res['code']);
 
-// ── 6. Invariante 2.4: el sorteo solo mira paid (un held jamás entra) ──
+// ── 6. Invariante 2.4: solo un ticket PAGADO puede ganar ──
 $src = file_get_contents(__DIR__ . '/../../cron/process_draws.php');
-check(strpos($src, "AND t.status = 'paid'") !== false, "process_draws busca ganador SOLO entre status='paid'", '');
+check(strpos($src, "\$matching['status'] === 'paid'") !== false,
+    'process_draws exige status===paid para declarar ganador (un held jamás gana)', '');

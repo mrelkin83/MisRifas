@@ -39,6 +39,19 @@ if ($raffleId) {
         $stmt->execute([$raffleId]);
         $raffle = $stmt->fetch(PDO::FETCH_ASSOC);
 
+        // §12.3: historial público de intentos de sorteo — la transparencia
+        // es lo que hace confiable la reprogramación.
+        $drawHistory = [];
+        $raffleStatusRow = null;
+        try {
+            $dh = $db->prepare("SELECT attempt, draw_date, winning_number, ticket_status, outcome, rescheduled_to FROM raffle_draws WHERE raffle_id = ? ORDER BY attempt");
+            $dh->execute([$raffleId]);
+            $drawHistory = $dh->fetchAll(PDO::FETCH_ASSOC);
+            $rs = $db->prepare("SELECT status, draw_rescheduled_count FROM raffles WHERE id = ?");
+            $rs->execute([$raffleId]);
+            $raffleStatusRow = $rs->fetch(PDO::FETCH_ASSOC);
+        } catch (Exception $e) {}
+
         if ($raffle) {
             // Get all images for gallery
             $stmtImg = $db->prepare("SELECT image_url FROM raffle_images WHERE raffle_id = ? ORDER BY sort_order ASC");
@@ -499,6 +512,31 @@ header("Expires: 0");
                 </div>
             </div>
         </div>
+        <?php if (!empty($drawHistory) || (($raffleStatusRow['status'] ?? '') === 'cancelled')): ?>
+        <section class="container mx-auto px-4 mt-10" aria-label="Historial de sorteos">
+            <div class="max-w-3xl mx-auto bg-white/5 border border-white/10 rounded-2xl p-6">
+                <h2 class="text-lg font-bold mb-1">🔍 Historial de sorteos</h2>
+                <p class="text-xs text-slate-400 mb-4">Cada intento queda registrado públicamente. Solo un boleto <strong>pagado</strong> puede ganar; si el número cae en un boleto sin pagar o sin vender, el sorteo se reprograma (máximo 3 veces).</p>
+                <?php if (($raffleStatusRow['status'] ?? '') === 'cancelled'): ?>
+                <div class="mb-4 p-3 rounded-xl bg-red-500/15 border border-red-500/40 text-red-300 text-sm font-bold">
+                    ✖ Esta rifa fue CANCELADA tras agotar sus reprogramaciones sin ganador. El organizador debe devolver el dinero de los boletos pagados.
+                </div>
+                <?php endif; ?>
+                <?php $outLabel = ['winner' => '🏆 ¡Hubo ganador!', 'no_winner' => 'Sin ganador (boleto no pagado)', 'not_sold' => 'Sin ganador (número no vendido)'];
+                foreach ($drawHistory as $d): ?>
+                <div class="flex flex-wrap items-center gap-x-3 gap-y-1 py-2 border-b border-white/5 text-sm">
+                    <span class="text-slate-500">Intento <?= (int)$d['attempt'] ?></span>
+                    <span><?= htmlspecialchars(date('d/m/Y', strtotime($d['draw_date'])), ENT_QUOTES, 'UTF-8') ?></span>
+                    <span>salió <strong class="text-amber-400 font-mono"><?= htmlspecialchars((string)$d['winning_number'], ENT_QUOTES, 'UTF-8') ?></strong></span>
+                    <span class="<?= $d['outcome'] === 'winner' ? 'text-emerald-400 font-bold' : 'text-slate-400' ?>"><?= $outLabel[$d['outcome']] ?? $d['outcome'] ?></span>
+                    <?php if (!empty($d['rescheduled_to'])): ?>
+                    <span class="text-slate-500">→ reprogramada al <?= htmlspecialchars(date('d/m/Y', strtotime($d['rescheduled_to'])), ENT_QUOTES, 'UTF-8') ?></span>
+                    <?php endif; ?>
+                </div>
+                <?php endforeach; ?>
+            </div>
+        </section>
+        <?php endif; ?>
     </main>
 
     <footer class="bg-[#0b1120] text-slate-500 py-10 border-t border-slate-800 mt-20">

@@ -159,7 +159,7 @@ function fxRaffle(array $opts = []): int {
     onTeardown(function () use ($db, $raffleId) {
         $db->prepare("DELETE FROM payments WHERE raffle_id = ? OR ticket_id IN (SELECT id FROM tickets WHERE raffle_id = ?)")->execute([$raffleId, $raffleId]);
         $db->prepare("DELETE FROM raffle_winners WHERE raffle_id = ?")->execute([$raffleId]);
-        foreach (['numero_reservas', 'tickets', 'raffles'] as $t) {
+        foreach (['raffle_draws', 'ticket_events', 'message_queue', 'numero_reservas', 'tickets', 'raffles'] as $t) {
             $col = $t === 'raffles' ? 'id' : 'raffle_id';
             $db->prepare("DELETE FROM {$t} WHERE {$col} = ?")->execute([$raffleId]);
         }

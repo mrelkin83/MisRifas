@@ -2011,7 +2011,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                         if (isPaid) paidCommission += commission;
                         else { pendingCommission += commission; if (isOverdue) overdueCount++; }
                         
-                        const statusMap = { draft: 'Borrador', active: 'Activa', blocked: 'Bloqueada', completed: 'Completada', cancelled: 'Cancelada' };
+                        const statusMap = { draft: 'Borrador', active: 'Activa', blocked: 'Bloqueada', pending_reschedule: 'Por reprogramar', completed: 'Completada', cancelled: 'Cancelada' };
                         const statusClass = r.status === 'active' ? 'active' : (r.status === 'completed' ? 'completed' : (r.status === 'cancelled' ? 'cancelled' : 'pending'));
                         
                         return '<tr>' +
@@ -2081,7 +2081,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
             const raffles = (res.success && res.data) ? res.data : [];
             if (!raffles.length) { empty.classList.remove('hidden'); return; }
             window.__myRaffles = raffles;
-            const statusMap = { draft: 'Borrador', active: 'Activa', blocked: 'Bloqueada', completed: 'Completada', cancelled: 'Cancelada' };
+            const statusMap = { draft: 'Borrador', active: 'Activa', blocked: 'Bloqueada', pending_reschedule: 'Por reprogramar', completed: 'Completada', cancelled: 'Cancelada' };
             grid.innerHTML = raffles.map(r => {
                 const sold = parseInt(r.sold_tickets || 0, 10);
                 const total = parseInt(r.total_tickets || 0, 10);
@@ -2561,7 +2561,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
             tbody.innerHTML = '<tr><td colspan="8" class="text-center text-gray-500 py-6">No hay rifas</td></tr>';
             return;
         }
-        const statusMap = { draft: 'Borrador', active: 'Activa', blocked: 'Bloqueada', completed: 'Completada', cancelled: 'Cancelada' };
+        const statusMap = { draft: 'Borrador', active: 'Activa', blocked: 'Bloqueada', pending_reschedule: 'Por reprogramar', completed: 'Completada', cancelled: 'Cancelada' };
         tbody.innerHTML = raffles.map(r => {
             const statusClass = r.status === 'active' ? 'active' : (r.status === 'completed' ? 'completed' : (r.status === 'cancelled' ? 'cancelled' : (r.status === 'blocked' ? 'pending' : 'pending')));
             return '<tr>' +
@@ -3950,6 +3950,20 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
             <button type="button" id="hold-submit" onclick="submitHold()" class="btn btn--primary btn--sm" style="width:100%;margin-top:10px;">Apartar número</button>
         </div>
     </div>
+    <!-- Modal: reprogramar sorteo (§12.2 — solo cuando el sistema lo habilitó) -->
+    <div id="resched-backdrop" onclick="closeRescheduleModal()" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:130;"></div>
+    <div id="resched-modal" style="display:none;position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:131;background:#fff;border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.35);padding:20px;width:min(94vw,420px);max-height:88vh;overflow-y:auto;">
+        <h3 style="font-weight:800;font-size:16px;margin-bottom:4px;">📅 Reprogramar sorteo</h3>
+        <p id="resched-info" style="font-size:12.5px;color:#6b7280;margin-bottom:12px;"></p>
+        <div id="resched-hist" style="margin-bottom:12px;"></div>
+        <p style="font-weight:700;font-size:13.5px;margin-bottom:8px;">Nueva fecha (misma lotería):</p>
+        <div id="resched-fechas" style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px;"></div>
+        <p id="resched-msg" style="display:none;font-size:12.5px;margin-top:4px;padding:8px 10px;border-radius:8px;"></p>
+        <div style="display:flex;gap:8px;margin-top:8px;">
+            <button type="button" onclick="closeRescheduleModal()" class="btn btn--sm" style="flex:1;background:#f1f5f9;">Cancelar</button>
+            <button type="button" id="resched-submit" onclick="submitReschedule()" class="btn btn--primary btn--sm" style="flex:2;">Confirmar reprogramación</button>
+        </div>
+    </div>
     <script>
         (function () {
             function el(id){ return document.getElementById(id); }
@@ -4009,6 +4023,9 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                 if (r.status === 'active') {
                     items.push({ label: '💵  Registrar venta en efectivo', onClick: function(){ openCashSale(id); } });
                     items.push({ label: '🤝  Apartados (fiado)', onClick: function(){ openHoldsModal(id); } });
+                }
+                if (r.status === 'pending_reschedule') {
+                    items.push({ label: '📅  Reprogramar sorteo', onClick: function(){ openRescheduleModal(id); } });
                 }
                 items.push({ label: '🗑️  Eliminar', danger: true, onClick: function(){ if (window.deleteRaffle) deleteRaffle(id, r.name); } });
                 openActionSheet(r.name || 'Rifa', 'Estado: ' + (r.status || '') + ' · ' + (r.sold_tickets || 0) + ' vendidos', items);
@@ -4143,6 +4160,54 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                     await refreshHolds();
                 } catch (e) { holdsMsg(e.message || 'No se pudo apartar', false); }
                 finally { btn.disabled = false; btn.textContent = 'Apartar número'; }
+            };
+
+            // §12.2: reprogramación manual — el botón solo existe si el SISTEMA
+            // dejó la rifa en pending_reschedule (verificó que el ganador no
+            // estaba pagado). El servidor re-valida todas las guardas.
+            var reschedRaffleId = null;
+            function reschedMsg(t, ok){ var m = el('resched-msg'); m.textContent = t; m.style.display = 'block'; m.style.background = ok ? '#dcfce7' : '#fee2e2'; m.style.color = ok ? '#166534' : '#b91c1c'; }
+            window.openRescheduleModal = async function(raffleId){
+                reschedRaffleId = raffleId;
+                el('resched-msg').style.display = 'none';
+                el('resched-modal').style.display = 'block';
+                el('resched-backdrop').style.display = 'block';
+                try {
+                    var r = await API.get('/vendor/reschedule.php', { raffle_id: raffleId });
+                    if (!r.success) { reschedMsg(r.message || 'No disponible', false); return; }
+                    var d = r.data;
+                    el('resched-info').innerHTML = '<strong>' + d.raffle.name + '</strong> · ' + d.raffle.lottery +
+                        ' · te quedan <strong>' + d.reprogramaciones_restantes + '</strong> reprogramación(es). Los boletos pagados se conservan.';
+                    el('resched-hist').innerHTML = (d.historial || []).map(function(h){
+                        return '<div style="font-size:12px;color:#64748b;border-left:3px solid #e2e8f0;padding-left:8px;margin-bottom:4px;">Intento ' + h.attempt + ' · ' +
+                            new Date(h.draw_date).toLocaleDateString('es-CO') + ' · salió <strong>' + h.winning_number + '</strong> · ' +
+                            (h.outcome === 'not_sold' ? 'número sin vender' : 'boleto en ' + (h.ticket_status || '?')) + '</div>';
+                    }).join('');
+                    el('resched-fechas').innerHTML = (d.fechas_validas || []).map(function(f, i){
+                        return '<label style="display:flex;align-items:center;gap:10px;border:1px solid #e2e8f0;border-radius:10px;padding:10px 12px;cursor:pointer;">' +
+                            '<input type="radio" name="resched-fecha" value="' + f + '"' + (i === 0 ? ' checked' : '') + '> ' +
+                            new Date(f + 'T12:00:00').toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'long' }) + '</label>';
+                    }).join('');
+                } catch (e) { reschedMsg(e.message || 'No disponible', false); }
+            };
+            window.closeRescheduleModal = function(){
+                el('resched-modal').style.display = 'none';
+                el('resched-backdrop').style.display = 'none';
+            };
+            window.submitReschedule = async function(){
+                var sel = document.querySelector('input[name=resched-fecha]:checked');
+                if (!sel) { reschedMsg('Elige una fecha', false); return; }
+                var btn = el('resched-submit');
+                btn.disabled = true; btn.textContent = 'Reprogramando…';
+                try {
+                    var r = await API.post('/vendor/reschedule.php', { raffle_id: reschedRaffleId, new_draw_date: sel.value });
+                    Utils.showNotification(r.message || 'Sorteo reprogramado ✅', 'success');
+                    closeRescheduleModal();
+                    if (window.loadDashboard) loadDashboard();
+                    var secMR = document.getElementById('section-mis-rifas');
+                    if (window.loadMyRaffles && secMR && !secMR.classList.contains('hidden')) loadMyRaffles();
+                } catch (e) { reschedMsg(e.message || 'No se pudo reprogramar', false); }
+                finally { btn.disabled = false; btn.textContent = 'Confirmar reprogramación'; }
             };
 
             // ⋮ en "Comisiones": ver rifa / marcar como pagada.
