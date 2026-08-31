@@ -160,6 +160,9 @@ try {
         'total_tickets'      => (int)$input['total_tickets'],
         'digits'             => (int)$input['digits'],
         'draw_date'          => $input['draw_date'],
+        // §8.3: cierre de apartados = sorteo - 2 días (el vendedor podrá
+        // ajustarlo, nunca después del sorteo).
+        'cutoff_at'          => date('Y-m-d H:i:s', strtotime($input['draw_date'] . ' -2 days')),
         'lottery_id'         => (int)$input['lottery_id'],
         'opportunities'      => (int)$input['opportunities'],
         'winning_mode'       => $input['winning_mode'],

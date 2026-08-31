@@ -176,6 +176,40 @@ class TicketRepository extends BaseRepository
     }
 
     /**
+     * §8: liberar apartados (held) cuya rifa ya pasó su corte (cutoff_at).
+     * Devuelve las filas liberadas agrupables por vendedor para avisarle.
+     */
+    public function releaseExpiredHolds(): array
+    {
+        $released = [];
+        try {
+            $stmt = $this->db->query("
+                SELECT t.id, t.ticket_number, t.holder_name, r.name AS raffle_name, r.id AS raffle_id,
+                       COALESCE(r.vendor_id, r.created_by) AS vendor_id
+                FROM tickets t
+                JOIN raffles r ON r.id = t.raffle_id
+                WHERE t.status = 'held' AND r.cutoff_at IS NOT NULL AND r.cutoff_at < NOW()
+                ORDER BY t.id
+            ");
+            foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+                try {
+                    TicketStateMachine::transition($this->db, (int)$row['id'], 'available', [
+                        'actor' => 'system', 'source' => 'cron',
+                        'reason' => 'corte de apartados (cutoff_at)',
+                        'detail' => ['holder_name' => $row['holder_name']],
+                    ]);
+                    $released[] = $row;
+                } catch (InvalidTransition $e) {
+                    // El vendedor lo cobró/liberó justo entre el SELECT y el lock.
+                }
+            }
+        } catch (Exception $e) {
+            Logger::exception($e);
+        }
+        return $released;
+    }
+
+    /**
      * Obtener boletos disponibles de una rifa
      */
     public function getAvailableTickets(int $raffleId, int $limit = null): array

@@ -3929,6 +3929,27 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
             <button type="button" id="cash-submit" onclick="submitCashSale()" class="btn btn--primary btn--sm" style="flex:2;">Registrar venta</button>
         </div>
     </div>
+    <!-- Modal: cartera de apartados (§8.4 — el "fiado" del vendedor) -->
+    <div id="holds-backdrop" onclick="closeHoldsModal()" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:130;"></div>
+    <div id="holds-modal" style="display:none;position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:131;background:#fff;border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.35);padding:20px;width:min(94vw,460px);max-height:88vh;overflow-y:auto;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+            <h3 style="font-weight:800;font-size:16px;">🤝 Apartados</h3>
+            <button type="button" onclick="closeHoldsModal()" style="background:none;border:none;font-size:20px;cursor:pointer;color:#64748b;">✕</button>
+        </div>
+        <p id="holds-resumen" style="font-size:12.5px;color:#6b7280;margin-bottom:12px;"></p>
+        <div id="holds-lista" style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px;"></div>
+        <div style="border-top:1px dashed #e2e8f0;padding-top:14px;">
+            <p style="font-weight:700;font-size:13.5px;margin-bottom:8px;">➕ Apartar un número</p>
+            <div style="display:flex;flex-direction:column;gap:8px;">
+                <input type="text" id="hold-number" placeholder="Número (ej: 37)" maxlength="4" inputmode="numeric" style="width:100%;padding:10px 12px;border:1px solid #e2e8f0;border-radius:10px;font-size:15px;">
+                <input type="text" id="hold-name" placeholder="Nombre de la persona *" style="width:100%;padding:10px 12px;border:1px solid #e2e8f0;border-radius:10px;font-size:15px;">
+                <input type="tel" id="hold-phone" placeholder="Celular *" maxlength="10" inputmode="numeric" style="width:100%;padding:10px 12px;border:1px solid #e2e8f0;border-radius:10px;font-size:15px;">
+                <input type="text" id="hold-note" placeholder="Nota (opcional)" maxlength="100" style="width:100%;padding:10px 12px;border:1px solid #e2e8f0;border-radius:10px;font-size:14px;">
+            </div>
+            <p id="holds-msg" style="display:none;font-size:12.5px;margin-top:8px;padding:8px 10px;border-radius:8px;"></p>
+            <button type="button" id="hold-submit" onclick="submitHold()" class="btn btn--primary btn--sm" style="width:100%;margin-top:10px;">Apartar número</button>
+        </div>
+    </div>
     <script>
         (function () {
             function el(id){ return document.getElementById(id); }
@@ -3987,6 +4008,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                 }
                 if (r.status === 'active') {
                     items.push({ label: '💵  Registrar venta en efectivo', onClick: function(){ openCashSale(id); } });
+                    items.push({ label: '🤝  Apartados (fiado)', onClick: function(){ openHoldsModal(id); } });
                 }
                 items.push({ label: '🗑️  Eliminar', danger: true, onClick: function(){ if (window.deleteRaffle) deleteRaffle(id, r.name); } });
                 openActionSheet(r.name || 'Rifa', 'Estado: ' + (r.status || '') + ' · ' + (r.sold_tickets || 0) + ' vendidos', items);
@@ -4048,6 +4070,79 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                 } finally {
                     btn.disabled = false; btn.textContent = 'Registrar venta';
                 }
+            };
+
+            // §8: cartera de apartados del vendedor.
+            var holdsRaffleId = null;
+            function holdsEsc(s){ return String(s ?? '').replace(/[&<>"']/g, function(c){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]; }); }
+            function holdsMsg(t, ok){ var m = el('holds-msg'); m.textContent = t; m.style.display = 'block'; m.style.background = ok ? '#dcfce7' : '#fee2e2'; m.style.color = ok ? '#166534' : '#b91c1c'; }
+            window.openHoldsModal = async function(raffleId){
+                holdsRaffleId = raffleId;
+                ['hold-number','hold-name','hold-phone','hold-note'].forEach(function(i){ el(i).value = ''; });
+                el('holds-msg').style.display = 'none';
+                el('holds-modal').style.display = 'block';
+                el('holds-backdrop').style.display = 'block';
+                await refreshHolds();
+            };
+            window.closeHoldsModal = function(){
+                el('holds-modal').style.display = 'none';
+                el('holds-backdrop').style.display = 'none';
+            };
+            window.refreshHolds = async function(){
+                try {
+                    var r = await API.get('/vendor/holds.php', { raffle_id: holdsRaffleId });
+                    if (!r.success) return;
+                    var d = r.data;
+                    el('holds-resumen').innerHTML = '<strong>' + d.cantidad + '</strong> apartado(s) sin cobrar · <strong>$' +
+                        Number(d.total_apartado || 0).toLocaleString('es-CO') + '</strong>' +
+                        (d.dias_para_corte != null ? ' · corte en <strong>' + d.dias_para_corte + '</strong> día(s)' : '');
+                    var lista = el('holds-lista');
+                    if (!d.holds.length) {
+                        lista.innerHTML = '<p style="color:#94a3b8;font-size:13px;text-align:center;padding:8px 0;">No hay números apartados.</p>';
+                        return;
+                    }
+                    lista.innerHTML = d.holds.map(function(h){
+                        return '<div style="border:1px solid #eef2f7;border-radius:12px;padding:10px 12px;">' +
+                            '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">' +
+                                '<div><strong style="font-size:15px;">#' + holdsEsc(h.ticket_number) + '</strong> · ' + holdsEsc(h.holder_name) +
+                                '<br><span style="font-size:12px;color:#94a3b8;">' + holdsEsc(h.holder_phone) + ' · hace ' + h.dias + ' día(s)' +
+                                (h.held_note ? ' · ' + holdsEsc(h.held_note) : '') + '</span></div>' +
+                            '</div>' +
+                            '<div style="display:flex;gap:6px;margin-top:8px;">' +
+                                '<button type="button" class="btn btn--sm" style="flex:1;background:#10b981;color:#fff;" onclick="holdAction(' + h.ticket_id + ', \'mark_paid\')">💵 Pagado</button>' +
+                                '<button type="button" class="btn btn--sm" style="flex:1;background:#f1f5f9;" onclick="holdAction(' + h.ticket_id + ', \'remind\')">🔔 Recordar</button>' +
+                                '<button type="button" class="btn btn--sm" style="flex:1;background:#fee2e2;color:#b91c1c;" onclick="holdAction(' + h.ticket_id + ', \'release\')">🔓 Liberar</button>' +
+                            '</div>' +
+                        '</div>';
+                    }).join('');
+                } catch (e) { holdsMsg(e.message || 'Error al cargar la cartera', false); }
+            };
+            window.holdAction = async function(ticketId, accion){
+                if (accion === 'release' && !confirm('¿Liberar este número? Volverá a la venta.')) return;
+                if (accion === 'mark_paid' && !confirm('¿Marcar como PAGADO? El boleto queda vendido y con boleta emitida.')) return;
+                try {
+                    var r = await API.post('/vendor/holds.php', { action: accion, ticket_id: ticketId });
+                    holdsMsg(r.message || 'Listo', true);
+                    if (accion !== 'remind') await refreshHolds();
+                    if (window.loadDashboard) loadDashboard();
+                } catch (e) { holdsMsg(e.message || 'No se pudo completar', false); }
+            };
+            window.submitHold = async function(){
+                var numero = el('hold-number').value.trim();
+                var nombre = el('hold-name').value.trim();
+                var cel = el('hold-phone').value.replace(/[^0-9]/g, '');
+                if (!/^[0-9]{2,4}$/.test(numero)) { holdsMsg('Escribe el número (2 a 4 cifras).', false); return; }
+                if (nombre.length < 3) { holdsMsg('El nombre es obligatorio.', false); return; }
+                if (!/^3[0-9]{9}$/.test(cel)) { holdsMsg('El celular es obligatorio (10 dígitos, empieza por 3).', false); return; }
+                var btn = el('hold-submit');
+                btn.disabled = true; btn.textContent = 'Apartando…';
+                try {
+                    var r = await API.post('/vendor/holds.php', { action: 'hold', raffle_id: holdsRaffleId, ticket_number: numero, holder_name: nombre, holder_phone: cel, note: el('hold-note').value.trim() });
+                    holdsMsg(r.message || 'Apartado', true);
+                    ['hold-number','hold-name','hold-phone','hold-note'].forEach(function(i){ el(i).value = ''; });
+                    await refreshHolds();
+                } catch (e) { holdsMsg(e.message || 'No se pudo apartar', false); }
+                finally { btn.disabled = false; btn.textContent = 'Apartar número'; }
             };
 
             // ⋮ en "Comisiones": ver rifa / marcar como pagada.
