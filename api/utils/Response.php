@@ -140,7 +140,9 @@ class Response
     public static function rateLimitExceeded(string $message = 'Demasiadas solicitudes'): void
     {
         header('Retry-After: 60');
-        self::error($message, null, 429, ERROR_RATE_LIMIT);
+        // No todos los endpoints cargan config/constants.php: sin este guard,
+        // el 429 se convertía en un 500 (Undefined constant ERROR_RATE_LIMIT).
+        self::error($message, null, 429, defined('ERROR_RATE_LIMIT') ? ERROR_RATE_LIMIT : 'RATE_LIMIT_EXCEEDED');
     }
 
     /**
