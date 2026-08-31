@@ -22,6 +22,27 @@ class MailService {
         while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
             $this->settings[$row['setting_key']] = $row['setting_value'];
         }
+
+        // Respaldo: las credenciales SMTP del .env (las que documenta
+        // DEPLOY.md y pide install-vps.sh). Sin esto, un despliegue con el
+        // .env bien configurado seguía sin poder enviar correos porque esta
+        // clase solo miraba system_settings.
+        $envMap = [
+            'mailing_smtp_host' => 'SMTP_HOST',
+            'mailing_smtp_port' => 'SMTP_PORT',
+            'mailing_smtp_user' => 'SMTP_USER',
+            'mailing_smtp_pass' => 'SMTP_PASS',
+            'mailing_smtp_from' => 'EMAIL_FROM_ADDRESS',
+            'mailing_from_name' => 'EMAIL_FROM_NAME',
+        ];
+        foreach ($envMap as $key => $envVar) {
+            if (empty($this->settings[$key])) {
+                $val = getenv($envVar);
+                if ($val !== false && $val !== '') {
+                    $this->settings[$key] = $val;
+                }
+            }
+        }
     }
 
     /**
