@@ -33,7 +33,7 @@ $mkRaffle = function () use ($token) {
         'name' => '__TEST__ Rifa Billing', 'description' => 'x', 'department' => 'Cundinamarca',
         'city' => 'Bogota', 'scope' => 'municipal', 'whatsapp_contact' => '3007778899',
         'responsible_person' => 'Test', 'ticket_price' => 10000, 'total_tickets' => 100,
-        'draw_date' => date('Y-m-d', strtotime('+30 days')), 'lottery_id' => 1, 'digits' => 2,
+        'draw_date' => fxNextLotteryDate(1), 'lottery_id' => 1, 'digits' => 2,
         'opportunities' => 1, 'winning_mode' => 'last_2', 'image_url' => '/assets/images/placeholder.svg',
     ], $token);
 };

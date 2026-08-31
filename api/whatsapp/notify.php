@@ -32,7 +32,10 @@ if (!function_exists('notificarWhatsAppVendor')) {
             'negocio' => new MisRifasTenant($vendorId),
             'formato' => new \ElkinLinan\WhatsappAiEngine\Defecto\PesosColombianos(),
             'funcion' => new \ElkinLinan\WhatsappAiEngine\Defecto\TodoPermitido(),
-            'config' => new \ElkinLinan\WhatsappAiEngine\Defecto\SinUrl(),
+            // ConfigDeEntorno: usa las credenciales Evolution gestionadas de la
+            // plataforma (WA_EVOLUTION_URL/APIKEY del .env) cuando el vendedor
+            // no configuró servidor propio.
+            'config' => new \ElkinLinan\WhatsappAiEngine\Defecto\ConfigDeEntorno(),
         ]);
 
         $canal = \ElkinLinan\WhatsappAiEngine\Channel\EvolutionClient::desdeConfig(\ElkinLinan\WhatsappAiEngine\Engine::db());

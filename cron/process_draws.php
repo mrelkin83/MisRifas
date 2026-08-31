@@ -23,7 +23,7 @@ try {
 
     $stmt = $db->query("
         SELECT r.id, r.name, r.lottery_id, r.vendor_id, r.winning_mode,
-               r.draw_date, r.ticket_price, r.whatsapp_contact, r.image_url,
+               r.draw_date, r.ticket_price, r.whatsapp_contact, r.image_url, r.auto_notify,
                lr.winning_number,
                l.name AS lottery_name
         FROM raffles r
@@ -184,16 +184,22 @@ function registerWinner(array $raffle, array $ticket, string $matchedDigits, arr
         'confirm_url' => $confirmUrl,
     ];
 
-    $msg = MessageBuilderService::buildWinnerMessage($raffle, $ticket, $winner, $lottery, $matchedDigits);
-    enqueueMessage(
-        $raffle['id'],
-        $vendor['id'],
-        $ticket['user_id'],
-        $ticket['buyer_phone'],
-        $ticket['buyer_email'],
-        $msg,
-        $scheduledAt
-    );
+    // auto_notify=0: el organizador eligió avisar él mismo a sus compradores;
+    // el ganador igual queda registrado y el organizador SÍ es notificado.
+    $notifyBuyers = !isset($raffle['auto_notify']) || (int)$raffle['auto_notify'] === 1;
+
+    if ($notifyBuyers) {
+        $msg = MessageBuilderService::buildWinnerMessage($raffle, $ticket, $winner, $lottery, $matchedDigits);
+        enqueueMessage(
+            $raffle['id'],
+            $vendor['id'],
+            $ticket['user_id'],
+            $ticket['buyer_phone'],
+            $ticket['buyer_email'],
+            $msg,
+            $scheduledAt
+        );
+    }
 
     $vendorMsg = MessageBuilderService::buildVendorWinnerNotification($raffle, $winner, $matchedDigits);
     enqueueMessage(
@@ -210,6 +216,9 @@ function registerWinner(array $raffle, array $ticket, string $matchedDigits, arr
     // ganador y sus boletos. Agrupado por comprador (una persona con varios
     // boletos recibe UN mensaje que los lista todos), excluyendo al ganador
     // (ya recibió su felicitación).
+    if (!$notifyBuyers) {
+        return;
+    }
     $byUser = [];
     foreach ($allTickets as $t) {
         if ((int)$t['user_id'] === (int)$ticket['user_id']) {
@@ -264,6 +273,11 @@ function scheduleResorteo(array $raffle, array $vendor, array $tickets, string $
     Logger::info("Rifa re-programada para: $nextDate", ['raffle_id' => $raffle['id']]);
 
     $lottery = ['name' => $raffle['lottery_name']];
+
+    // auto_notify=0: el organizador avisa por su cuenta.
+    if (isset($raffle['auto_notify']) && (int)$raffle['auto_notify'] === 0) {
+        return;
+    }
 
     // Un mensaje por comprador (agrupando sus boletos), avisando que sus
     // boletos SIGUEN participando y la nueva fecha del sorteo.

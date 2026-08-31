@@ -118,6 +118,19 @@ function httpPost(string $p, array $b = [], ?string $token = null): array { retu
  *  Fixtures (todos con marca __TEST__ y auto-limpieza)
  * ------------------------------------------------------------------ */
 
+/**
+ * Próxima fecha (Y-m-d) en que juega la lotería, a partir de $from.
+ * create.php ahora valida el día del sorteo contra lotteries.day_of_week.
+ */
+function fxNextLotteryDate(int $lotteryId, string $from = '+21 days'): string {
+    $day = testdb()->query("SELECT day_of_week FROM lotteries WHERE id = " . (int)$lotteryId)->fetchColumn() ?: 'monday';
+    $ts = strtotime($from);
+    while (strtolower(date('l', $ts)) !== $day) {
+        $ts = strtotime('+1 day', $ts);
+    }
+    return date('Y-m-d', $ts);
+}
+
 /** Crea una rifa de prueba y sus boletos (00..$nTickets-1). Devuelve el id. */
 function fxRaffle(array $opts = []): int {
     $db = testdb();

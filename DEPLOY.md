@@ -182,6 +182,10 @@ externo de cron en vez de crontab del sistema.
 # Notificaciones pendientes en cola — cada 10 minutos
 */10 * * * * php /var/www/misrifas/cron/process_notifications.php >> /var/www/misrifas/logs/cron.log 2>&1
 
+# Vinculación WhatsApp del organizador: recordatorio D-5/D-3 por correo y
+# desvinculación automática al día siguiente del último sorteo.
+0 8 * * * php /var/www/misrifas/cron/wa_link_reminders.php >> /var/www/misrifas/logs/cron.log 2>&1
+
 # El Tapazo (feature aparte, minijuego) — cada 10 segundos vía servicio
 # systemd/supervisor, no crontab (la frecuencia es demasiado alta para cron
 # estándar) — ver cron/INICIAR_SERVICIO_TAPAZO.bat como referencia de la

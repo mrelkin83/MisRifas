@@ -36,7 +36,7 @@ use ElkinLinan\WhatsappAiEngine\Core\HumanHandoff;
 use ElkinLinan\WhatsappAiEngine\Core\RateLimiter;
 use ElkinLinan\WhatsappAiEngine\Core\WaConfig;
 use ElkinLinan\WhatsappAiEngine\Defecto\PesosColombianos;
-use ElkinLinan\WhatsappAiEngine\Defecto\SinUrl;
+use ElkinLinan\WhatsappAiEngine\Defecto\ConfigDeEntorno;
 use ElkinLinan\WhatsappAiEngine\Defecto\TodoPermitido;
 
 header('Content-Type: application/json; charset=utf-8');
@@ -84,7 +84,7 @@ Engine::arrancar([
     'negocio' => new MisRifasTenant($vendorId, $vendorName),
     'formato' => new PesosColombianos(),
     'funcion' => new TodoPermitido(),
-    'config' => new SinUrl(),
+    'config' => new ConfigDeEntorno(),
 ]);
 
 $payload = json_decode(file_get_contents('php://input'), true);

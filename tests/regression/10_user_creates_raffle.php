@@ -41,7 +41,7 @@ $res = httpPost('/api/raffles/create.php', [
     'name' => '__TEST__ Rifa Unify', 'description' => 'prueba', 'department' => 'Cundinamarca',
     'city' => 'Bogota', 'scope' => 'municipal', 'whatsapp_contact' => '3007778899',
     'responsible_person' => 'Test', 'ticket_price' => 1000, 'total_tickets' => 100,
-    'draw_date' => date('Y-m-d', strtotime('+30 days')), 'lottery_id' => 1, 'digits' => 2,
+    'draw_date' => fxNextLotteryDate(1), 'lottery_id' => 1, 'digits' => 2,
     'opportunities' => 1, 'winning_mode' => 'last_2', 'image_url' => '/assets/images/placeholder.svg',
 ], $token);
 $created = assertHttp(201, $res, 'El usuario puede crear una rifa');
@@ -49,3 +49,16 @@ if ($created) {
     $owner = $db->query("SELECT created_by FROM raffles WHERE name = '__TEST__ Rifa Unify' ORDER BY id DESC LIMIT 1")->fetchColumn();
     check((int)$owner === $vid, 'La rifa queda a nombre de su organizador provisionado', "created_by=$owner vendor=$vid");
 }
+
+// 3) El backend rechaza una fecha que NO cae el día que juega la lotería
+//    (antes solo lo validaba el navegador → rifas huérfanas vía API).
+$badDate = date('Y-m-d', strtotime(fxNextLotteryDate(1) . ' +1 day'));
+$res = httpPost('/api/raffles/create.php', [
+    'name' => '__TEST__ Rifa DiaMalo', 'description' => 'x', 'department' => 'Cundinamarca',
+    'city' => 'Bogota', 'scope' => 'municipal', 'whatsapp_contact' => '3007778899',
+    'responsible_person' => 'Test', 'ticket_price' => 1000, 'total_tickets' => 100,
+    'draw_date' => $badDate, 'lottery_id' => 1, 'digits' => 2,
+    'opportunities' => 1, 'winning_mode' => 'last_2', 'image_url' => '/assets/images/placeholder.svg',
+], $token);
+check($res['code'] === 422 && ($res['json']['errors'] ?? '') === 'DRAW_DAY_MISMATCH',
+    'Fecha en día que la lotería no juega → 422 DRAW_DAY_MISMATCH', 'HTTP ' . $res['code']);

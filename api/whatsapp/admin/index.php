@@ -41,7 +41,7 @@ use ElkinLinan\WhatsappAiEngine\Core\WaConfig;
 use ElkinLinan\WhatsappAiEngine\Providers\LlmProviderManager;
 use ElkinLinan\WhatsappAiEngine\Providers\ModelDiscoveryService;
 use ElkinLinan\WhatsappAiEngine\Defecto\PesosColombianos;
-use ElkinLinan\WhatsappAiEngine\Defecto\SinUrl;
+use ElkinLinan\WhatsappAiEngine\Defecto\ConfigDeEntorno;
 use ElkinLinan\WhatsappAiEngine\Defecto\TodoPermitido;
 
 function jsonResponse(array $data, int $code = 200): void {
@@ -72,7 +72,7 @@ Engine::arrancar([
     'negocio' => new MisRifasTenant($vendorId, $vendorName),
     'formato' => new PesosColombianos(),
     'funcion' => new TodoPermitido(),
-    'config' => new SinUrl(),
+    'config' => new ConfigDeEntorno(),
 ]);
 
 $db  = Engine::db();

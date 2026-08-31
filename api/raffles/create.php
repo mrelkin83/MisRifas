@@ -88,6 +88,36 @@ try {
         Response::error('Para rifas de 4 cifras, el modo de ganar debe ser últimas 4 cifras');
     }
 
+    // Validar que la fecha del sorteo caiga en el día que juega la lotería.
+    // El formulario ya lo valida en el navegador, pero sin este chequeo un
+    // llamado directo a la API podía crear una rifa cuyo resultado el scraper
+    // jamás encontraría (la lotería no juega ese día) — rifa huérfana.
+    $lotStmt = Database::getInstance()->getConnection()
+        ->prepare("SELECT name, day_of_week FROM lotteries WHERE id = ? AND active = 1");
+    $lotStmt->execute([(int)$input['lottery_id']]);
+    $lottery = $lotStmt->fetch(PDO::FETCH_ASSOC);
+    if (!$lottery) {
+        Response::error('La lotería seleccionada no existe o no está activa', null, 422);
+    }
+    $drawTs = strtotime($input['draw_date']);
+    if ($drawTs === false || $drawTs < strtotime('tomorrow')) {
+        Response::error('La fecha de sorteo debe ser una fecha futura válida', null, 422);
+    }
+    $dayNamesEs = [
+        'monday' => 'lunes', 'tuesday' => 'martes', 'wednesday' => 'miércoles',
+        'thursday' => 'jueves', 'friday' => 'viernes', 'saturday' => 'sábado', 'sunday' => 'domingo',
+    ];
+    $selectedDay = strtolower(date('l', $drawTs));
+    if ($selectedDay !== $lottery['day_of_week']) {
+        Response::error(
+            'La ' . $lottery['name'] . ' sortea los ' . ($dayNamesEs[$lottery['day_of_week']] ?? $lottery['day_of_week'])
+            . ', pero la fecha elegida cae un ' . ($dayNamesEs[$selectedDay] ?? $selectedDay)
+            . '. Elige una fecha que caiga en ' . ($dayNamesEs[$lottery['day_of_week']] ?? $lottery['day_of_week']) . '.',
+            'DRAW_DAY_MISMATCH',
+            422
+        );
+    }
+
     // Validar coherencia entre oportunidades y total_tickets
     $opportunities = (int)$input['opportunities'];
     $totalTickets = (int)$input['total_tickets'];
@@ -134,6 +164,8 @@ try {
         'opportunities'      => (int)$input['opportunities'],
         'winning_mode'       => $input['winning_mode'],
         'status'             => RAFFLE_STATUS_DRAFT,
+        // Opt-in de notificaciones automáticas a participantes (default sí).
+        'auto_notify'        => (isset($input['auto_notify']) && !$input['auto_notify']) ? 0 : 1,
         'created_by'         => $adminUser['id'],
         // vendor_id es la columna de scoping que usan api/vendor/list_raffles.php,
         // list_participants.php y list_payments.php - sin esto, una rifa creada

@@ -950,6 +950,15 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                                     <input type="date" id="draw-date" name="draw_date" required>
                                     <small style="color:#64748b;font-size:12px;margin-top:4px;display:block;">La hora se asigna automáticamente según la lotería seleccionada.</small>
                                 </div>
+                                <div class="form-group">
+                                    <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;font-weight:normal;">
+                                        <input type="checkbox" id="auto-notify" checked style="margin-top:3px;width:16px;height:16px;flex-shrink:0;">
+                                        <span style="font-size:13px;color:#475569;">
+                                            <strong style="color:#0f172a;">Verificar el resultado y notificar automáticamente</strong><br>
+                                            El día del sorteo, el sistema consulta el número ganador de la lotería y le avisa a cada participante de ESTA rifa por correo (y WhatsApp si lo vinculas): felicita al ganador y agradece a los demás. Si lo desactivas, tú te encargas de avisarles.
+                                        </span>
+                                    </label>
+                                </div>
                             </div>
                             <div class="form-row">
                                 <div class="form-group">
@@ -1123,6 +1132,24 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                             </div>
                             <button type="submit" class="btn btn--primary" id="btn-save-nequi">Guardar Nequi API</button>
                         </form>
+                    </div>
+
+                    <div class="section-card" id="wa-link-card">
+                        <h2 class="text-lg font-bold mb-2">📱 WhatsApp para notificaciones</h2>
+                        <p class="text-sm text-gray-500 mb-4">Vincula tu WhatsApp escaneando un código QR. El día del sorteo, el sistema enviará desde TU número el resultado a los participantes de tu rifa (además del correo, que va siempre). Puedes desvincularlo cuando quieras.</p>
+                        <div class="flex items-center gap-3 flex-wrap mb-3">
+                            <span id="wa-link-estado" class="badge badge--pending">Consultando…</span>
+                            <span id="wa-link-numero" class="text-sm text-gray-500"></span>
+                        </div>
+                        <div id="wa-link-qr" class="hidden text-center py-3">
+                            <img id="wa-link-qr-img" alt="Código QR de WhatsApp" style="width:240px;height:240px;margin:0 auto;border-radius:12px;border:1px solid #e2e8f0;">
+                            <p class="text-sm text-gray-500 mt-2">Abre WhatsApp → Dispositivos vinculados → Vincular dispositivo, y escanea.</p>
+                        </div>
+                        <div class="flex gap-2 flex-wrap">
+                            <button type="button" class="btn btn--primary btn--sm" id="wa-link-btn" onclick="waLinkQr()">🔗 Vincular con código QR</button>
+                            <button type="button" class="btn btn--sm hidden" id="wa-unlink-btn" style="background:#ef4444;color:#fff;" onclick="waUnlink()">Desvincular</button>
+                        </div>
+                        <p id="wa-link-msg" class="text-sm mt-3" style="color:#94a3b8;"></p>
                     </div>
 
                     <div class="section-card">
@@ -3102,6 +3129,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
         data.digits        = digits;
         data.opportunities = opportunities;
         data.lottery_id    = parseInt(data.lottery_id);
+        data.auto_notify   = document.getElementById('auto-notify')?.checked !== false;
 
         // Agregar hora automática según lotería
         const lottery = LOTTERY_DAYS[data.lottery_id];
@@ -3201,7 +3229,74 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
     // ================================================================
     // MI PERFIL: Cargar y guardar Nequi + EvolutionAPI
     // ================================================================
+
+    // ── WhatsApp autoservicio (QR gestionado por la plataforma) ──
+    let waLinkPoll = null;
+    async function loadWaLinkStatus() {
+        try {
+            const r = await API.get('/vendor/whatsapp.php', { action: 'estado' });
+            if (!r.success) return;
+            const d = r.data;
+            const badge = document.getElementById('wa-link-estado');
+            const numero = document.getElementById('wa-link-numero');
+            const btn = document.getElementById('wa-link-btn');
+            const unlink = document.getElementById('wa-unlink-btn');
+            const msg = document.getElementById('wa-link-msg');
+            if (!badge) return;
+            if (d.estado === 'no_disponible') {
+                badge.className = 'badge badge--pending';
+                badge.textContent = 'Próximamente';
+                btn.disabled = true;
+                msg.textContent = d.mensaje || '';
+                return;
+            }
+            if (d.estado === 'conectado') {
+                badge.className = 'badge badge--active';
+                badge.textContent = 'Conectado ✓';
+                numero.textContent = d.numero ? ('+' + d.numero) : '';
+                btn.classList.add('hidden');
+                unlink.classList.remove('hidden');
+                document.getElementById('wa-link-qr').classList.add('hidden');
+                if (waLinkPoll) { clearInterval(waLinkPoll); waLinkPoll = null; }
+            } else {
+                badge.className = 'badge badge--pending';
+                badge.textContent = 'Sin vincular';
+                btn.classList.remove('hidden');
+                unlink.classList.add('hidden');
+            }
+        } catch (e) { console.error('wa estado', e); }
+    }
+    window.waLinkQr = async () => {
+        const btn = document.getElementById('wa-link-btn');
+        const msg = document.getElementById('wa-link-msg');
+        btn.disabled = true; btn.textContent = 'Generando QR…';
+        try {
+            const r = await API.post('/vendor/whatsapp.php', { action: 'qr' });
+            if (r.success && r.data.qr) {
+                const img = document.getElementById('wa-link-qr-img');
+                img.src = r.data.qr.startsWith('data:') ? r.data.qr : ('data:image/png;base64,' + r.data.qr);
+                document.getElementById('wa-link-qr').classList.remove('hidden');
+                msg.textContent = 'Esperando el escaneo… esta tarjeta se actualizará sola al conectar.';
+                if (waLinkPoll) clearInterval(waLinkPoll);
+                waLinkPoll = setInterval(loadWaLinkStatus, 4000);
+            } else {
+                msg.textContent = r.message || r.data?.error || 'No se pudo generar el QR';
+            }
+        } catch (e) { msg.textContent = e.message || 'No se pudo generar el QR'; }
+        finally { btn.disabled = false; btn.textContent = '🔗 Vincular con código QR'; }
+    };
+    window.waUnlink = async () => {
+        if (!confirm('¿Desvincular tu WhatsApp? Las notificaciones seguirán saliendo por correo.')) return;
+        try {
+            await API.post('/vendor/whatsapp.php', { action: 'desconectar' });
+            Utils.showNotification('WhatsApp desvinculado', 'info');
+            document.getElementById('wa-link-qr').classList.add('hidden');
+            loadWaLinkStatus();
+        } catch (e) { Utils.showNotification('Error al desvincular', 'error'); }
+    };
+
     async function loadPerfilAPI() {
+        loadWaLinkStatus();
         try {
             // 1. Configuración de Pago/WA
             const res = await API.get('/admin/profile_api.php');
