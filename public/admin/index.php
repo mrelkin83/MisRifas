@@ -3945,6 +3945,13 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
             }
             .vtab svg { width: 22px; height: 22px; }
             .vtab--on { color: #f59e0b; }
+            a.vtab { text-decoration: none; }
+            /* Avatar del usuario junto a la hamburguesa (header estilo app):
+               [☰][avatar] a la izquierda, título a la derecha. */
+            .admin-header { justify-content: flex-end; padding-left: 112px !important; }
+            .user-menu { position: absolute; left: 62px; top: 50%; transform: translateY(-50%); }
+            .user-name, .user-menu-caret { display: none; }
+            .user-dropdown { left: 0; right: auto; }
             #vendor-fab {
                 display: flex; align-items: center; justify-content: center;
                 position: fixed; right: 18px; bottom: 84px; z-index: 91;
@@ -3960,6 +3967,10 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
     </button>
     <nav id="vendor-tabbar" aria-label="Navegación">
+        <a class="vtab" href="<?= BASE_PATH ?>/public/index.php" title="Ir al sitio público">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 9v11a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9"/></svg>
+            <span>Inicio</span>
+        </a>
         <button class="vtab" data-tab="dashboard" onclick="switchTo('dashboard')">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
             <span>Panel</span>
