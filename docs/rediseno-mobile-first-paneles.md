@@ -1,0 +1,248 @@
+# Rediseño Mobile-First de Paneles
+
+> **Uso**: pega este documento como system prompt (o inclúyelo en el CLAUDE.md / contexto del proyecto) cuando quieras aplicar a un panel administrativo web el mismo sistema de rediseño móvil que se implementó en MisRifas (paneles admin + vendedor). Está escrito como instrucciones directas para quien implementa. Los snippets son plantillas probadas en producción: adapta colores/nombres a tu proyecto, no la estructura.
+
+---
+
+## Rol y objetivo
+
+Eres un desarrollador frontend aplicando un rediseño **mobile-first** a un panel administrativo existente (dashboard con sidebar, secciones conmutables por JS y tablas de datos). El objetivo es que el panel se sienta como una **app nativa en el teléfono** sin degradar la experiencia de escritorio ni romper ninguna función existente. No es una reescritura: es una capa de patrones sobre lo que ya funciona.
+
+## Principios innegociables
+
+1. **Una sola base de código.** Nada de "versión móvil" aparte: los componentes móviles (tab bar, FAB, sheets) se ocultan/muestran con media queries sobre el mismo HTML.
+2. **El escritorio no se toca salvo para mejorar.** El sidebar, las tablas y los flujos de escritorio siguen funcionando igual; los componentes nuevos conviven.
+3. **Paridad entre paneles gemelos.** Si el proyecto tiene dos paneles forkeados (p. ej. admin y vendedor), todo patrón se aplica a AMBOS en el mismo cambio, preservando las divergencias legítimas de cada uno (features exclusivos, redirects propios).
+4. **CSS del framework purgado = no inventes clases.** Si el proyecto compila/purga Tailwind (u otro), **verifica que cada clase exista en el CSS final** antes de usarla (`grep -F ".clase" dist.css`). Para los componentes nuevos usa estilos propios con prefijo (`.mr-*`, `.rs-*`) — nunca dependas de clases que quizás no estén.
+5. **Todo renderizador escapa datos de usuario.** Cualquier `innerHTML` que interpole nombres, ciudades o textos escritos por usuarios pasa por un escapador HTML. Aprovecha el rediseño para cerrar XSS almacenado en las listas que toques.
+6. **Toda lista tiene 3 estados**: cargando, vacío (con CTA) y contenido. Nunca un contenedor en blanco.
+7. **Verificación real, no fe.** Cada pieza se prueba en navegador real a ~390 px de ancho Y en escritorio, con clicks reales (no solo "el código se ve bien"). Si hay suite de regresión, corre verde antes de desplegar.
+
+```js
+// Escapador estándar para todos los renderizadores:
+function esc(s) {
+    return String(s ?? '').replace(/[&<>"']/g, c =>
+        ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+```
+
+---
+
+## 1. Tab bar inferior (navegación móvil)
+
+**Qué es**: barra fija al fondo de la pantalla con las 4-5 secciones más usadas, solo visible en móvil (≤768 px). El sidebar de escritorio queda intacto.
+
+**Reglas**:
+- Máximo 5 tabs. Elige por frecuencia de uso, no por jerarquía del menú.
+- Cada tab: icono SVG de trazo (stroke, no fill) + etiqueta corta de una palabra.
+- La tab activa se resalta con el color de acento; el estado se sincroniza con el router de secciones mediante un **hook**, no duplicando lógica.
+- `env(safe-area-inset-bottom)` para teléfonos con notch/gesto.
+- El contenedor principal recibe `padding-bottom` para que el contenido no quede debajo de la barra.
+
+```html
+<nav id="app-tabbar" aria-label="Navegación">
+    <button class="vtab" data-tab="dashboard" onclick="switchTo('dashboard')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9">…</svg>
+        <span>Panel</span>
+    </button>
+    <!-- 3-4 tabs más -->
+</nav>
+```
+
+```css
+#app-fab, #app-tabbar { display: none; }
+@media (max-width: 768px) {
+    .admin-main { padding-bottom: 78px; }
+    #app-tabbar {
+        display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 90;
+        background: var(--nav-bg, #0f172a); border-top: 1px solid var(--nav-border, #1e293b);
+        padding: 6px 4px calc(6px + env(safe-area-inset-bottom, 0px));
+        box-shadow: 0 -6px 20px rgba(0,0,0,.25);
+    }
+    .vtab {
+        flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+        gap: 3px; background: none; border: none; cursor: pointer; padding: 6px 2px;
+        color: var(--nav-muted, #94a3b8); font-size: 11px; font-weight: 600; border-radius: 12px;
+    }
+    .vtab svg { width: 22px; height: 22px; }
+    .vtab--on { color: var(--accent, #f59e0b); }
+}
+```
+
+```js
+// Sincronización: el router de secciones llama al hook si existe.
+window.syncTab = function (section) {
+    document.querySelectorAll('#app-tabbar .vtab').forEach(t =>
+        t.classList.toggle('vtab--on', t.getAttribute('data-tab') === section));
+};
+// …y dentro de switchTo(section):  if (window.syncTab) syncTab(section);
+```
+
+## 2. FAB (botón de acción flotante)
+
+**Qué es**: botón circular flotante para LA acción primaria de creación del panel (una sola). Solo móvil; se posiciona encima de la tab bar.
+
+```css
+@media (max-width: 768px) {
+    #app-fab {
+        display: flex; align-items: center; justify-content: center;
+        position: fixed; right: 18px; bottom: 84px; z-index: 91;
+        width: 58px; height: 58px; border-radius: 50%; border: none; cursor: pointer;
+        background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+        color: var(--accent-text); box-shadow: 0 10px 25px rgba(0,0,0,.35);
+    }
+    #app-fab:active { transform: scale(.94); }
+}
+```
+
+## 3. Menú de avatar (header)
+
+**Qué es**: el círculo de usuario del header abre un dropdown con las acciones de cuenta (Mi Panel, Configuración, Salir…).
+
+**Reglas**:
+- Botón con `aria-haspopup="true"` y `aria-expanded` que rota un caret; click fuera y tecla Escape cierran.
+- La opción "Salir" en color de peligro. **Cerrar sesión redirige a la página inicial pública, no al login.**
+- **En móvil, el mismo menú se integra dentro del menú hamburguesa** como lista plana (CSS convierte el dropdown en bloque estático) — el usuario no debe buscar dos menús distintos.
+- Estilos inline o propios: este menú suele vivir en páginas que no cargan el CSS del framework completo.
+
+## 4. Menú de 3 puntos (⋮) + bottom sheet de acciones
+
+**El patrón central del rediseño.** Toda fila de tabla o tarjeta que tenga botones de acción ("Ver", "Editar", "Aprobar", "Eliminar"…) los reemplaza por **un solo botón ⋮** que abre una **hoja inferior (bottom sheet)** estilo app nativa con la lista de acciones. Vale para escritorio también (la hoja tiene `max-width` y se centra).
+
+**Componente genérico** (uno solo por página, reutilizado por todas las listas):
+
+```html
+<div id="sheet-backdrop" onclick="closeSheet()"></div>
+<div id="action-sheet" role="dialog" aria-modal="true">
+    <div class="rs-handle"></div>
+    <div class="rs-head">
+        <div class="rs-title" id="sheet-title"></div>
+        <div class="rs-sub" id="sheet-sub"></div>
+    </div>
+    <div id="sheet-actions"></div>
+</div>
+```
+
+```css
+#sheet-backdrop { display:none; position:fixed; inset:0; background:rgba(15,23,42,.5); z-index:120; }
+#action-sheet {
+    display:none; position:fixed; left:0; right:0; bottom:0; z-index:121;
+    background:#fff; border-radius:20px 20px 0 0; box-shadow:0 -12px 40px rgba(0,0,0,.25);
+    padding:10px 12px calc(12px + env(safe-area-inset-bottom,0px));
+    animation:sheetUp .22s ease-out; max-width:520px; margin:0 auto;
+}
+@keyframes sheetUp { from{transform:translateY(100%);} to{transform:translateY(0);} }
+.rs-handle { width:40px; height:4px; border-radius:99px; background:#e5e7eb; margin:4px auto 10px; }
+.rs-head { padding:0 8px 10px; border-bottom:1px solid #f1f5f9; margin-bottom:6px; }
+.rs-title { font-weight:800; font-size:16px; }
+.rs-sub { font-size:12px; color:#6b7280; margin-top:2px; }
+.rs-item { display:flex; align-items:center; gap:12px; width:100%; text-align:left; background:none;
+           border:none; cursor:pointer; padding:14px 10px; border-radius:12px; font-size:15px; font-weight:600; }
+.rs-item:hover { background:#f3f4f6; }
+.rs-item--danger { color:#dc2626; }
+```
+
+```js
+(function () {
+    function el(id){ return document.getElementById(id); }
+    function item(label, onClick, danger){
+        var b = document.createElement('button');
+        b.className = 'rs-item' + (danger ? ' rs-item--danger' : '');
+        b.textContent = label;
+        b.addEventListener('click', onClick);
+        return b;
+    }
+    window.showSheet  = function(){ el('action-sheet').style.display='block'; el('sheet-backdrop').style.display='block'; document.body.style.overflow='hidden'; };
+    window.closeSheet = function(){ el('action-sheet').style.display='none';  el('sheet-backdrop').style.display='none';  document.body.style.overflow=''; };
+
+    // API genérica: título, subtítulo y acciones [{label, onClick, danger}]
+    window.openActionSheet = function(title, sub, items){
+        el('sheet-title').textContent = title || '';
+        el('sheet-sub').textContent = sub || '';
+        var body = el('sheet-actions');
+        body.innerHTML = '';
+        (items || []).forEach(function(it){
+            body.appendChild(item(it.label, function(){ closeSheet(); it.onClick(); }, it.danger));
+        });
+        showSheet();
+    };
+})();
+```
+
+**Reglas del patrón**:
+- El botón de la fila: `<button class="btn btn--sm" aria-label="Acciones" title="Acciones" onclick="openXSheet(ID)" style="font-size:20px;line-height:1;padding:2px 10px;">⋮</button>`. En tarjetas con imagen, es un círculo blanco superpuesto.
+- **Cada lista guarda su dataset** al renderizar (`window.__pagos = data;`) y su opener busca por id comparando como String (`String(x.id) === String(id)`) — los ids llegan como número o string según el backend.
+- Las acciones del sheet son **condicionales al estado** del ítem (p. ej. "Publicar" si es borrador, "Ocultar" si está activa; "Completar" solo si está activo).
+- La acción destructiva va al final, marcada `danger`, y conserva su `confirm()`.
+- El wrapper cierra el sheet ANTES de ejecutar la acción.
+- **Refresco tras mutación**: una función central re-carga solo las vistas que estén visibles (`!section.classList.contains('hidden')`), nunca todas a ciegas.
+- Etiquetas con emoji al inicio (👁️ Ver / ✏️ Editar / 🚀 Publicar / 🗑️ Eliminar) — legibles y sin dependencia de iconfonts.
+- **Gotcha JS**: variables `let/const` de nivel superior de otro `<script>` NO cuelgan de `window`; referencia con identificador directo protegido por `typeof x !== 'undefined'`.
+
+## 5. Tarjetas enriquecidas (grid de entidades)
+
+Para la lista principal de entidades del usuario (sus rifas, sus productos, sus eventos…), reemplaza la tabla por un **grid de tarjetas** con esta anatomía, de arriba a abajo:
+
+1. **Cabecera de imagen 16:9** (`aspect-ratio:16/9; object-fit:cover; loading="lazy"`), con **badge de estado** superpuesto arriba-izquierda y el **⋮ en círculo blanco** arriba-derecha. Fallback si no hay imagen o falla la carga: gradiente oscuro con un emoji temático centrado y `onerror="this.remove()"` en el `<img>`.
+2. **Nombre** (bold, `text-overflow:ellipsis`) y ubicación/subtítulo tenue.
+3. **Fila de datos**: precio/dato clave + **chip semántico de tiempo** ("¡Hoy!", "Mañana", "Faltan N días" — ámbar si es inminente, azul si falta, gris para vencido/finalizado).
+4. **Barra de progreso** con etiqueta "X de Y" y porcentaje; la barra cambia a verde al 100 %.
+5. **Pie con el dato de negocio** que el dueño quiere ver de un vistazo (recaudado, ventas), separado por borde punteado.
+
+```css
+.card { background:#fff; border:1px solid #eef2f7; border-radius:16px; overflow:hidden;
+        box-shadow:0 1px 2px rgba(15,23,42,.06); display:flex; flex-direction:column;
+        transition:box-shadow .15s ease, transform .15s ease; }
+.card:hover { box-shadow:0 8px 24px rgba(15,23,42,.12); transform:translateY(-2px); }
+.card-media { position:relative; aspect-ratio:16/9; background:linear-gradient(135deg,#0f172a,#334155);
+              display:flex; align-items:center; justify-content:center; font-size:36px; }
+.card-media img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+.card-kebab { position:absolute; top:8px; right:8px; z-index:2; width:34px; height:34px; border-radius:50%;
+              background:rgba(255,255,255,.94); border:none; cursor:pointer; font-size:18px; font-weight:700;
+              box-shadow:0 2px 8px rgba(0,0,0,.22); }
+```
+
+Grid: `grid-cols-1` móvil → `sm:grid-cols-2` → `lg:grid-cols-3` escritorio (o su equivalente CSS puro).
+
+## 6. Hojas de selección / formularios emergentes (páginas públicas)
+
+En flujos públicos móviles (compra, selección de ítems), el formulario vive en una **hoja emergente** con resumen fijo ("Tu selección — N · $total"), disparada por un botón flotante contextual ("Ver selección (N)").
+
+**Gotcha crítico de CSS**: `position:fixed` se rompe si un ancestro tiene `backdrop-filter`, `transform` o `filter` (el fixed pasa a ser relativo a ese ancestro). Si la hoja sale recortada o mal posicionada, **muévela a hijo directo de `<body>`**.
+
+## 7. Estados, refresco y datos
+
+- **3 estados por lista** con contenedores dedicados: `#x-loading` ("Cargando…"), `#x-empty` (mensaje + emoji + botón CTA a crear), `#x-grid`. El catch de la carga muestra empty, no un error rojo, cuando "no hay datos" es un resultado válido.
+- Tras cualquier mutación (crear/editar/borrar/cambiar estado), refresca **solo** las vistas visibles.
+- Fechas con `toLocaleDateString` del locale del proyecto; dinero con el formateador central del proyecto — nunca formateos ad-hoc.
+
+## 8. Accesibilidad y detalles
+
+- Todo botón icónico lleva `aria-label` y `title`.
+- El sheet: `role="dialog" aria-modal="true"`; el dropdown de avatar: `aria-haspopup`/`aria-expanded`.
+- `:active { transform: scale(.94) }` en FAB y kebabs — feedback táctil barato.
+- Tablas anchas en móvil: `display:block; overflow-x:auto; -webkit-overflow-scrolling:touch;` en la tabla, nunca scroll horizontal del body.
+- Stat-cards en grids: `min-width:0` en la tarjeta y su contenido, `word-break:break-word` en cifras grandes (los números largos desbordan los grids).
+
+## 9. Orden de implementación probado
+
+Aplica en este orden; cada paso se verifica en navegador (≈390 px y escritorio) y con la suite de tests antes del siguiente:
+
+1. **Auditoría**: mapa de secciones del panel, router (`switchTo` o equivalente), listas con botones de acción, y verificación de qué clases CSS existen realmente.
+2. **Tab bar + FAB** + hook de sincronización con el router.
+3. **Menú de avatar** (header) + su integración en la hamburguesa móvil.
+4. **Componente sheet genérico** + conversión de la primera lista (la más usada) al patrón ⋮.
+5. **Conversión del resto de listas**, una a una, agregando el escape XSS y los datasets `window.__*` por el camino.
+6. **Sección "Mis X"** (grid de tarjetas enriquecidas de las entidades del usuario) con su entrada en sidebar + tab bar.
+7. **Refinamiento de tarjetas** (imagen, chips, progreso, dato de negocio).
+8. **Paridad**: portar todo al panel gemelo (los forks casi idénticos se portan por bloques; preserva las divergencias legítimas de cada panel).
+9. Logout → página inicial pública (no al login).
+
+## 10. Qué NO hacer
+
+- No dupliques markup "solo móvil" / "solo escritorio" para el mismo contenido.
+- No uses clases del framework CSS sin confirmar que sobrevivieron al purgado.
+- No dejes botones de acción en fila Y ⋮ a la vez: el ⋮ los reemplaza.
+- No refresques todas las secciones tras cada acción — solo las visibles.
+- No interpoles texto de usuario en `innerHTML` sin escapar.
+- No pruebes solo el camino feliz: abre el sheet, ejecuta una mutación real, verifica BD y refresco de UI.
