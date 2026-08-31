@@ -150,8 +150,9 @@ function fxBuyer(?string $phone = null): array {
     $db = testdb();
     $phone = $phone ?: ('39' . random_int(10000000, 99999999));
     $uuid = sprintf('%s-%s-%s-%s-%s', bin2hex(random_bytes(4)), bin2hex(random_bytes(2)), bin2hex(random_bytes(2)), bin2hex(random_bytes(2)), bin2hex(random_bytes(6)));
-    $stmt = $db->prepare("INSERT INTO users (unique_id, name, phone_whatsapp) VALUES (?, '__TEST__ Comprador', ?)");
-    $stmt->execute([$uuid, $phone]);
+    // Email incluido: es el canal por defecto de notificación de resultados.
+    $stmt = $db->prepare("INSERT INTO users (unique_id, name, phone_whatsapp, email) VALUES (?, '__TEST__ Comprador', ?, ?)");
+    $stmt->execute([$uuid, $phone, 'test-' . $phone . '@test.local']);
     $id = (int)$db->lastInsertId();
     onTeardown(function () use ($db, $id) {
         // Limpiar referencias primero para que el borrado no dependa del orden

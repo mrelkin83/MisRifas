@@ -114,7 +114,7 @@ function processRaffleDraw(array $raffle): array
     $scheduledAt = date('Y-m-d') . ' 05:00:00';
 
     if ($winningTicket) {
-        registerWinner($raffle, $winningTicket, $digitsToMatch, $vendor, $scheduledAt);
+        registerWinner($raffle, $winningTicket, $digitsToMatch, $vendor, $scheduledAt, $tickets);
         return ['has_winner' => true];
     }
 
@@ -140,7 +140,7 @@ function getWinningDigits(string $number, string $mode): string
     }
 }
 
-function registerWinner(array $raffle, array $ticket, string $matchedDigits, array $vendor, string $scheduledAt): void
+function registerWinner(array $raffle, array $ticket, string $matchedDigits, array $vendor, string $scheduledAt, array $allTickets = []): void
 {
     $db = Database::getInstance()->getConnection();
 
@@ -205,6 +205,47 @@ function registerWinner(array $raffle, array $ticket, string $matchedDigits, arr
         $vendorMsg,
         $scheduledAt
     );
+
+    // Agradecimiento a los demás participantes de ESTA rifa: resultado,
+    // ganador y sus boletos. Agrupado por comprador (una persona con varios
+    // boletos recibe UN mensaje que los lista todos), excluyendo al ganador
+    // (ya recibió su felicitación).
+    $byUser = [];
+    foreach ($allTickets as $t) {
+        if ((int)$t['user_id'] === (int)$ticket['user_id']) {
+            continue;
+        }
+        $uid = (int)$t['user_id'];
+        if (!isset($byUser[$uid])) {
+            $byUser[$uid] = [
+                'name' => $t['buyer_name'],
+                'phone' => $t['buyer_phone'],
+                'email' => $t['buyer_email'],
+                'tickets' => [],
+            ];
+        }
+        $byUser[$uid]['tickets'][] = $t['ticket_number'];
+    }
+    foreach ($byUser as $uid => $participant) {
+        $msg = MessageBuilderService::buildParticipantResultMessage(
+            $raffle,
+            $participant['tickets'],
+            ['name' => $participant['name']],
+            $lottery,
+            $matchedDigits,
+            $ticket['buyer_name'],
+            $ticket['ticket_number']
+        );
+        enqueueMessage(
+            $raffle['id'],
+            $vendor['id'],
+            $uid,
+            $participant['phone'],
+            $participant['email'],
+            $msg,
+            $scheduledAt
+        );
+    }
 }
 
 function scheduleResorteo(array $raffle, array $vendor, array $tickets, string $digitsToMatch, string $scheduledAt): void
@@ -224,20 +265,36 @@ function scheduleResorteo(array $raffle, array $vendor, array $tickets, string $
 
     $lottery = ['name' => $raffle['lottery_name']];
 
+    // Un mensaje por comprador (agrupando sus boletos), avisando que sus
+    // boletos SIGUEN participando y la nueva fecha del sorteo.
+    $byUser = [];
     foreach ($tickets as $ticket) {
-        $buyer = [
-            'name' => $ticket['buyer_name'],
-            'phone_whatsapp' => $ticket['buyer_phone'],
-            'email' => $ticket['buyer_email'],
-        ];
-
-        $msg = MessageBuilderService::buildNoWinnerMessage($raffle, $ticket, $buyer, $lottery, $digitsToMatch);
+        $uid = (int)$ticket['user_id'];
+        if (!isset($byUser[$uid])) {
+            $byUser[$uid] = [
+                'name' => $ticket['buyer_name'],
+                'phone' => $ticket['buyer_phone'],
+                'email' => $ticket['buyer_email'],
+                'tickets' => [],
+            ];
+        }
+        $byUser[$uid]['tickets'][] = $ticket['ticket_number'];
+    }
+    foreach ($byUser as $uid => $participant) {
+        $msg = MessageBuilderService::buildResorteoMessage(
+            $raffle,
+            $participant['tickets'],
+            ['name' => $participant['name']],
+            $lottery,
+            $digitsToMatch,
+            $nextDate
+        );
         enqueueMessage(
             $raffle['id'],
             $vendor['id'],
-            $ticket['user_id'],
-            $ticket['buyer_phone'],
-            $ticket['buyer_email'],
+            $uid,
+            $participant['phone'],
+            $participant['email'],
             $msg,
             $scheduledAt
         );
@@ -262,20 +319,34 @@ function enqueueMessage(
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, NOW())
     ");
 
-    $stmt->execute([
-        $raffleId,
-        $vendorId,
-        $recipientUserId,
-        $recipientPhone,
-        $recipientEmail,
-        $msg['channel'] ?? 'whatsapp',
-        $msg['message_type'] ?? 'winner',
-        $msg['subject'] ?? null,
-        $msg['body_text'] ?? '',
-        $msg['body_html'] ?? null,
-        isset($msg['variables']) ? json_encode($msg['variables']) : null,
-        $scheduledAt,
-    ]);
+    // El email es el canal POR DEFECTO de resultados: se encola siempre que
+    // el destinatario tenga correo. WhatsApp es el canal adicional (depende
+    // de que el vendedor tenga su instancia Evolution vinculada). Cada canal
+    // va en su propia fila para que el fallo de uno no bloquee al otro.
+    $channels = [];
+    if ($recipientEmail && filter_var($recipientEmail, FILTER_VALIDATE_EMAIL)) {
+        $channels[] = 'email';
+    }
+    if ($recipientPhone) {
+        $channels[] = 'whatsapp';
+    }
+
+    foreach ($channels as $channel) {
+        $stmt->execute([
+            $raffleId,
+            $vendorId,
+            $recipientUserId,
+            $recipientPhone,
+            $recipientEmail,
+            $channel,
+            $msg['message_type'] ?? 'winner',
+            $msg['subject'] ?? null,
+            $msg['body_text'] ?? '',
+            $msg['body_html'] ?? null,
+            isset($msg['variables']) ? json_encode($msg['variables']) : null,
+            $scheduledAt,
+        ]);
+    }
 }
 
 function getNextDrawDate(int $lotteryId, string $currentDate): string

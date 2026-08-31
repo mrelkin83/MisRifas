@@ -63,12 +63,10 @@ try {
         ->required('user.name', 'El nombre es requerido')
         ->minLength('user.name', 3, 'El nombre debe tener al menos 3 caracteres')
         ->required('user.phone', 'El teléfono es requerido')
-        ->phoneColombia('user.phone', 'El teléfono debe ser válido de Colombia');
-
-    // Email opcional
-    if (!empty($input['user']['email'])) {
-        $validator->email('user.email', 'El email no es válido');
-    }
+        ->phoneColombia('user.phone', 'El teléfono debe ser válido de Colombia')
+        // El email es el canal por defecto de notificación de resultados.
+        ->required('user.email', 'El email es requerido para notificarte el resultado del sorteo')
+        ->email('user.email', 'El email no es válido');
 
     // Horas de reserva (2, 4 o 6)
     if (isset($input['reservation_hours'])) {
@@ -137,6 +135,13 @@ try {
         ]);
 
         $user = $userRepo->findById($userId);
+    } elseif (empty($user['email']) && $userEmail) {
+        // Comprador recurrente sin email registrado: completar su ficha para
+        // poder notificarle resultados por el canal por defecto.
+        Database::getInstance()->getConnection()
+            ->prepare("UPDATE users SET email = ? WHERE id = ?")
+            ->execute([$userEmail, $user['id']]);
+        $user['email'] = $userEmail;
     }
 
     // Reservar boleto (con control de concurrencia)

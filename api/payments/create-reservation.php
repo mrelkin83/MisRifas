@@ -67,17 +67,19 @@ try {
         ->required('user.name', 'El nombre es requerido')
         ->minLength('user.name', 3, 'El nombre debe tener al menos 3 caracteres')
         ->required('user.phone', 'El telefono es requerido')
-        ->phoneColombia('user.phone', 'El telefono debe ser valido de Colombia');
-    if (!empty($input['user']['email'])) {
-        $validator->email('user.email', 'El email no es valido');
-    }
+        ->phoneColombia('user.phone', 'El telefono debe ser valido de Colombia')
+        // El email es el canal por defecto de notificacion de resultados
+        // (ganador/no-ganador/re-sorteo): sin el, el comprador quedaria sin
+        // forma garantizada de enterarse del resultado.
+        ->required('user.email', 'El email es requerido para notificarte el resultado del sorteo')
+        ->email('user.email', 'El email no es valido');
     if ($validator->fails()) {
         Response::validationError($validator->getErrors());
     }
 
     $userName = Validator::sanitize($input['user']['name']);
     $userPhone = Validator::sanitize($input['user']['phone']);
-    $userEmail = !empty($input['user']['email']) ? Validator::sanitize($input['user']['email']) : null;
+    $userEmail = Validator::sanitize($input['user']['email']);
 
     // Validar números (solo dígitos, 2-4 caracteres)
     foreach ($numeros as $numero) {
@@ -99,6 +101,11 @@ try {
             'email' => $userEmail,
         ]);
         $user = $userRepo->findById($userId);
+    } elseif (empty($user['email']) && $userEmail) {
+        // Comprador recurrente registrado antes de que el email fuera
+        // obligatorio: completar su ficha para poder notificarle resultados.
+        $db->prepare("UPDATE users SET email = ? WHERE id = ?")->execute([$userEmail, $user['id']]);
+        $user['email'] = $userEmail;
     }
 
     // Validar raffle existe y está activa

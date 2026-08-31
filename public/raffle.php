@@ -478,6 +478,7 @@ header("Expires: 0");
                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
                                     <input type="text" id="buyer-name" name="name" autocomplete="name" aria-label="Tu nombre" required placeholder="Tu nombre" class="w-full px-4 py-3 rounded-xl bg-black/30 border border-white/10 text-white placeholder:text-slate-500 focus:outline-none focus:border-amber-500">
                                     <input type="tel" id="buyer-phone" name="phone" autocomplete="tel" inputmode="numeric" aria-label="Número de WhatsApp" required placeholder="WhatsApp (3001234567)" pattern="[3][0-9]{9}" class="w-full px-4 py-3 rounded-xl bg-black/30 border border-white/10 text-white placeholder:text-slate-500 focus:outline-none focus:border-amber-500">
+                                    <input type="email" id="buyer-email" name="email" autocomplete="email" aria-label="Correo electrónico" required placeholder="Correo (te avisamos el resultado)" class="w-full px-4 py-3 rounded-xl bg-black/30 border border-white/10 text-white placeholder:text-slate-500 focus:outline-none focus:border-amber-500">
                                 </div>
                                 <button id="pay-selected-btn" class="w-full py-4 bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-black rounded-xl text-lg hover:brightness-110 active:scale-[0.97] disabled:opacity-50 disabled:grayscale transition-all shadow-[0_0_20px_rgba(245,158,11,0.3)] hover:shadow-[0_0_25px_rgba(245,158,11,0.5)]">
                                     Pagar números seleccionados →
@@ -846,8 +847,13 @@ document.getElementById('pay-selected-btn').addEventListener('click', async () =
 
     const buyerName = document.getElementById('buyer-name').value.trim();
     const buyerPhone = document.getElementById('buyer-phone').value.trim();
-    if (!buyerName || !buyerPhone) {
-        Utils.showNotification('Completa tu nombre y WhatsApp para continuar', 'error');
+    const buyerEmail = document.getElementById('buyer-email').value.trim();
+    if (!buyerName || !buyerPhone || !buyerEmail) {
+        Utils.showNotification('Completa tu nombre, WhatsApp y correo para continuar', 'error');
+        return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(buyerEmail)) {
+        Utils.showNotification('El correo no parece válido — lo usamos para avisarte el resultado del sorteo', 'error');
         return;
     }
 
@@ -861,7 +867,7 @@ document.getElementById('pay-selected-btn').addEventListener('click', async () =
             raffle_id: raffleId,
             numeros: numeros,
             payment_gateway: 'manual',
-            user: { name: buyerName, phone: buyerPhone }
+            user: { name: buyerName, phone: buyerPhone, email: buyerEmail }
         });
 
         if (response.success) {

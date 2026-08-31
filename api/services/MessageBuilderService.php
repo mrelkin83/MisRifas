@@ -163,6 +163,102 @@ class MessageBuilderService
         ];
     }
 
+    /**
+     * Mensaje para los participantes que NO ganaron cuando SÍ hubo ganador:
+     * agradecimiento + resultado + quién ganó. $ticketNumbers agrupa todos
+     * los boletos del comprador en esa rifa (un solo mensaje por persona).
+     */
+    public static function buildParticipantResultMessage(array $raffle, array $ticketNumbers, array $buyer, array $lottery, string $winningDigits, string $winnerName, string $winnerTicket): array
+    {
+        $tickets = implode(', ', array_map(
+            fn($n) => str_pad($n, 4, '0', STR_PAD_LEFT),
+            $ticketNumbers
+        ));
+        $vars = [
+            'nombre' => $buyer['name'] ?? 'Participante',
+            'raffle_name' => $raffle['name'],
+            'tickets' => $tickets,
+            'lottery_name' => $lottery['name'] ?? '',
+            'winning_number' => $winningDigits,
+            'draw_date' => date('d/m/Y', strtotime($raffle['draw_date'])),
+            'winner_name' => $winnerName,
+            'winner_ticket' => str_pad($winnerTicket, 4, '0', STR_PAD_LEFT),
+        ];
+        $text = "Hola {nombre}, gracias por participar en la rifa *{raffle_name}*. "
+              . "El numero ganador de la {lottery_name} del {draw_date} fue *{winning_number}*. "
+              . "Felicitaciones a *{winner_name}*, quien gano con el boleto *{winner_ticket}*. "
+              . "Tu participacion: boleto(s) {tickets}. Esta vez no fue, pero sigue participando en misrifas.online!";
+        $text = self::replaceVars($text, $vars);
+        $html = self::buildEmailHtml(
+            'Resultado de la rifa ' . $raffle['name'],
+            "<h2>Gracias por participar, {nombre}!</h2>"
+            . "<p>La rifa <strong>{raffle_name}</strong> ya tuvo sorteo con la {lottery_name} del {draw_date}.</p>"
+            . "<p>Numero ganador: <strong style='color:#22c55e;font-size:1.5em;'>{winning_number}</strong></p>"
+            . "<p>Felicitaciones a <strong>{winner_name}</strong>, quien gano con el boleto <strong>{winner_ticket}</strong>.</p>"
+            . "<p>Tu participacion: boleto(s) <strong>{tickets}</strong>. Esta vez no fue, pero sigue participando!</p>",
+            self::escapeVars($vars)
+        );
+        return [
+            'channel' => 'email',
+            'message_type' => 'no_winner',
+            'subject' => 'Resultado de la rifa ' . $raffle['name'],
+            'body_text' => $text,
+            'body_html' => $html,
+            'variables' => $vars,
+        ];
+    }
+
+    /**
+     * Mensaje de re-sorteo: nadie ganó, los boletos siguen participando y el
+     * sorteo se reprograma. Incluye la nueva fecha (la versión anterior decía
+     * "esta vez no fue" sin aclarar que la rifa continuaba).
+     */
+    public static function buildResorteoMessage(array $raffle, array $ticketNumbers, array $buyer, array $lottery, string $winningDigits, string $nextDrawDate): array
+    {
+        $tickets = implode(', ', array_map(
+            fn($n) => str_pad($n, 4, '0', STR_PAD_LEFT),
+            $ticketNumbers
+        ));
+        $vars = [
+            'nombre' => $buyer['name'] ?? 'Participante',
+            'raffle_name' => $raffle['name'],
+            'tickets' => $tickets,
+            'lottery_name' => $lottery['name'] ?? '',
+            'winning_number' => $winningDigits,
+            'draw_date' => date('d/m/Y', strtotime($raffle['draw_date'])),
+            'next_date' => date('d/m/Y', strtotime($nextDrawDate)),
+        ];
+        $text = "Hola {nombre}, la rifa *{raffle_name}* jugo el {draw_date} con la {lottery_name}: "
+              . "el numero fue *{winning_number}* y ningun boleto vendido resulto ganador. "
+              . "Tu(s) boleto(s) {tickets} SIGUEN participando: el sorteo se reprogramo para el *{next_date}*. Mucha suerte!";
+        $text = self::replaceVars($text, $vars);
+        $html = self::buildEmailHtml(
+            'Re-sorteo de la rifa ' . $raffle['name'],
+            "<h2>La rifa {raffle_name} se reprogramo</h2>"
+            . "<p>El numero de la {lottery_name} del {draw_date} fue <strong>{winning_number}</strong> y ningun boleto vendido resulto ganador.</p>"
+            . "<p>Tu(s) boleto(s) <strong>{tickets}</strong> siguen participando.</p>"
+            . "<p>Nueva fecha de sorteo: <strong style='color:#fbbf24;font-size:1.2em;'>{next_date}</strong>. Mucha suerte!</p>",
+            self::escapeVars($vars)
+        );
+        return [
+            'channel' => 'email',
+            'message_type' => 'no_winner',
+            'subject' => 'Re-sorteo: la rifa ' . $raffle['name'] . ' se reprogramó',
+            'body_text' => $text,
+            'body_html' => $html,
+            'variables' => $vars,
+        ];
+    }
+
+    /** Escapa los valores (nombres de compradores, etc.) para plantillas HTML. */
+    private static function escapeVars(array $vars): array
+    {
+        return array_map(
+            fn($v) => htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'),
+            $vars
+        );
+    }
+
     private static function replaceVars(string $template, array $vars): string
     {
         return str_replace(

@@ -32,6 +32,12 @@ $buyer = fxBuyer();
 $db->prepare("UPDATE tickets SET status='paid', user_id=?, paid_at=NOW() WHERE raffle_id=? AND ticket_number='05'")
    ->execute([$buyer['id'], $raffle]);
 
+// Segundo participante que NO gana (boleto '07'): debe recibir el mensaje de
+// agradecimiento/resultado cuando se determine el ganador.
+$participant = fxBuyer();
+$db->prepare("UPDATE tickets SET status='paid', user_id=?, paid_at=NOW() WHERE raffle_id=? AND ticket_number='07'")
+   ->execute([$participant['id'], $raffle]);
+
 // Resultado de lotería verificado de HOY: número '7705' → last_2 = '05'.
 $db->prepare("INSERT INTO lottery_results (lottery_id, draw_date, winning_number, verified) VALUES ($LOT, CURDATE(), '7705', 1)")->execute();
 onTeardown(function () use ($db, $LOT) { $db->exec("DELETE FROM lottery_results WHERE lottery_id=$LOT AND draw_date=CURDATE() AND winning_number='7705'"); });
@@ -58,3 +64,24 @@ check($status === 'completed', "La rifa queda 'completed'", "status=$status");
 // verificamos que el ganador vino de un boleto pagado (integridad).
 $winnerStatus = $db->query("SELECT t.status FROM raffle_winners rw JOIN tickets t ON rw.ticket_id=t.id WHERE rw.raffle_id=$raffle")->fetchColumn();
 check($winnerStatus === 'paid', 'El ganador provino de un boleto pagado', "status=$winnerStatus");
+
+// ── Notificaciones encoladas (canal email por defecto + whatsapp) ──
+// Ganador: felicitación por AMBOS canales.
+$winEmail = (int)$db->query("SELECT COUNT(*) FROM message_queue WHERE raffle_id=$raffle AND recipient_user_id={$buyer['id']} AND message_type='winner' AND channel='email'")->fetchColumn();
+$winWa    = (int)$db->query("SELECT COUNT(*) FROM message_queue WHERE raffle_id=$raffle AND recipient_user_id={$buyer['id']} AND message_type='winner' AND channel='whatsapp'")->fetchColumn();
+check($winEmail === 1, 'Felicitación al ganador encolada por EMAIL', "email=$winEmail");
+check($winWa === 1, 'Felicitación al ganador encolada por WhatsApp', "wa=$winWa");
+
+// Participante que no ganó: agradecimiento/resultado por ambos canales.
+$parEmail = (int)$db->query("SELECT COUNT(*) FROM message_queue WHERE raffle_id=$raffle AND recipient_user_id={$participant['id']} AND message_type='no_winner' AND channel='email'")->fetchColumn();
+$parWa    = (int)$db->query("SELECT COUNT(*) FROM message_queue WHERE raffle_id=$raffle AND recipient_user_id={$participant['id']} AND message_type='no_winner' AND channel='whatsapp'")->fetchColumn();
+check($parEmail === 1, 'Agradecimiento al participante encolado por EMAIL', "email=$parEmail");
+check($parWa === 1, 'Agradecimiento al participante encolado por WhatsApp', "wa=$parWa");
+
+// El email del participante lleva el resultado en HTML (para el motor SMTP).
+$parHtml = $db->query("SELECT body_html FROM message_queue WHERE raffle_id=$raffle AND recipient_user_id={$participant['id']} AND channel='email'")->fetchColumn();
+check(is_string($parHtml) && str_contains($parHtml, '05'), 'El email del participante incluye el número ganador en HTML', substr((string)$parHtml, 0, 60));
+
+// El ganador NO debe recibir además el mensaje de "no ganaste".
+$winNoWin = (int)$db->query("SELECT COUNT(*) FROM message_queue WHERE raffle_id=$raffle AND recipient_user_id={$buyer['id']} AND message_type='no_winner'")->fetchColumn();
+check($winNoWin === 0, 'El ganador no recibe el mensaje de participante', "filas=$winNoWin");

@@ -125,28 +125,39 @@ function whatsAppTextoDeMensaje($msg) {
     return $vars['texto'] ?? 'Tienes una notificacion de MisRifas.';
 }
 
+/**
+ * Envía por el motor SMTP real (MailService, settings mailing_* — Postal en
+ * prod). La versión anterior leía $msg['recipient']/$msg['message'] —
+ * columnas que no existen en message_queue (las reales son recipient_email/
+ * body_text) y usaba EmailService, que apunta a un servicio HTTP
+ * ("mail-service:8080") que no está desplegado. Nunca envió un correo.
+ */
 function processEmail($msg) {
-    $toEmail = $msg['recipient'];
-    $toName = $msg['subject'] ?? 'Usuario';
-    $subject = $msg['subject'];
-    $body = $msg['message'];
+    $toEmail = $msg['recipient_email'] ?? '';
+    $subject = !empty($msg['subject']) ? $msg['subject'] : 'Notificación de MisRifas';
 
     if (!filter_var($toEmail, FILTER_VALIDATE_EMAIL)) {
         return false;
     }
 
-    $html = buildEmailHtml($subject, $body);
+    // Los mensajes de resultado traen body_html ya armado por
+    // MessageBuilderService; el resto usa la plantilla genérica.
+    $html = !empty($msg['body_html'])
+        ? $msg['body_html']
+        : buildEmailHtml($subject, $msg['body_text'] ?? '');
 
     try {
-        $emailService = \api\services\EmailService::getInstance();
-        $emailService->sendEmail($toEmail, $toName, $subject, $html);
-        Logger::info('Email sent via BillionMail', ['to' => $toEmail, 'subject' => $subject]);
-        return true;
+        require_once __DIR__ . '/../api/services/MailService.php';
+        $mail = new MailService();
+        $ok = $mail->sendDirect($toEmail, $subject, $html);
+        if ($ok) {
+            Logger::info('Email sent', ['to' => $toEmail, 'subject' => $subject, 'message_id' => $msg['id']]);
+        } else {
+            Logger::error('Email send failed', ['to' => $toEmail, 'message_id' => $msg['id']]);
+        }
+        return (bool)$ok;
     } catch (Exception $e) {
-        Logger::error('Email send failed (BillionMail)', [
-            'to' => $toEmail,
-            'error' => $e->getMessage()
-        ]);
+        Logger::error('Email send failed', ['to' => $toEmail, 'error' => $e->getMessage()]);
         return false;
     }
 }
