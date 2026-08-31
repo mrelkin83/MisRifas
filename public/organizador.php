@@ -27,7 +27,9 @@ $reviewAvg = null;
 $reviewCount = 0;
 
 if ($slug !== '') {
-    $stmt = $db->prepare("SELECT id, business_name, city, department, created_at FROM vendors WHERE slug = ? AND status = 'active'");
+    $stmt = $db->prepare("SELECT id, business_name, legal_name, document_type, document_number, phone, email,
+                                 email_verified_at, phone_verified_at, city, department, created_at
+                          FROM vendors WHERE slug = ? AND status = 'active'");
     $stmt->execute([$slug]);
     $vendor = $stmt->fetch(PDO::FETCH_ASSOC);
 }
@@ -96,6 +98,26 @@ function nombreCorto(string $n): string
 
 $estrellas = fn(int $r) => str_repeat('★', max(0, min(5, $r))) . str_repeat('☆', 5 - max(0, min(5, $r)));
 
+/** Documento corroborable SIN exponerlo completo: "CC ****8721". */
+function docEnmascarado(?string $tipo, ?string $num): ?string
+{
+    $num = preg_replace('/\D/', '', (string)$num);
+    if ($num === '' || strlen($num) < 4) {
+        return null;
+    }
+    return trim(($tipo ?: 'CC') . ' ' . str_repeat('*', max(0, strlen($num) - 4)) . substr($num, -4));
+}
+
+/** "laura@dominio.com" → "la***@dominio.com". */
+function emailEnmascarado(?string $mail): ?string
+{
+    if (!$mail || strpos($mail, '@') === false) {
+        return null;
+    }
+    [$u, $d] = explode('@', $mail, 2);
+    return substr($u, 0, 2) . str_repeat('*', max(1, strlen($u) - 2)) . '@' . $d;
+}
+
 $e = fn($s) => htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8');
 ?>
 <!DOCTYPE html>
@@ -144,6 +166,54 @@ $e = fn($s) => htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8');
             <div class="stat <?= (int)($stats['disputas'] ?? 0) > 0 ? 'bad' : 'plain' ?>"><div class="n"><?= (int)($stats['disputas'] ?? 0) ?></div><div class="l">Disputas abiertas</div></div>
         </div>
         <p class="aviso">📖 Este historial es público y lo construyen los propios sorteos: solo las entregas <strong>confirmadas por el ganador</strong> cuentan en verde, y las reprogramaciones y disputas nunca se ocultan.</p>
+    </div>
+
+    <!-- Quién RESPONDE: datos reales y corroborables del responsable.
+         El documento se muestra parcial (corroborable sin exponerlo completo)
+         y el celular completo: es su canal de venta y ya es público en cada
+         rifa. Transparencia = confianza. -->
+    <div class="card">
+        <h2 style="font-size:15px;margin-bottom:10px;">🪪 ¿Quién responde por estas rifas?</h2>
+        <?php
+            $filas = [];
+            if (!empty($vendor['legal_name'])) {
+                $filas[] = ['Responsable', $vendor['legal_name']];
+            }
+            if ($doc = docEnmascarado($vendor['document_type'] ?? null, $vendor['document_number'] ?? null)) {
+                $filas[] = ['Documento registrado', $doc];
+            }
+            if (!empty($vendor['phone'])) {
+                $filas[] = ['WhatsApp de contacto', $vendor['phone']];
+            }
+            if ($mail = emailEnmascarado($vendor['email'] ?? null)) {
+                $filas[] = ['Correo', $mail];
+            }
+        ?>
+        <?php if (!$filas): ?>
+        <p style="font-size:13px;color:#94a3b8;">El organizador aún no ha completado sus datos de responsable.</p>
+        <?php else: foreach ($filas as [$k, $v]): ?>
+        <div style="display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px dashed rgba(255,255,255,.07);font-size:13.5px;">
+            <span style="color:#94a3b8;"><?= $e($k) ?></span>
+            <strong style="color:#fff;text-align:right;"><?= $e($v) ?></strong>
+        </div>
+        <?php endforeach; endif; ?>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;">
+            <?php if (!empty($vendor['email_verified_at'])): ?>
+            <span style="padding:3px 10px;border-radius:99px;background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.35);color:#4ade80;font-size:11px;font-weight:800;">✓ Correo verificado</span>
+            <?php endif; ?>
+            <?php if (!empty($vendor['phone_verified_at'])): ?>
+            <span style="padding:3px 10px;border-radius:99px;background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.35);color:#4ade80;font-size:11px;font-weight:800;">✓ Celular verificado</span>
+            <?php endif; ?>
+            <span style="padding:3px 10px;border-radius:99px;background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.3);color:#93c5fd;font-size:11px;font-weight:800;">🪪 Documento en registro de la plataforma</span>
+        </div>
+        <?php if (!empty($vendor['phone'])): ?>
+        <a href="https://wa.me/57<?= $e(preg_replace('/\D/', '', (string)$vendor['phone'])) ?>?text=<?= rawurlencode('Hola, te escribo desde tu perfil en MisRifas 👋') ?>"
+           target="_blank" rel="noopener"
+           style="display:block;margin-top:12px;padding:12px;border-radius:12px;background:#25D366;color:#fff;font-weight:800;font-size:14px;text-align:center;text-decoration:none;">
+            💬 Escribir por WhatsApp
+        </a>
+        <?php endif; ?>
+        <p class="aviso">El documento del responsable queda registrado ante la plataforma al crear la cuenta y se muestra parcialmente por su seguridad. Si algo no cuadra, repórtalo antes de comprar.</p>
     </div>
     <?php if ($activas): ?>
     <div class="card">

@@ -67,6 +67,15 @@ check($res['code'] === 200 && strpos((string)$res['raw'], 'Reseñas de comprador
 check(strpos((string)$res['raw'], 'Actualizo mi opinión') !== false, 'La reseña aparece publicada', '');
 check(strpos((string)$res['raw'], (string)$buyer['phone']) === false, 'El celular del comprador NO se expone', '');
 
+// 5b) Transparencia del RESPONSABLE: nombre visible, documento solo parcial.
+check(strpos((string)$res['raw'], '¿Quién responde por estas rifas?') !== false,
+    'El perfil muestra la tarjeta del responsable', '');
+$docCompleto = (string)$db->query("SELECT document_number FROM vendors WHERE id=5")->fetchColumn();
+if (strlen(preg_replace('/\D/', '', $docCompleto)) >= 5) {
+    check(strpos((string)$res['raw'], $docCompleto) === false,
+        'El documento COMPLETO del responsable NO se expone (solo parcial)', '');
+}
+
 // 6) Interruptor APAGADO: API 403 y la sección desaparece del perfil.
 $db->exec("UPDATE system_settings SET setting_value='0' WHERE setting_key='reviews_enabled'");
 $res = httpPost('/api/vendors/reviews.php', ['slug' => $slug5, 'ticket_code' => $code, 'rating' => 4]);
