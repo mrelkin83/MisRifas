@@ -253,8 +253,15 @@ setup_cron() {
 * * * * * ${WEB_USER} php ${APP_DIR}/cron/expire-reservations.php >> ${APP_DIR}/logs/cron.log 2>&1
 0 * * * * ${WEB_USER} php ${APP_DIR}/cron/send_reminders.php >> ${APP_DIR}/logs/cron.log 2>&1
 0 4 * * * ${WEB_USER} php ${APP_DIR}/cron/check_commissions.php >> ${APP_DIR}/logs/cron.log 2>&1
-30 22 * * * ${WEB_USER} php ${APP_DIR}/cron/fetch_lottery_results.php >> ${APP_DIR}/logs/cron.log 2>&1
-0 23 * * * ${WEB_USER} php ${APP_DIR}/cron/process_draws.php >> ${APP_DIR}/logs/cron.log 2>&1
+# Barrido nocturno: las loterías publican a horas DISTINTAS (10:30pm, 11pm,
+# 11:30pm…). Ambos crons son idempotentes (fetch: ON DUPLICATE KEY; draws:
+# solo rifas activas vencidas CON resultado verificado de hoy), así que se
+# repiten cada 20 min entre 10pm y 1am: cada lotería se procesa minutos
+# después de publicar su resultado, sin esperar al día siguiente.
+*/20 22,23 * * * ${WEB_USER} php ${APP_DIR}/cron/fetch_lottery_results.php >> ${APP_DIR}/logs/cron.log 2>&1
+*/20 0 * * * ${WEB_USER} php ${APP_DIR}/cron/fetch_lottery_results.php >> ${APP_DIR}/logs/cron.log 2>&1
+10,30,50 22,23 * * * ${WEB_USER} php ${APP_DIR}/cron/process_draws.php >> ${APP_DIR}/logs/cron.log 2>&1
+10,30,50 0 * * * ${WEB_USER} php ${APP_DIR}/cron/process_draws.php >> ${APP_DIR}/logs/cron.log 2>&1
 */10 * * * * ${WEB_USER} php ${APP_DIR}/cron/process_notifications.php >> ${APP_DIR}/logs/cron.log 2>&1
 0 3 * * * root ${APP_DIR}/database/backup.sh >> ${APP_DIR}/logs/backup.log 2>&1
 CRON
