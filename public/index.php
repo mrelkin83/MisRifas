@@ -764,28 +764,37 @@ $page_description = "La plataforma más confiable para crear y participar en rif
                 <h2 class="text-4xl md:text-5xl font-bold tracking-tight mb-4 text-white">¿Cómo funciona?</h2>
                 <p class="text-slate-400 text-lg">Un proceso transparente, conectado a tu WhatsApp.</p>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-16 max-w-6xl mx-auto">
-                <div class="text-center">
-                    <div class="text-6xl font-bold text-amber-500/25 mb-4 tracking-tight">01</div>
-                    <h3 class="text-lg font-bold mb-2 text-white">Elige Rifa</h3>
-                    <p class="text-slate-400 text-sm leading-relaxed">Encuentra una rifa verificada de nuestra red nacional.</p>
+            <!-- Tarjetas con lenguaje SENCILLO: que cualquiera lo entienda,
+                 tenga o no estudios. Nada de jerga técnica. -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 md:gap-6 max-w-6xl mx-auto" id="pasos-grid">
+                <div class="paso-card">
+                    <div class="paso-head"><span class="paso-num">1</span><span class="paso-emoji">🎁</span></div>
+                    <h3 class="text-lg font-bold mb-2 text-white">Escoge tu rifa</h3>
+                    <p class="text-slate-400 text-sm leading-relaxed">Mira los premios y elige la rifa que más te guste. En cada una puedes ver <strong class="text-slate-200">quién la organiza</strong> y con qué lotería juega.</p>
                 </div>
-                <div class="text-center">
-                    <div class="text-6xl font-bold text-amber-500/25 mb-4 tracking-tight">02</div>
-                    <h3 class="text-lg font-bold mb-2 text-white">Toma un Cupo</h3>
-                    <p class="text-slate-400 text-sm leading-relaxed">Los tickets bloquean dobles compras gracias a nuestra concurrencia estricta.</p>
+                <div class="paso-card">
+                    <div class="paso-head"><span class="paso-num">2</span><span class="paso-emoji">🔢</span></div>
+                    <h3 class="text-lg font-bold mb-2 text-white">Aparta tu número</h3>
+                    <p class="text-slate-400 text-sm leading-relaxed">Toca el número de tu suerte y queda <strong class="text-slate-200">apartado solo para ti</strong> por 45 minutos. Nadie más lo puede tomar mientras pagas.</p>
                 </div>
-                <div class="text-center">
-                    <div class="text-6xl font-bold text-amber-500/25 mb-4 tracking-tight">03</div>
-                    <h3 class="text-lg font-bold mb-2 text-white">Pago Seguro</h3>
-                    <p class="text-slate-400 text-sm leading-relaxed">Transfieres directo al organizador y él confirma tu pago; tu boleta digital queda emitida.</p>
+                <div class="paso-card">
+                    <div class="paso-head"><span class="paso-num">3</span><span class="paso-emoji">📲</span></div>
+                    <h3 class="text-lg font-bold mb-2 text-white">Paga y sube la foto</h3>
+                    <p class="text-slate-400 text-sm leading-relaxed">Envía la plata por Nequi, DaviPlata o Bre-B <strong class="text-slate-200">directo al organizador</strong> y sube la foto del pago. Cuando él la revise, tu boleta digital te llega al WhatsApp y al correo.</p>
                 </div>
-                <div class="text-center">
-                    <div class="text-6xl font-bold text-amber-500/25 mb-4 tracking-tight">04</div>
-                    <h3 class="text-lg font-bold mb-2 text-white">Lotería en Vivo</h3>
-                    <p class="text-slate-400 text-sm leading-relaxed">Te notificamos si tu número ganó apenas se conoce el resultado.</p>
+                <div class="paso-card">
+                    <div class="paso-head"><span class="paso-num">4</span><span class="paso-emoji">🏆</span></div>
+                    <h3 class="text-lg font-bold mb-2 text-white">Espera el sorteo</h3>
+                    <p class="text-slate-400 text-sm leading-relaxed">El número ganador lo da la <strong class="text-slate-200">lotería oficial</strong>, no nosotros ni el organizador. Si tu número gana, te avisamos de una por WhatsApp y correo.</p>
                 </div>
             </div>
+            <style>
+                .paso-card { background: rgba(30,41,59,.6); border: 1px solid rgba(255,255,255,.06); border-radius: 18px; padding: 22px 18px; transition: border-color .2s, transform .2s; }
+                .paso-card:hover { border-color: rgba(245,158,11,.35); transform: translateY(-3px); }
+                .paso-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+                .paso-num { width: 34px; height: 34px; border-radius: 10px; background: linear-gradient(135deg,#f59e0b,#d97706); color: #1c1305; font-weight: 900; font-size: 17px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(217,119,6,.35); }
+                .paso-emoji { font-size: 26px; }
+            </style>
         </div>
     </section>
 

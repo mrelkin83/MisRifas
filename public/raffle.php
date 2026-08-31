@@ -486,6 +486,16 @@ header("Expires: 0");
                                 </div>
                             </div>
 
+                            <!-- Responsable de la rifa → perfil público de reputación (§13.5) -->
+                            <div class="mb-8 p-4 bg-slate-900/50 rounded-2xl border border-white/5 items-center justify-between gap-3 flex-wrap" id="organizer-row" style="display:none;">
+                                <div class="min-w-0">
+                                    <span class="text-xs uppercase tracking-wider text-slate-500 block mb-1">Organiza y responde</span>
+                                    <span id="organizer-name" class="font-bold text-white block"></span>
+                                    <span id="responsible-name" class="text-slate-400 text-sm"></span>
+                                </div>
+                                <a id="organizer-link" href="#" class="px-4 py-2 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-300 text-sm font-bold whitespace-nowrap hover:bg-amber-500/25 transition-colors">Ver reputación →</a>
+                            </div>
+
                             <div class="mb-8">
                                 <h3 class="text-xl font-bold mb-3 text-white border-b border-slate-700 pb-2 inline-block">Descripción</h3>
                                 <p id="raffle-description" class="text-slate-300 leading-relaxed text-lg">Cargando…</p>
@@ -809,6 +819,14 @@ header("Expires: 0");
         document.getElementById('draw-date').textContent = Utils.formatDate(r.draw_date);
         document.getElementById('lottery-name').textContent = r.lottery_name || '';
         document.getElementById('raffle-description').textContent = r.description || '';
+
+        // Responsable visible SIEMPRE, con enlace a su reputación pública.
+        if (r.organizer_name) {
+            document.getElementById('organizer-row').style.display = 'flex';
+            document.getElementById('organizer-name').textContent = r.organizer_name;
+            document.getElementById('responsible-name').textContent = r.responsible_person ? ('Responsable: ' + r.responsible_person) : '';
+            document.getElementById('organizer-link').href = BASE_PATH + '/public/organizador.php?slug=' + encodeURIComponent(r.organizer_slug || '');
+        }
 
         const soldPct = r.sold_percentage || 0;
         document.getElementById('sold-percentage-badge').textContent = soldPct + '% vendido';

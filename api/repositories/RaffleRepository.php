@@ -100,6 +100,8 @@ class RaffleRepository extends BaseRepository
                     l.name as lottery_name,
                     l.day_of_week,
                     l.draw_time,
+                    v.business_name AS organizer_name,
+                    v.slug AS organizer_slug,
                     COUNT(CASE WHEN t.status = ? THEN 1 END) as sold_tickets,
                     COUNT(CASE WHEN t.status = ? THEN 1 END) as reserved_tickets,
                     COUNT(CASE WHEN t.status = ? THEN 1 END) as available_tickets,
@@ -108,8 +110,9 @@ class RaffleRepository extends BaseRepository
                 FROM raffles r
                 LEFT JOIN tickets t ON r.id = t.raffle_id
                 LEFT JOIN lotteries l ON r.lottery_id = l.id
+                LEFT JOIN vendors v ON v.id = COALESCE(r.vendor_id, r.created_by)
                 WHERE r.id = ?
-                GROUP BY r.id";
+                GROUP BY r.id, v.business_name, v.slug";
 
         $stmt = $this->db->prepare($sql);
         $stmt->execute([

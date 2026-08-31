@@ -68,7 +68,33 @@ $page_title = "Pago - MisRifas";
 
     <main class="py-6 sm:py-8">
         <div class="container mx-auto px-4 max-w-2xl">
-            <div class="glass-card rounded-2xl shadow-md p-5 sm:p-8">
+
+            <!-- Pantalla de ÉXITO: qué sigue después de subir el comprobante -->
+            <div id="success-screen" class="hidden glass-card rounded-2xl shadow-md p-6 sm:p-10 text-center">
+                <div class="text-6xl mb-4">✅</div>
+                <h1 class="text-2xl sm:text-3xl font-black mb-2">¡Comprobante recibido!</h1>
+                <p id="success-numbers" class="text-primary font-black font-mono text-xl mb-6"></p>
+                <div class="text-left bg-black/20 border border-white/10 rounded-2xl p-5 mb-6 space-y-4">
+                    <div class="flex gap-3">
+                        <span class="w-7 h-7 shrink-0 rounded-full bg-primary text-slate-950 font-black flex items-center justify-center text-sm">1</span>
+                        <p class="text-sm text-slate-300">El organizador va a <strong class="text-white">verificar tu pago</strong> (normalmente tarda solo unos minutos). Tu número queda apartado mientras tanto.</p>
+                    </div>
+                    <div class="flex gap-3">
+                        <span class="w-7 h-7 shrink-0 rounded-full bg-primary text-slate-950 font-black flex items-center justify-center text-sm">2</span>
+                        <p class="text-sm text-slate-300">Cuando lo confirme, tu <strong class="text-white">boleta digital</strong> te llegará por <strong class="text-white">WhatsApp y correo</strong> con su código y QR de verificación.</p>
+                    </div>
+                    <div class="flex gap-3">
+                        <span class="w-7 h-7 shrink-0 rounded-full bg-primary text-slate-950 font-black flex items-center justify-center text-sm">3</span>
+                        <p class="text-sm text-slate-300">También puedes verla cuando quieras en <strong class="text-white">Resultados</strong>, buscando con tu número de WhatsApp.</p>
+                    </div>
+                </div>
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <a href="<?= BASE_PATH ?>/public/mis-boletos.php" class="flex-1 py-4 bg-primary text-slate-950 font-black rounded-xl hover:bg-primary-light transition-colors">Ver mis boletos y resultados</a>
+                    <a href="<?= BASE_PATH ?>/public/index.php" class="flex-1 py-4 bg-white/5 border border-white/10 text-white font-bold rounded-xl hover:bg-white/10 transition-colors">Volver al inicio</a>
+                </div>
+            </div>
+
+            <div class="glass-card rounded-2xl shadow-md p-5 sm:p-8" id="payment-card">
                 <h1 class="text-2xl font-bold mb-1 text-center sm:text-left">Completar Pago</h1>
                 <p id="raffle-name" class="hidden text-sm text-slate-400 mb-5 text-center sm:text-left"></p>
 
@@ -381,9 +407,17 @@ $page_title = "Pago - MisRifas";
             const response = await API.post('/tickets/confirm-payment.php', payload);
 
             if (response.success) {
-                Utils.showNotification('¡Pago registrado con éxito!', 'success');
+                // Pantalla de confirmación explícita: qué sigue y por dónde
+                // llegará la boleta — nada de redirigir "a otra sesión".
+                const nums = (reservationData?.numeros && reservationData.numeros.length)
+                    ? reservationData.numeros.map(n => '#' + n).join(', ')
+                    : ('#' + (reservationData?.ticket_number || ''));
+                document.getElementById('success-numbers').textContent =
+                    nums + (reservationData?.raffle_name ? ' · ' + reservationData.raffle_name : '');
+                document.getElementById('payment-card').classList.add('hidden');
+                document.getElementById('success-screen').classList.remove('hidden');
+                window.scrollTo(0, 0);
                 localStorage.removeItem('current_reservation');
-                setTimeout(() => window.location.href = BASE_PATH + '/public/mis-boletos.php', 1500);
             } else {
                 Utils.showNotification(response.message || 'Error', 'error');
                 btn.disabled = false;
