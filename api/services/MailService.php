@@ -175,7 +175,18 @@ class MailService {
     }
 
     private function expect($socket, $code) {
-        $res = fgets($socket, 512);
+        // Las respuestas SMTP pueden ser multilínea ("250-SIZE…", "250-AUTH…",
+        // "250 OK"): las líneas intermedias llevan '-' tras el código y la
+        // última un espacio. Leer solo una línea dejaba el resto en el buffer
+        // y descuadraba todos los expects siguientes (fallaba el AUTH contra
+        // cualquier servidor con EHLO multilínea — es decir, casi todos).
+        do {
+            $res = fgets($socket, 512);
+            if ($res === false) {
+                throw new Exception("Connection closed while expecting $code");
+            }
+        } while (isset($res[3]) && $res[3] === '-');
+
         if (substr($res, 0, 3) !== $code) {
             throw new Exception("Expected code $code, got: " . $res);
         }
