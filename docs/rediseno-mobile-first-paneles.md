@@ -446,3 +446,29 @@ no una tabla.
   (las descubrió con ctrl+scroll). Regla: el contenedor de navegación de
   todo sidebar `position:fixed` lleva `overflow-y:auto; min-height:0` y
   scrollbar fino; el pie (logout) queda fuera del área scrolleable.
+
+## 21. Estado en vivo, nunca afirmaciones estáticas (diagnóstico)
+
+**Regla de honestidad**: una tarjeta del panel NUNCA afirma que un canal
+"funciona" con texto fijo. La tarjeta de Comunicaciones decía que el OTP era
+"automático, sin configuración" y que el SMS "está apagado" — mientras el
+número OTP de WhatsApp estaba VACÍO en la BD (canal realmente no disponible),
+el correo iba a Mailpit (capturado, no entregado) y gammu ni estaba instalado.
+
+**Patrón aplicado** (ambos paneles):
+- `api/services/SystemStatus.php`: 7 verificaciones REALES — socket SMTP
+  (detecta Mailpit 127.0.0.1:1025 = captura), OTP correo (hereda SMTP), OTP
+  WhatsApp (setting `otp_whatsapp_number` en BD), motor Evolution (instancias
+  y su `connectionStatus` por API), SMS (binario gammu + `SMS_ENABLED`),
+  storage escribible, frescura de `logs/cron.log` (<10 min).
+- Bloque "🩺 Diagnóstico en vivo" al tope de la tarjeta: chips ✅/⚠️/❌ con
+  detalle y CÓMO arreglarlo; botón "Verificar de nuevo".
+- Campo editable para `otp_whatsapp_number` en la propia tegla del OTP
+  (antes no existía NINGÚN lugar para configurarlo).
+- `tools/diagnostico.php` (CLI, `--json`, exit 1 si hay FAIL): correrlo tras
+  cada deploy es el "looping" anti-inconsistencias.
+- Los textos estáticos quedan solo DESCRIPTIVOS (qué hace el canal, dónde se
+  configura); el ESTADO siempre sale del diagnóstico.
+
+Gotcha: `curl_close()` está deprecado en PHP 8.5 (prod) — y una deprecación
+impresa corrompe el JSON de la API. Usar `unset($ch)`.
