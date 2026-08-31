@@ -240,7 +240,9 @@ try {
         require_once __DIR__ . '/../whatsapp/notify.php';
         $enviado = notificarWhatsAppVendor($vendorId, (string)$t['holder_phone'], $texto);
         if (!$enviado) {
-            Response::error('No se pudo enviar (¿tu WhatsApp está vinculado?). También puedes escribirle directo al ' . $t['holder_phone'], null, 502);
+            // 409 y no 502: con 502 Cloudflare reemplaza el cuerpo por su
+            // página de error y el vendedor nunca ve esta explicación.
+            Response::error('No se pudo enviar (¿tu WhatsApp está vinculado?). También puedes escribirle directo al ' . $t['holder_phone'], null, 409);
         }
         Logger::activity('hold_reminder_sent', $vendorId, ['ticket_id' => $ticketId]);
         Response::success([], 'Recordatorio enviado a ' . $t['holder_name'] . ' por WhatsApp.');
