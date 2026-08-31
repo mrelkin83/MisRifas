@@ -247,10 +247,24 @@ $page_description = "La plataforma más confiable para crear y participar en rif
         .premium-filter label { color: #fbbf24 !important; font-weight: 800; }
         .premium-filter select, .premium-filter input { background: rgba(30, 41, 59, 0.5) !important; border-color: rgba(245, 158, 11, 0.15) !important; color: #fff !important; }
         .premium-filter select:focus, .premium-filter input:focus { border-color: #f59e0b !important; box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15) !important; }
+        /* Elementos del buscador estilo app: en escritorio son neutros
+           (el botón de filtros y la cabecera de la hoja no existen). */
+        #filter-open-btn, #filter-panel-head, #filter-backdrop { display: none; }
+
         @media (max-width: 767px) {
+            /* ===== VISTA APP (móvil): pensada como pantalla de app nativa,
+               no como página adaptada. Header compacto, buscador píldora
+               pegajoso, filtros en hoja inferior, hero como banner-card,
+               pestañas como chips deslizables. El escritorio NO cambia. ===== */
+
+            /* Header compacto tipo app-bar (64px) */
+            .glass-nav nav { height: 64px; }
+            .glass-nav nav > a { font-size: 20px; }
+            .glass-nav nav > a svg { width: 22px; height: 22px; }
+
             #nav-menu {
                 position: fixed;
-                top: 80px;
+                top: 64px;
                 left: 0;
                 right: 0;
                 background: rgba(15, 23, 42, 0.98);
@@ -260,7 +274,7 @@ $page_description = "La plataforma más confiable para crear y participar en rif
                 border-bottom: 1px solid rgba(255, 255, 255, 0.1);
                 z-index: 100;
                 gap: 1.5rem;
-                height: calc(100vh - 80px);
+                height: calc(100vh - 64px);
                 overflow-y: auto;
             }
             #nav-menu.active {
@@ -273,11 +287,104 @@ $page_description = "La plataforma más confiable para crear y participar en rif
             #user-caret { display: none; }
             #user-dropdown { display: block !important; position: static; width: 100%; box-shadow: none; background: rgba(255,255,255,.03); margin-top: 6px; }
             #auth-buttons { flex-direction: column; align-items: stretch; width: 100%; }
-            .premium-filter {
-                padding: 1.25rem !important;
-                border-radius: 20px !important;
+
+            /* Hero: de portada de navegador a banner-card de app */
+            .hero-slider { height: 240px; margin: 10px 12px 0; border-radius: 20px; }
+            .hero-slide__content { padding: 0 18px !important; }
+            .hero-slide__tag { font-size: 9px !important; padding: 4px 10px !important; margin-bottom: 8px !important; }
+            .hero-slide__title { font-size: 1.35rem !important; line-height: 1.2 !important; margin-bottom: 6px !important; }
+            .hero-slide__desc { font-size: 0.8rem !important; margin-bottom: 12px !important; }
+            .hero-slide__btn { padding: 9px 16px !important; font-size: 12px !important; border-radius: 12px !important; }
+            .hero-slide__actions { gap: 8px; }
+
+            /* Buscador: barra píldora compacta y PEGAJOSA bajo el app-bar
+               (lo primero que se ve y siempre a la mano, como en una app) */
+            /* OJO: sin backdrop-filter aquí — un ancestro con blur convierte el
+               position:fixed de la hoja de filtros en relativo (gotcha CSS). */
+            #search-section {
+                position: sticky; top: 64px; z-index: 45;
+                padding: 10px 0;
+                background: #0f172a;
             }
-            #search-section { padding-top: 2rem; padding-bottom: 2rem; }
+            #search-section > .container { padding-left: 12px; padding-right: 12px; }
+            .premium-filter {
+                padding: 0 !important;
+                border-radius: 0 !important;
+                background: transparent !important;
+                border: none !important;
+                box-shadow: none !important;
+                backdrop-filter: none !important;
+            }
+            #search-bar-row { margin-bottom: 0; gap: 8px; }
+            #search-input {
+                padding: 12px 14px 12px 42px !important;
+                font-size: 15px !important;
+                border-radius: 9999px !important;
+                box-shadow: none !important;
+                background: rgba(30, 41, 59, 0.85) !important;
+            }
+            #search-input::placeholder { font-size: 14px; }
+            .search-icon { left: 15px !important; width: 18px !important; height: 18px !important; }
+
+            /* Botón de filtros (solo móvil), con badge de filtros activos */
+            #filter-open-btn {
+                display: flex; align-items: center; justify-content: center;
+                position: relative; flex: 0 0 auto;
+                width: 46px; height: 46px; border-radius: 50%;
+                background: linear-gradient(135deg, #f59e0b, #d97706); color: #1c1305;
+                border: none; cursor: pointer; box-shadow: 0 6px 16px rgba(217,119,6,.35);
+            }
+            #filter-open-btn:active { transform: scale(.94); }
+            #filter-count-badge {
+                position: absolute; top: -3px; right: -3px;
+                min-width: 18px; height: 18px; padding: 0 5px;
+                border-radius: 99px; background: #ef4444; color: #fff;
+                font-size: 11px; font-weight: 800; line-height: 18px; text-align: center;
+            }
+
+            /* Hoja inferior de filtros (bottom sheet estilo app) */
+            #filter-backdrop { position: fixed; inset: 0; background: rgba(2,6,23,.6); z-index: 129; }
+            #filter-backdrop.open { display: block; }
+            #filter-panel {
+                position: fixed; left: 0; right: 0; bottom: 0; z-index: 130;
+                background: #0f172a; border-top: 1px solid rgba(255,255,255,.1);
+                border-radius: 22px 22px 0 0;
+                padding: 10px 16px calc(18px + env(safe-area-inset-bottom, 0px));
+                max-height: 82vh; overflow-y: auto;
+                transform: translateY(110%); transition: transform .28s ease-out;
+                box-shadow: 0 -14px 40px rgba(0,0,0,.5);
+            }
+            #filter-panel.open { transform: translateY(0); }
+            #filter-panel-head { display: block; margin-bottom: 10px; }
+            .fp-handle { width: 42px; height: 4px; border-radius: 99px; background: #334155; margin: 4px auto 12px; }
+            #filter-panel .grid { gap: 14px; }
+
+            /* Pestañas: chips deslizables de una línea (sin scroll del body) */
+            #tabs-section { padding-top: 10px; padding-bottom: 4px; }
+            #tabs-section > .container { padding-left: 12px; padding-right: 12px; }
+            #tabs-row {
+                flex-wrap: nowrap; justify-content: flex-start;
+                overflow-x: auto; -webkit-overflow-scrolling: touch;
+                scrollbar-width: none; gap: 8px; padding: 2px;
+            }
+            #tabs-row::-webkit-scrollbar { display: none; }
+            #tabs-row .tab { flex: 0 0 auto; white-space: nowrap; font-size: 13px; padding: 8px 16px; border-radius: 99px; }
+
+            /* Feed de tarjetas: densidad de app */
+            #rifas { padding-top: 12px; padding-bottom: 20px; }
+            #rifas > .container { padding-left: 12px; padding-right: 12px; }
+            #raffles-container { gap: 14px; }
+            .raffle-card__image { height: 180px; }
+            .raffle-card__content { padding: 16px; }
+            .raffle-card__title { font-size: 18px; margin-bottom: 4px; }
+            .raffle-card__city { font-size: 12.5px; margin-bottom: 10px; }
+            .raffle-card__price { font-size: 22px; }
+            .raffle-card__info { margin-bottom: 12px; }
+
+            /* Secciones informativas: densidad móvil */
+            #como-funciona { padding-top: 48px; padding-bottom: 48px; }
+            #como-funciona .grid { gap: 32px; }
+            #como-funciona h2 { font-size: 26px; }
         }
     </style>
 </head>
@@ -526,13 +633,27 @@ $page_description = "La plataforma más confiable para crear y participar en rif
     <section id="search-section" class="py-12 border-b border-white/5 bg-slate-900/50">
         <div class="container mx-auto px-4 max-w-6xl">
             <div class="premium-filter rounded-[40px] p-8 md:p-12">
-                <div class="flex flex-col lg:flex-row gap-6 mb-8">
+                <div class="flex flex-row gap-2 lg:gap-6 mb-8" id="search-bar-row">
                     <div class="flex-1 relative group">
                         <input type="text" id="search-input" name="search" aria-label="Buscar rifas" autocomplete="off" class="w-full pl-16 pr-8 py-5 bg-slate-950/40 border border-white/10 rounded-3xl text-xl outline-none focus:border-amber-500/50 transition-all placeholder-slate-500 text-white shadow-inner" placeholder="¿Qué quieres ganar hoy? (ej: Carro, Moto, iPhone…)">
-                        <svg class="absolute left-6 top-1/2 -translate-y-1/2 w-6 h-6 text-slate-400 group-focus-within:text-amber-400 group-focus-within:scale-110 transition-all" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path stroke-linecap="round" d="m20 20-3.5-3.5"/></svg>
+                        <svg class="search-icon absolute left-6 top-1/2 -translate-y-1/2 w-6 h-6 text-slate-400 group-focus-within:text-amber-400 group-focus-within:scale-110 transition-all" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path stroke-linecap="round" d="m20 20-3.5-3.5"/></svg>
+                    </div>
+                    <!-- Solo móvil: abre la hoja de filtros (estilo app) -->
+                    <button type="button" id="filter-open-btn" onclick="openFilterSheet()" aria-label="Abrir filtros" title="Filtros">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" viewBox="0 0 24 24"><path d="M4 6h16M7 12h10M10 18h4"/></svg>
+                        <span id="filter-count-badge" style="display:none;"></span>
+                    </button>
+                </div>
+
+                <div id="filter-backdrop" onclick="closeFilterSheet()"></div>
+                <div id="filter-panel" role="dialog" aria-label="Filtros de búsqueda">
+                <div id="filter-panel-head">
+                    <div class="fp-handle"></div>
+                    <div style="display:flex;align-items:center;justify-content:space-between;">
+                        <span style="font-weight:800;font-size:16px;color:#fff;">Filtrar rifas</span>
+                        <button type="button" onclick="closeFilterSheet()" aria-label="Cerrar filtros" style="background:none;border:none;color:#94a3b8;font-size:22px;cursor:pointer;padding:4px 8px;">✕</button>
                     </div>
                 </div>
-                
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     <div class="space-y-2">
                         <label for="filter-dept" class="text-[11px] font-black text-amber-400 uppercase tracking-[0.2em] ml-2">Departamento</label>
@@ -584,7 +705,7 @@ $page_description = "La plataforma más confiable para crear y participar en rif
                     </div>
                     <div class="space-y-2 flex flex-col justify-end">
                         <div class="flex gap-2">
-                            <button onclick="handleFilter()" class="flex-1 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black uppercase tracking-widest text-[11px] h-[55px] rounded-2xl shadow-xl shadow-amber-500/20 transition-all hover:-translate-y-0.5 active:scale-95 flex items-center justify-center gap-2">
+                            <button onclick="handleFilter(); closeFilterSheet();" class="flex-1 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black uppercase tracking-widest text-[11px] h-[55px] rounded-2xl shadow-xl shadow-amber-500/20 transition-all hover:-translate-y-0.5 active:scale-95 flex items-center justify-center gap-2">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path stroke-linecap="round" d="m20 20-3.5-3.5"/></svg> Buscar
                             </button>
                             <button onclick="clearFilters()" class="px-6 py-3 bg-gradient-to-r from-slate-600 to-slate-700 hover:from-slate-500 hover:to-slate-600 text-white font-bold uppercase tracking-widest text-[10px] rounded-2xl transition-all flex items-center justify-center gap-2 h-[55px]">
@@ -593,13 +714,14 @@ $page_description = "La plataforma más confiable para crear y participar en rif
                         </div>
                     </div>
                 </div>
+                </div><!-- /filter-panel -->
             </div>
         </div>
     </section>
 
-    <section class="py-8">
+    <section class="py-8" id="tabs-section">
         <div class="container mx-auto px-4 max-w-7xl">
-            <div class="flex flex-wrap gap-3 justify-center">
+            <div class="flex flex-wrap gap-3 justify-center" id="tabs-row">
                 <button class="tab active px-6 py-2.5 rounded-xl font-semibold shadow-lg" data-tab="destacadas">Destacadas</button>
                 <button class="tab px-6 py-2.5 rounded-xl font-semibold shadow-lg" data-tab="populares">Top ventas</button>
                 <button class="tab px-6 py-2.5 rounded-xl font-semibold shadow-lg" data-tab="proximas">Cierran pronto</button>
@@ -616,7 +738,7 @@ $page_description = "La plataforma más confiable para crear y participar en rif
         </div>
     </section>
 
-    <section class="py-32 bg-slate-900 border-t border-slate-800/60">
+    <section class="py-32 bg-slate-900 border-t border-slate-800/60" id="como-funciona">
         <div class="container mx-auto px-4">
             <div class="text-center mb-20">
                 <h2 class="text-4xl md:text-5xl font-bold tracking-tight mb-4 text-white">¿Cómo funciona?</h2>
@@ -800,7 +922,7 @@ $page_description = "La plataforma más confiable para crear y participar en rif
                     container.innerHTML = raffles.map(r => `
                         <div class="raffle-card group" data-id="${r.id}">
                             <div class="raffle-card__image">
-                                <img src="${Utils.fixUrl(r.image_url)}" alt="${Utils.esc(r.name)}" width="400" height="220" loading="lazy" class="group-hover:scale-110 transition-transform duration-500">
+                                <img src="${Utils.fixUrl(r.image_url)}" alt="${Utils.esc(r.name)}" width="400" height="220" loading="lazy" class="group-hover:scale-110 transition-transform duration-500" onerror="this.onerror=null;this.src='<?= BASE_PATH ?>/public/assets/images/placeholder.svg';">
                                 <span class="raffle-card__badge">${r.sold_percentage || 0}% vendido</span>
                                 <div class="absolute bottom-0 left-0 right-0 h-1/2 bg-gradient-to-t from-slate-900 to-transparent"></div>
                             </div>
@@ -950,6 +1072,7 @@ $page_description = "La plataforma más confiable para crear y participar en rif
 
     function clearFilters() {
         document.getElementById('search-input').value = '';
+        if (window.updateFilterBadge) updateFilterBadge();
         document.getElementById('filter-dept').value = '';
         document.getElementById('filter-city').value = '';
         document.getElementById('filter-min-price').value = '';
@@ -1033,6 +1156,30 @@ $page_description = "La plataforma más confiable para crear y participar en rif
                 navMenu.classList.toggle('hidden');
             });
         }
+
+        // ── Hoja de filtros (solo móvil): mismo DOM, en escritorio es el grid ──
+        window.openFilterSheet = function () {
+            document.getElementById('filter-panel').classList.add('open');
+            document.getElementById('filter-backdrop').classList.add('open');
+            document.body.style.overflow = 'hidden';
+        };
+        window.closeFilterSheet = function () {
+            document.getElementById('filter-panel').classList.remove('open');
+            document.getElementById('filter-backdrop').classList.remove('open');
+            document.body.style.overflow = '';
+        };
+        document.addEventListener('keydown', e => { if (e.key === 'Escape') closeFilterSheet(); });
+
+        // Badge con la cantidad de filtros activos sobre el botón de filtros.
+        window.updateFilterBadge = function () {
+            const n = ['filter-dept', 'filter-city', 'filter-min-price', 'filter-max-price', 'filter-lottery']
+                .filter(id => (document.getElementById(id)?.value || '') !== '').length;
+            const b = document.getElementById('filter-count-badge');
+            if (b) { b.textContent = n; b.style.display = n > 0 ? 'block' : 'none'; }
+        };
+        ['filter-dept', 'filter-city', 'filter-min-price', 'filter-max-price', 'filter-lottery'].forEach(id => {
+            document.getElementById(id)?.addEventListener('change', updateFilterBadge);
+        });
 
         // Event listeners
         const searchInput = document.getElementById('search-input');
