@@ -167,6 +167,47 @@ try {
 
     $db->commit();
 
+    // §10.1: aviso al VENDEDOR por WhatsApp con lo mínimo para decidir —
+    // SIEMPRE después del commit, best-effort (el panel es la contingencia).
+    try {
+        $stmt = $db->prepare("
+            SELECT COALESCE(r.vendor_id, r.created_by) AS vendor_id, r.name, r.ticket_price,
+                   v.phone AS vendor_phone, u.name AS buyer_name
+            FROM tickets t
+            JOIN raffles r ON r.id = t.raffle_id
+            JOIN vendors v ON v.id = COALESCE(r.vendor_id, r.created_by)
+            LEFT JOIN users u ON u.id = t.user_id
+            WHERE t.id = ?
+        ");
+        $stmt->execute([$ticketIds[0]]);
+        if ($ctx = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $ordenAmount = $totalAmount;
+            if ($reservationId !== '') {
+                $sfx = $db->prepare("SELECT payment_suffix FROM numero_reservas WHERE reservation_id = ? LIMIT 1");
+                $sfx->execute([$reservationId]);
+                $ordenAmount += (int)($sfx->fetchColumn() ?: 0);
+            }
+            $nums = array_map(fn($t2) => $t2['ticket_number'], $tickets);
+            $appUrl = rtrim(getenv('APP_URL') ?: 'http://localhost', '/');
+            $lineas = "🧾 *Nuevo pago por confirmar*\n"
+                . 'Rifa: ' . $ctx['name'] . "\n"
+                . 'Comprador: ' . ($ctx['buyer_name'] ?: 'Sin nombre') . "\n"
+                . 'Número(s): ' . implode(', ', $nums) . "\n"
+                . 'Monto exacto: $' . number_format($ordenAmount, 0, ',', '.') . "\n"
+                . 'Hora: ' . date('d/m H:i') . "\n"
+                . ($proofUrl ? ('Comprobante: ' . $appUrl . BASE_PATH . '/public' . $proofUrl . "\n") : "Sin comprobante adjunto\n")
+                . "\nResponde por cada boleto:\n";
+            foreach ($tickets as $t2) {
+                $lineas .= '✅ *SI ' . $t2['id'] . '*  |  ❌ *NO ' . $t2['id'] . '*  (boleto ' . $t2['ticket_number'] . ")\n";
+            }
+            $lineas .= "\nO confírmalo desde tu panel → Pagos por confirmar.";
+            require_once __DIR__ . '/../whatsapp/notify.php';
+            notificarWhatsAppVendor((int)$ctx['vendor_id'], (string)$ctx['vendor_phone'], $lineas);
+        }
+    } catch (\Throwable $e) {
+        Logger::error('Aviso WA de comprobante falló: ' . $e->getMessage());
+    }
+
     Logger::activity('payment_proof_reported', (int)$userId, [
         'ticket_ids' => $ticketIds,
         'reservation_id' => $reservationId ?: null,

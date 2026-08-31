@@ -34,10 +34,13 @@ try {
                 p.payment_method,
                 p.transaction_status as payment_status,
                 p.payment_gateway_response,
+                p.amount,
                 p.created_at as reported_at,
+                TIMESTAMPDIFF(MINUTE, p.created_at, NOW()) as age_minutes,
                 t.reserved_at,
                 r.name as raffle_name,
                 r.id as raffle_id,
+                r.ticket_price,
                 u.name as buyer_name,
                 u.phone_whatsapp as buyer_phone
             FROM payments p
@@ -52,9 +55,23 @@ try {
         $stmt->execute([$adminUser['id']]);
         $tickets = $stmt->fetchAll();
 
+        // Monto EXACTO de la orden (§6): precio × boletos de la misma
+        // reservation + su sufijo — es el número que el vendedor debe ver en
+        // su app de banco para identificar el pago.
+        $suffixStmt = $db->prepare("
+            SELECT payment_suffix, COUNT(*) AS n FROM numero_reservas
+            WHERE reservation_id = ? GROUP BY payment_suffix LIMIT 1
+        ");
         foreach ($tickets as &$row) {
             $gw = json_decode($row['payment_gateway_response'] ?? '{}', true);
             $row['proof_url'] = $gw['proof_url'] ?? null;
+            $row['order_amount'] = null;
+            if (!empty($gw['reservation_id'])) {
+                $suffixStmt->execute([$gw['reservation_id']]);
+                if ($ord = $suffixStmt->fetch(PDO::FETCH_ASSOC)) {
+                    $row['order_amount'] = (float)$row['ticket_price'] * (int)$ord['n'] + (int)($ord['payment_suffix'] ?? 0);
+                }
+            }
             unset($row['payment_gateway_response']);
         }
         unset($row);
@@ -71,105 +88,36 @@ try {
             Response::error('Datos inválidos', null, 400);
         }
 
-        // Verificar que el ticket pertenece a una rifa del vendedor y que
-        // tiene un pago manual pendiente real (evita aprobar tickets ajenos
-        // o sin comprobante reportado).
-        $stmt = $db->prepare("
-            SELECT t.id, t.status, p.id as payment_id
-            FROM tickets t
-            JOIN raffles r ON t.raffle_id = r.id
-            LEFT JOIN payments p ON p.ticket_id = t.id AND p.transaction_status = 'pending'
-            WHERE t.id = ? AND COALESCE(r.vendor_id, r.created_by) = ?
-        ");
-        $stmt->execute([$ticketId, $adminUser['id']]);
-        $ticket = $stmt->fetch();
-
-        if (!$ticket) {
-            Response::error('No tienes permiso sobre este boleto', null, 403);
-        }
-
-        if (!$ticket['payment_id']) {
-            Response::error('Este boleto no tiene un pago pendiente de revision', null, 400);
-        }
+        // §10: AMBAS vías (WhatsApp y panel) usan el MISMO servicio de
+        // dominio; aquí solo cambia source='dashboard'.
+        require_once __DIR__ . '/../../api/services/PaymentReview.php';
 
         if ($action === 'approve') {
-            $db->beginTransaction();
-            try {
-                // La fila se relee CON lock dentro de la transición. Boletos
-                // que aún estén en 'reserved' (comprobantes anteriores a la
-                // máquina de estados) pasan primero por pending_review para
-                // que la bitácora refleje el flujo real.
-                $stmt = $db->prepare('SELECT * FROM tickets WHERE id = ? FOR UPDATE');
-                $stmt->execute([$ticketId]);
-                $row = $stmt->fetch(PDO::FETCH_ASSOC);
-                if (!$row || !in_array($row['status'], ['reserved', 'pending_review'], true)) {
-                    $db->rollBack();
-                    Response::error('El boleto ya no está en revisión (pudo expirar); no se aprobó el pago', null, 409);
-                }
-                if ($row['status'] === 'reserved') {
-                    $row = TicketStateMachine::apply($db, $row, 'pending_review', [
-                        'actor' => 'system', 'source' => 'dashboard',
-                        'reason' => 'normalización: comprobante previo a la máquina de estados',
-                    ]);
-                }
-                TicketStateMachine::apply($db, $row, 'paid', [
-                    'actor' => 'vendor', 'source' => 'dashboard', 'actor_id' => (int)$adminUser['id'],
-                    'reason' => 'pago confirmado por el vendedor',
-                    'detail' => ['payment_id' => (int)$ticket['payment_id']],
-                    'fields' => ['paid_at' => date('Y-m-d H:i:s'), 'payment_id' => (int)$ticket['payment_id']],
-                ]);
-
-                $stmt = $db->prepare("UPDATE payments SET transaction_status = 'completed', verified_at = NOW() WHERE id = ?");
-                $stmt->execute([$ticket['payment_id']]);
-
-                $db->commit();
-            } catch (Exception $e) {
-                if ($db->inTransaction()) {
-                    $db->rollBack();
-                }
-                throw $e;
+            $r = PaymentReview::aprobar($db, $ticketId, (int)$adminUser['id'], 'dashboard');
+            if (!$r['ok']) {
+                $code = $r['estado'] === 'sin_permiso' ? 403 : ($r['estado'] === 'sin_pago' ? 400 : 409);
+                Response::error($r['mensaje'], null, $code);
             }
-
-            Logger::activity('payment_manual_approved', $adminUser['id'], ['ticket_id' => $ticketId, 'payment_id' => $ticket['payment_id']]);
+            Logger::activity('payment_manual_approved', $adminUser['id'], ['ticket_id' => $ticketId]);
 
             // §9.6: boleta por WhatsApp al comprador — después del commit,
             // best-effort (si el vendedor no tiene canal, queda descargable).
             require_once __DIR__ . '/../../api/services/Boleta.php';
             Boleta::enviarPorWhatsApp($db, (int)$ticketId, (int)$adminUser['id']);
 
-            Response::success(['message' => 'Pago aprobado. El boleto ahora está vendido.']);
+            Response::success(['message' => $r['mensaje']]);
         }
 
         if ($action === 'reject') {
-            $db->beginTransaction();
-            try {
-                $stmt = $db->prepare('SELECT * FROM tickets WHERE id = ? FOR UPDATE');
-                $stmt->execute([$ticketId]);
-                $row = $stmt->fetch(PDO::FETCH_ASSOC);
-                if ($row && in_array($row['status'], ['reserved', 'pending_review'], true)) {
-                    if ($row['status'] === 'reserved') {
-                        $row = TicketStateMachine::apply($db, $row, 'pending_review', [
-                            'actor' => 'system', 'source' => 'dashboard',
-                            'reason' => 'normalización: comprobante previo a la máquina de estados',
-                        ]);
-                    }
-                    TicketStateMachine::apply($db, $row, 'available', [
-                        'actor' => 'vendor', 'source' => 'dashboard', 'actor_id' => (int)$adminUser['id'],
-                        'reason' => 'pago rechazado por el vendedor',
-                        'detail' => ['payment_id' => (int)$ticket['payment_id']],
-                    ]);
-                }
-                $stmt = $db->prepare("UPDATE payments SET transaction_status = 'failed' WHERE id = ?");
-                $stmt->execute([$ticket['payment_id']]);
-                $db->commit();
-            } catch (Exception $e) {
-                if ($db->inTransaction()) {
-                    $db->rollBack();
-                }
-                throw $e;
+            // §10.2: motivo OBLIGATORIO de la lista corta.
+            $reason = (string)($input['reason'] ?? '');
+            $r = PaymentReview::rechazar($db, $ticketId, (int)$adminUser['id'], 'dashboard', $reason);
+            if (!$r['ok']) {
+                $code = $r['estado'] === 'sin_permiso' ? 403 : ($r['estado'] === 'motivo_invalido' ? 422 : 409);
+                Response::error($r['mensaje'], null, $code);
             }
-            Logger::activity('payment_manual_rejected', $adminUser['id'], ['ticket_id' => $ticketId, 'payment_id' => $ticket['payment_id']]);
-            Response::success(['message' => 'Pago rechazado. El boleto volvió a estar disponible.']);
+            Logger::activity('payment_manual_rejected', $adminUser['id'], ['ticket_id' => $ticketId, 'motivo' => $reason]);
+            Response::success(['message' => $r['mensaje']]);
         }
     }
 

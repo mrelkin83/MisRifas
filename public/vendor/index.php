@@ -977,8 +977,12 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
 
                 <div id="section-pagos" class="admin-section hidden">
                     <div class="section-card">
-                        <div class="section-header">
-                            <h2>Validación de Pagos Manuales (Contraentrega/Transferencia)</h2>
+                        <div class="section-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+                            <h2>Pagos por confirmar</h2>
+                            <button type="button" id="approve-all-btn" class="btn btn--sm hidden" style="background:#10b981;color:#fff;" onclick="approveAllPayments()">✅ Confirmar todos</button>
+                        </div>
+                        <div id="wa-pagos-banner" class="hidden" style="margin-bottom:14px;padding:10px 14px;border-radius:10px;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.4);color:#92400e;font-size:13px;font-weight:600;">
+                            📵 WhatsApp desconectado — confirma tus pagos desde aquí.
                         </div>
                         <div class="table-responsive">
                             <table class="data-table">
@@ -987,8 +991,8 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                                         <th>Rifa</th>
                                         <th>Boleto</th>
                                         <th>Comprador</th>
-                                        <th>Método</th>
-                                        <th>Estado</th>
+                                        <th>Monto exacto</th>
+                                        <th>Hace</th>
                                         <th>Comprobante</th>
                                         <th>Acciones</th>
                                     </tr>
@@ -3076,24 +3080,32 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                     return;
                 }
                 window.__payments = data;
+                document.getElementById('approve-all-btn')?.classList.toggle('hidden', data.length < 2);
                 tbody.innerHTML = data.map(p => {
-                    const statusMap = { pending: 'Pendiente', verifying: 'Por verificar', approved: 'Aprobado', rejected: 'Rechazado' };
-                    const proofBtn = p.payment_proof_url
-                        ? `<a href="<?= BASE_PATH ?>/public${p.payment_proof_url}" target="_blank" style="color:#2563eb;text-decoration:underline;font-size:13px;">Ver comprobante</a>`
+                    // Miniatura del comprobante (§10.2), no solo un enlace.
+                    const proofCell = p.proof_url
+                        ? `<a href="<?= BASE_PATH ?>/public${p.proof_url}" target="_blank"><img src="<?= BASE_PATH ?>/public${p.proof_url}" alt="Comprobante" loading="lazy" style="width:44px;height:44px;object-fit:cover;border-radius:8px;border:1px solid #e2e8f0;"></a>`
                         : `<span style="color:#9ca3af;font-size:12px;">Sin comprobante</span>`;
-                    const actions = (p.payment_status === 'pending' || p.payment_status === 'verifying')
-                        ? `<button class="btn btn--sm" aria-label="Acciones" title="Acciones" onclick="openPaymentSheet(${parseInt(p.ticket_id, 10)})" style="font-size:20px;line-height:1;padding:2px 10px;">⋮</button>`
-                        : `<span style="color:#94a3b8;font-size:12px;">${statusMap[p.payment_status] || p.payment_status}</span>`;
+                    const monto = p.order_amount != null ? p.order_amount : p.amount;
+                    const mins = parseInt(p.age_minutes || 0, 10);
+                    const age = mins < 60 ? (mins + ' min') : (mins < 1440 ? Math.floor(mins / 60) + ' h' : Math.floor(mins / 1440) + ' d');
+                    const ageColor = mins > 600 ? '#dc2626' : (mins > 120 ? '#d97706' : '#64748b');
                     return `<tr>
                         <td class="font-medium">${userEsc(p.raffle_name || '')}</td>
                         <td><strong>#${userEsc(p.ticket_number)}</strong></td>
                         <td>${userEsc(p.buyer_name || '—')}<br><span style="color:#94a3b8;font-size:12px;">${userEsc(p.buyer_phone || '')}</span></td>
-                        <td>${userEsc(p.payment_method || '—')}</td>
-                        <td><span class="badge badge--pending">${statusMap[p.payment_status] || p.payment_status}</span></td>
-                        <td>${proofBtn}</td>
-                        <td>${actions}</td>
+                        <td class="font-bold" style="font-variant-numeric:tabular-nums;">$${Number(monto || 0).toLocaleString('es-CO')}<br><span style="color:#94a3b8;font-size:11px;font-weight:400;">${userEsc(p.payment_method || '')}</span></td>
+                        <td style="color:${ageColor};font-size:13px;font-weight:600;">${age}</td>
+                        <td>${proofCell}</td>
+                        <td><button class="btn btn--sm" aria-label="Acciones" title="Acciones" onclick="openPaymentSheet(${parseInt(p.ticket_id, 10)})" style="font-size:20px;line-height:1;padding:2px 10px;">⋮</button></td>
                     </tr>`;
                 }).join('');
+                // §10.2: si WhatsApp está caído, avisar que el panel es la vía.
+                try {
+                    const wa = await API.get('/vendor/whatsapp.php', { action: 'estado' });
+                    const caido = !(wa.success && wa.data && wa.data.estado === 'conectado');
+                    document.getElementById('wa-pagos-banner')?.classList.toggle('hidden', !caido || data.length === 0);
+                } catch (e) {}
             }
         } catch (error) { tbody.innerHTML = '<tr><td colspan="7" class="text-center text-red-500">Error al cargar pagos</td></tr>'; }
     }
@@ -3107,13 +3119,40 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
         } catch (e) { Utils.showNotification('Error al aprobar pago', 'error'); }
     }
 
-    async function rejectPayment(ticketId) {
-        if (!confirm('¿Rechazar este pago? El boleto volverá a estar disponible.')) return;
+    // §10.2: el rechazo SIEMPRE lleva motivo de la lista corta.
+    const REJECT_REASONS = { no_llego: 'La plata no llegó', monto: 'El monto no coincide', ilegible: 'Comprobante ilegible', repetido: 'Comprobante repetido', otro: 'Otro motivo' };
+    function chooseRejectReason(ticketId) {
+        const items = Object.entries(REJECT_REASONS).map(([key, label]) => ({
+            label: '❌  ' + label,
+            danger: key !== 'otro',
+            onClick: () => rejectPayment(ticketId, key)
+        }));
+        openActionSheet('¿Por qué rechazas este pago?', 'El número volverá a la venta', items);
+    }
+
+    async function rejectPayment(ticketId, reason) {
         try {
-            await API.post('/admin/payments.php', { action: 'reject', ticket_id: ticketId });
-            Utils.showNotification('❌ Pago rechazado. Boleto liberado.', 'info');
+            await API.post('/admin/payments.php', { action: 'reject', ticket_id: ticketId, reason: reason });
+            Utils.showNotification('❌ Pago rechazado (' + (REJECT_REASONS[reason] || reason) + '). Boleto liberado.', 'info');
             loadPayments();
-        } catch (e) { Utils.showNotification('Error al rechazar', 'error'); }
+        } catch (e) { Utils.showNotification(e.message || 'Error al rechazar', 'error'); }
+    }
+
+    // §10.2: confirmación en lote.
+    async function approveAllPayments() {
+        const pendientes = (window.__payments || []);
+        if (!pendientes.length) return;
+        if (!confirm('¿Confirmar TODOS los pagos pendientes (' + pendientes.length + ')? Cada boleto quedará vendido y con boleta emitida.')) return;
+        const btn = document.getElementById('approve-all-btn');
+        btn.disabled = true; btn.textContent = 'Confirmando…';
+        let ok = 0, fail = 0;
+        for (const p of pendientes) {
+            try { await API.post('/admin/payments.php', { action: 'approve', ticket_id: p.ticket_id }); ok++; }
+            catch (e) { fail++; }
+        }
+        btn.disabled = false; btn.textContent = '✅ Confirmar todos';
+        Utils.showNotification('Lote: ' + ok + ' confirmados' + (fail ? (', ' + fail + ' fallidos') : ''), fail ? 'warning' : 'success');
+        loadPayments();
     }
 
     // ================================================================
@@ -3810,8 +3849,10 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                     items.push({ label: '🧾  Ver comprobante', onClick: function(){ window.open(BASE_PATH + '/public' + p.payment_proof_url, '_blank'); } });
                 }
                 items.push({ label: '✅  Aprobar pago', onClick: function(){ approvePayment(p.ticket_id); } });
-                items.push({ label: '❌  Rechazar pago', danger: true, onClick: function(){ rejectPayment(p.ticket_id); } });
-                openActionSheet('Boleto #' + (p.ticket_number || ''), (p.raffle_name || '') + (p.buyer_name ? ' · ' + p.buyer_name : ''), items);
+                items.push({ label: '❌  Rechazar pago…', danger: true, onClick: function(){ chooseRejectReason(p.ticket_id); } });
+                var monto = p.order_amount != null ? p.order_amount : p.amount;
+                openActionSheet('Boleto #' + (p.ticket_number || ''),
+                    (p.raffle_name || '') + ' · $' + Number(monto || 0).toLocaleString('es-CO') + (p.buyer_name ? ' · ' + p.buyer_name : ''), items);
             };
 
             // §5.2: venta en efectivo — la registra SOLO el vendedor.

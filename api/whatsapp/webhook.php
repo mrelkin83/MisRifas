@@ -129,6 +129,14 @@ if ($guardado === 0) {
     responder(200, ['ok' => true, 'duplicado' => true]);
 }
 
+// Confirmación de pagos del vendedor (§10.1): SI/NO <ticket_id>. Corre
+// DESPUÉS del dedupe por message_id (idempotencia persistida) y ANTES del
+// motor de IA — un comando de pago no es una conversación.
+require_once __DIR__ . '/PaymentInbound.php';
+if (PaymentInbound::procesar($mensaje, $canal, $vendorId)) {
+    responder(200, ['ok' => true, 'pago' => true]);
+}
+
 $convManager->tocar((int)$conv['id']);
 
 if (!HumanHandoff::iaPuedeResponder($conv)) {

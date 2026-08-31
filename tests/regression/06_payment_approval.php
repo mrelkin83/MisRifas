@@ -17,7 +17,8 @@ check($pStatus === 'completed', 'El pago queda en estado completed', "payment=$p
 
 section('Pago — rechazar libera el boleto');
 $p2 = fxPendingPayment($raffle, '02', $buyer['id']);
-$res = httpPost('/api/admin/payments.php', ['action' => 'reject', 'ticket_id' => $p2['ticket_id']], $vendorToken);
+// §10.2: el rechazo lleva motivo obligatorio de la lista corta.
+$res = httpPost('/api/admin/payments.php', ['action' => 'reject', 'ticket_id' => $p2['ticket_id'], 'reason' => 'no_llego'], $vendorToken);
 assertHttp(200, $res, 'Rechazar un pago pendiente propio funciona');
 $tStatus = $db->query("SELECT status FROM tickets WHERE id={$p2['ticket_id']}")->fetchColumn();
 $pStatus = $db->query("SELECT transaction_status FROM payments WHERE id={$p2['payment_id']}")->fetchColumn();
