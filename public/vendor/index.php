@@ -43,6 +43,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
         .nav-item--active { background: rgba(245, 158, 11, 0.12); color: #fbbf24; border-left-color: #f59e0b; }
         .nav-icon { width: 20px; height: 20px; flex-shrink: 0; }
         .nav-text { font-size: 14px; font-weight: 500; }
+        .nav-group { padding: 16px 20px 6px; font-size: 10px; font-weight: 800; letter-spacing: 1.2px; color: #64748b; text-transform: uppercase; }
         .sidebar-footer { padding: 16px 20px; border-top: 1px solid #334155; }
         .logout-btn { display: flex; align-items: center; gap: 8px; width: 100%; padding: 10px; background: #dc2626; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500; transition: background 0.2s; }
         .logout-btn:hover { background: #b91c1c; }
@@ -586,41 +587,41 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg>
                     <span class="nav-text">Dashboard</span>
                 </a>
-                <a href="#crear" class="nav-item" data-section="crear" onclick="switchTo('crear')">
-                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>
-                    <span class="nav-text">Crear Rifa</span>
+                <div class="nav-group">Operación diaria</div>
+                <a href="#pagos" class="nav-item" data-section="pagos" onclick="switchTo('pagos')">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="3"/></svg>
+                    <span class="nav-text">Pagos Recibidos</span>
                 </a>
                 <a href="#mis-rifas" class="nav-item" data-section="mis-rifas" onclick="switchTo('mis-rifas')">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h11l-1 15a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 3Zm11 4h2.5a2 2 0 0 1 2 2.2l-.4 4A2 2 0 0 1 18.1 15H16"/></svg>
                     <span class="nav-text">Mis Rifas</span>
                 </a>
-                <a href="#pagos" class="nav-item" data-section="pagos" onclick="switchTo('pagos')">
-                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="3"/></svg>
-                    <span class="nav-text">Pagos Recibidos</span>
+                <a href="#crear" class="nav-item" data-section="crear" onclick="switchTo('crear')">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>
+                    <span class="nav-text">Crear Rifa</span>
                 </a>
                 <a href="#boletas-compradas" class="nav-item" data-section="boletas-compradas" onclick="switchTo('boletas-compradas')">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v1a2 2 0 0 0 0 4v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1a2 2 0 0 0 0-4Z"/><path d="M9 8l6 8M15 8l-6 8" stroke-dasharray="1 2.5"/></svg>
                     <span class="nav-text">Boletas Compradas</span>
                 </a>
-                <a href="#mi-perfil" class="nav-item" data-section="mi-perfil" onclick="switchTo('mi-perfil')">
-                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
-                    <span class="nav-text">Mi Perfil</span>
-                </a>
-                <a href="#comisiones" class="nav-item" data-section="comisiones" id="nav-comisiones" onclick="switchTo('comisiones')">
-                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
-                    <span class="nav-text">Comisiones</span>
-                </a>
+                <div class="nav-group" id="nav-group-sorteos">Sorteos y control</div>
                 <a href="#gestion-rifas" class="nav-item" data-section="gestion-rifas" id="nav-gestion-rifas" onclick="switchTo('gestion-rifas')">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 3h6v3H9zM8 10h8M8 14h8M8 18h5"/></svg>
-                    <span class="nav-text">Gestión de Rifas</span>
+                    <span class="nav-text">Sorteos y Resultados</span>
                 </a>
                 <a href="#usuarios" class="nav-item" data-section="usuarios" id="nav-usuarios" onclick="switchTo('usuarios')">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                     <span class="nav-text">Usuarios</span>
                 </a>
-                <a href="#configuracion" class="nav-item" data-section="configuracion" onclick="switchTo('configuracion')">
-                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>
-                    <span class="nav-text">Configuración Generales</span>
+                <!-- WhatsApp IA: SOLO super_admin. Oculto por defecto (fail-closed). -->
+                <a href="<?= BASE_PATH ?>/public/admin/whatsapp/dashboard.php" class="nav-item" id="nav-whatsapp" style="display:none">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5Z"/></svg>
+                    <span class="nav-text">WhatsApp IA</span>
+                </a>
+                <div class="nav-group">Crecimiento</div>
+                <a href="#tapazo" class="nav-item" data-section="tapazo" onclick="switchTo('tapazo')">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h11l-1 15a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 3Zm11 4h2.5a2 2 0 0 1 2 2.2l-.4 4A2 2 0 0 1 18.1 15H16"/></svg>
+                    <span class="nav-text">El Tapazo</span>
                 </a>
                 <a href="#email-campaigns" class="nav-item" data-section="email-campaigns" id="nav-campaigns" onclick="switchTo('email-campaigns')">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 6-10 7L2 6"/></svg>
@@ -630,9 +631,18 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="14" rx="2"/><circle cx="8.5" cy="9.5" r="1.5"/><path d="m21 15-5-5-9 9"/></svg>
                     <span class="nav-text">Gestión de Portada</span>
                 </a>
-                <a href="#tapazo" class="nav-item" data-section="tapazo" onclick="switchTo('tapazo')">
-                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h11l-1 15a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 3Zm11 4h2.5a2 2 0 0 1 2 2.2l-.4 4A2 2 0 0 1 18.1 15H16"/></svg>
-                    <span class="nav-text">El Tapazo</span>
+                <div class="nav-group">Plataforma</div>
+                <a href="#comisiones" class="nav-item" data-section="comisiones" id="nav-comisiones" onclick="switchTo('comisiones')">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+                    <span class="nav-text">Comisiones</span>
+                </a>
+                <a href="#configuracion" class="nav-item" data-section="configuracion" onclick="switchTo('configuracion')">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>
+                    <span class="nav-text">Configuración Generales</span>
+                </a>
+                <a href="#mi-perfil" class="nav-item" data-section="mi-perfil" onclick="switchTo('mi-perfil')">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
+                    <span class="nav-text">Mi Perfil</span>
                 </a>
             </nav>
             <div class="sidebar-footer">
@@ -1486,39 +1496,6 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                         </form>
                     </div>
                     <div class="section-card">
-                        <h2 class="text-xl font-bold mb-4">Configuración del Servidor de Correos (SMTP)</h2>
-                        <p class="text-sm text-gray-500 mb-6">Configura tu servidor SMTP para enviar campañas de email y notificaciones automáticas.</p>
-                        <form id="email-settings-form" class="space-y-6">
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div class="form-group">
-                                    <label>Servidor SMTP (Host)</label>
-                                    <input type="text" id="smtp-host" class="w-full px-4 py-2 border rounded-lg" placeholder="smtp.gmail.com">
-                                </div>
-                                <div class="form-group">
-                                    <label>Puerto SMTP</label>
-                                    <input type="number" id="smtp-port" class="w-full px-4 py-2 border rounded-lg" placeholder="587" value="587">
-                                </div>
-                                <div class="form-group">
-                                    <label>Usuario SMTP (Email)</label>
-                                    <input type="email" id="smtp-user" class="w-full px-4 py-2 border rounded-lg" placeholder="tu@email.com">
-                                </div>
-                                <div class="form-group">
-                                    <label>Contraseña SMTP</label>
-                                    <input type="password" id="smtp-pass" class="w-full px-4 py-2 border rounded-lg" placeholder="••••••••">
-                                </div>
-                                <div class="form-group">
-                                    <label>Email Remitente (From)</label>
-                                    <input type="email" id="smtp-from" class="w-full px-4 py-2 border rounded-lg" placeholder="noreply@misrifas.com">
-                                </div>
-                                <div class="form-group">
-                                    <label>Nombre Remitente</label>
-                                    <input type="text" id="smtp-from-name" class="w-full px-4 py-2 border rounded-lg" placeholder="MisRifas">
-                                </div>
-                            </div>
-                            <button type="submit" class="btn btn--primary px-8 h-12">Guardar Configuración SMTP</button>
-                        </form>
-                    </div>
-                    <div class="section-card">
                         <h2 class="text-xl font-bold mb-4">Historial de Campañas</h2>
                         <div class="table-responsive">
                             <table class="data-table">
@@ -1682,6 +1659,104 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                             <button type="button" class="btn btn--sm btn--outline" onclick="switchTo('crear')">➕ Crear rifa</button>
                             <a href="<?= BASE_PATH ?>/public/index.php" class="btn btn--sm btn--outline" style="text-decoration:none;">🌐 Volver al sitio</a>
                         </div>
+                    </div>
+
+
+                    <!-- Centro de COMUNICACIONES (solo super_admin): dónde se
+                         configura cada canal y QUÉ mensajes envía el sistema. -->
+                    <div class="section-card" id="comms-card">
+                        <h2 class="text-lg font-bold mb-2 flex items-center gap-2"><svg class="w-5 h-5 text-primary shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m3 11 18-8-8 18-2-8-8-2Z"/></svg>Comunicaciones y notificaciones</h2>
+                        <p class="text-sm text-gray-500 mb-4">Mapa de TODO lo que el sistema envía y dónde se configura cada canal.</p>
+
+                        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;margin-bottom:18px;">
+                            <div style="padding:14px;border:1px solid #e2e8f0;border-radius:12px;">
+                                <div style="font-weight:800;font-size:13px;">🏆 Resultados del sorteo</div>
+                                <p style="font-size:12px;color:#64748b;margin-top:4px;">Automático: 10:30pm se trae el resultado oficial y 11:00pm corre el sorteo — solo un boleto <strong>pagado</strong> gana. Se notifica a TODOS los compradores por correo y WhatsApp (cola cada 10 min). Respaldo manual: <a href="#gestion-rifas" onclick="switchTo('gestion-rifas')" style="color:#f59e0b;font-weight:700;">Sorteos y Resultados</a>.</p>
+                            </div>
+                            <div style="padding:14px;border:1px solid #e2e8f0;border-radius:12px;">
+                                <div style="font-weight:800;font-size:13px;">📧 Correo (SMTP)</div>
+                                <p style="font-size:12px;color:#64748b;margin-top:4px;">Se configura <strong>aquí abajo</strong> ⬇. Lo usan: resultados, boleta digital, OTP de registro, recordatorios y campañas.</p>
+                            </div>
+                            <div style="padding:14px;border:1px solid #e2e8f0;border-radius:12px;">
+                                <div style="font-weight:800;font-size:13px;">📱 WhatsApp</div>
+                                <p style="font-size:12px;color:#64748b;margin-top:4px;">Cada organizador vincula SU número con QR en <a href="#mi-perfil" onclick="switchTo('mi-perfil')" style="color:#f59e0b;font-weight:700;">Mi Perfil</a> (la plataforma pone servidor e instancia). La configuración avanzada del motor y la IA viven en <strong>WhatsApp IA</strong> (menú lateral).</p>
+                            </div>
+                            <div style="padding:14px;border:1px solid #e2e8f0;border-radius:12px;">
+                                <div style="font-weight:800;font-size:13px;">🔐 OTP de registro</div>
+                                <p style="font-size:12px;color:#64748b;margin-top:4px;">Automático, sin configuración: al registrarse, el usuario recibe un código <code>VERIFY-XXXXX</code> por correo, o lo ENVÍA por WhatsApp (OTP inverso) para verificar su número. Usa el SMTP de abajo y el canal WhatsApp del sistema.</p>
+                            </div>
+                            <div style="padding:14px;border:1px solid #e2e8f0;border-radius:12px;">
+                                <div style="font-weight:800;font-size:13px;">✉️ SMS (Gammu)</div>
+                                <p style="font-size:12px;color:#64748b;margin-top:4px;">Canal opcional de respaldo. Se activa por el archivo <code>.env</code> del servidor (<code>SMS_ENABLED=true</code> + módem configurado). Hoy está <strong>apagado</strong>: el sistema opera con correo + WhatsApp.</p>
+                            </div>
+                        </div>
+
+                        <h3 class="text-md font-bold mb-2">📝 Plantillas que envía el sistema (texto actual)</h3>
+                        <p class="text-sm text-gray-500 mb-3">Vista de solo lectura. Los textos viven en el código (<code>api/services/MessageBuilderService.php</code> y los crons); si quieres editarlos desde aquí, pide el editor de plantillas.</p>
+                        <div style="display:flex;flex-direction:column;gap:10px;">
+                            <details style="border:1px solid #e2e8f0;border-radius:12px;padding:10px 14px;">
+                                <summary style="font-weight:700;font-size:13px;cursor:pointer;">🏆 Al GANADOR (WhatsApp y correo)</summary>
+                                <pre style="white-space:pre-wrap;font-size:12px;background:#f8fafc;border-radius:8px;padding:10px;margin-top:8px;">Felicitaciones {nombre}! Ganaste la rifa *{rifa}* con el numero *{boleto}*. El numero ganador de la {lotería} del {fecha} fue *{número}*. Confirma que aceptas tu premio aqui: {enlace} . Pronto te contactaremos para la entrega del premio.</pre>
+                                <p style="font-size:11.5px;color:#64748b;">El correo lleva además el botón verde "Confirmar aceptación del premio" con el mismo enlace tokenizado.</p>
+                            </details>
+                            <details style="border:1px solid #e2e8f0;border-radius:12px;padding:10px 14px;">
+                                <summary style="font-weight:700;font-size:13px;cursor:pointer;">🎟️ A los demás participantes (resultado)</summary>
+                                <pre style="white-space:pre-wrap;font-size:12px;background:#f8fafc;border-radius:8px;padding:10px;margin-top:8px;">Resultado de la rifa *{rifa}*: el numero ganador de la {lotería} fue *{número}*. Felicitaciones a *{ganador}*, quien gano con el boleto *{boleto ganador}*. Gracias por participar — tus boletos fueron: {tus boletos}.</pre>
+                            </details>
+                            <details style="border:1px solid #e2e8f0;border-radius:12px;padding:10px 14px;">
+                                <summary style="font-weight:700;font-size:13px;cursor:pointer;">📦 Entrega del premio (al ganador)</summary>
+                                <pre style="white-space:pre-wrap;font-size:12px;background:#f8fafc;border-radius:8px;padding:10px;margin-top:8px;">El organizador reporta que TE ENTREGÓ el premio de la rifa "{rifa}" (boleto #{boleto}). ¿Lo recibiste? Confírmalo aquí (o repórtalo si NO lo has recibido): {enlace}. Tu confirmación queda pública en el hall de ganadores.</pre>
+                                <p style="font-size:11.5px;color:#64748b;">El enlace muestra la foto de evidencia que subió el organizador (obligatoria).</p>
+                            </details>
+                            <details style="border:1px solid #e2e8f0;border-radius:12px;padding:10px 14px;">
+                                <summary style="font-weight:700;font-size:13px;cursor:pointer;">🔁 Reprogramación / cancelación</summary>
+                                <pre style="white-space:pre-wrap;font-size:12px;background:#f8fafc;border-radius:8px;padding:10px;margin-top:8px;">El numero {número} no estaba vendido/pagado, asi que el sorteo de *{rifa}* se reprogramó para el {nueva fecha} con la MISMA lotería. Tu boleto sigue participando tal cual. (Máximo 3 reprogramaciones; a la 4ª la rifa se cancela y el organizador debe devolver el dinero.)</pre>
+                            </details>
+                            <details style="border:1px solid #e2e8f0;border-radius:12px;padding:10px 14px;">
+                                <summary style="font-weight:700;font-size:13px;cursor:pointer;">🧾 Pago por confirmar (al organizador) y 🤝 recordatorio de apartado</summary>
+                                <pre style="white-space:pre-wrap;font-size:12px;background:#f8fafc;border-radius:8px;padding:10px;margin-top:8px;">🧾 Nuevo pago por confirmar — Rifa / Comprador / Número(s) / Monto exacto / Comprobante (enlace) + responde SI {id} o NO {id} {motivo}.
+
+🤝 Hola {nombre} 👋 Te recuerdo tu número *{boleto}* apartado en la rifa *{rifa}*. Valor: {precio}. Puedes pagar por: {llaves de cobro del organizador}.</pre>
+                            </details>
+                            <details style="border:1px solid #e2e8f0;border-radius:12px;padding:10px 14px;">
+                                <summary style="font-weight:700;font-size:13px;cursor:pointer;">🔐 OTP de verificación de cuenta</summary>
+                                <pre style="white-space:pre-wrap;font-size:12px;background:#f8fafc;border-radius:8px;padding:10px;margin-top:8px;">¡Casi listos! Tu código de verificación es VERIFY-XXXXX (por correo). Por WhatsApp funciona al revés: el usuario ENVÍA ese código al número del sistema y su cuenta queda verificada.</pre>
+                            </details>
+                        </div>
+                    </div>
+
+                    <div class="section-card">
+                        <h2 class="text-xl font-bold mb-4">📧 Correo del sistema (SMTP)</h2>
+                        <p class="text-sm text-gray-500 mb-6">Este correo envía TODO: resultados de sorteos, boletas, OTP de registro, recordatorios y campañas.</p>
+                        <form id="email-settings-form" class="space-y-6">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div class="form-group">
+                                    <label>Servidor SMTP (Host)</label>
+                                    <input type="text" id="smtp-host" class="w-full px-4 py-2 border rounded-lg" placeholder="smtp.gmail.com">
+                                </div>
+                                <div class="form-group">
+                                    <label>Puerto SMTP</label>
+                                    <input type="number" id="smtp-port" class="w-full px-4 py-2 border rounded-lg" placeholder="587" value="587">
+                                </div>
+                                <div class="form-group">
+                                    <label>Usuario SMTP (Email)</label>
+                                    <input type="email" id="smtp-user" class="w-full px-4 py-2 border rounded-lg" placeholder="tu@email.com">
+                                </div>
+                                <div class="form-group">
+                                    <label>Contraseña SMTP</label>
+                                    <input type="password" id="smtp-pass" class="w-full px-4 py-2 border rounded-lg" placeholder="••••••••">
+                                </div>
+                                <div class="form-group">
+                                    <label>Email Remitente (From)</label>
+                                    <input type="email" id="smtp-from" class="w-full px-4 py-2 border rounded-lg" placeholder="noreply@misrifas.com">
+                                </div>
+                                <div class="form-group">
+                                    <label>Nombre Remitente</label>
+                                    <input type="text" id="smtp-from-name" class="w-full px-4 py-2 border rounded-lg" placeholder="MisRifas">
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn--primary px-8 h-12">Guardar Configuración SMTP</button>
+                        </form>
                     </div>
 
                     <!-- Configuración General (solo super_admin: la API no aplica cambios para vendedores) -->
@@ -1910,7 +1985,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
             console.log('Running onTotalTicketsChange for section crear');
             onTotalTicketsChange();
         }
-        if (section === 'configuracion') loadSettings();
+        if (section === 'configuracion') { loadSettings(); loadEmailSettings(); }
         if (section === 'tapazo') loadTapazos();
         if (section === 'email-campaigns') { loadCampaigns(); loadEmailSettings(); }
     }
@@ -3741,8 +3816,14 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
         // Ocultar secciones exclusivas de super_admin (comisiones, campaigns, banners, gestion-rifas)
         // Solo super_admin puede ver estas secciones - vendedor NO las ve
         var userRole = user.role || 'unknown';
-        
+
+        // WhatsApp IA: solo super_admin (fail-closed, oculto por defecto)
+        var navWhatsapp = document.getElementById('nav-whatsapp');
+        if (navWhatsapp) navWhatsapp.style.display = (userRole === 'super_admin') ? 'flex' : 'none';
+
         if (userRole !== 'super_admin') {
+            var grpSorteos = document.getElementById('nav-group-sorteos');
+            if (grpSorteos) grpSorteos.style.display = 'none';
             // Ocultar usando style.display
             var navComisiones = document.getElementById('nav-comisiones');
             var navCampaigns = document.getElementById('nav-campaigns');
@@ -3761,6 +3842,10 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
             // un vendedor lo dejaba "guardar" cambios que nunca se aplicaban.
             var platformSettings = document.getElementById('section-platform-settings');
             if (platformSettings) platformSettings.style.display = 'none';
+            var commsCard = document.getElementById('comms-card');
+            if (commsCard) commsCard.style.display = 'none';
+            var emailForm = document.getElementById('email-settings-form');
+            if (emailForm && emailForm.closest('.section-card')) emailForm.closest('.section-card').style.display = 'none';
             // En su lugar, el vendedor ve SU configuración (lectura + atajos).
             var vendorSettings = document.getElementById('vendor-settings-card');
             if (vendorSettings) vendorSettings.classList.remove('hidden');
@@ -3791,7 +3876,11 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                 localStorage.setItem('misrifas_user', JSON.stringify(freshUser));
 
                 // Re-verificar rol por si cambió
+                var navWa2 = document.getElementById('nav-whatsapp');
+                if (navWa2) navWa2.style.display = (freshUser.role === 'super_admin') ? 'flex' : 'none';
                 if (freshUser.role !== 'super_admin') {
+                    var grpS2 = document.getElementById('nav-group-sorteos');
+                    if (grpS2) grpS2.style.display = 'none';
                     document.getElementById('nav-comisiones').style.display = 'none';
                     document.getElementById('nav-campaigns').style.display = 'none';
                     document.getElementById('nav-banners').style.display = 'none';
@@ -4304,13 +4393,25 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
             };
 
             // ⋮ en "Usuarios": editar / activar-suspender / eliminar.
+
+            // Restablecer contraseña (solo super_admin): genera una temporal y
+            // la muestra UNA vez para copiarla — no se envía por ningún canal.
+            window.resetUserPassword = async function(type, id, nombre){
+                if (!confirm('¿Restablecer la contraseña de ' + (nombre || 'este usuario') + '?\n\nSe genera una temporal (se muestra UNA sola vez) y su sesión actual se cierra.')) return;
+                try {
+                    var r = await API.post('/admin/users/reset_password.php', { type: type, id: id });
+                    var pwd = r.data && r.data.password;
+                    if (pwd) window.prompt('Contraseña temporal de ' + nombre + ' — cópiala AHORA (no se vuelve a mostrar):', pwd);
+                } catch (e) { Utils.showNotification(e.message || 'No se pudo restablecer', 'error'); }
+            };
             window.openUserSheet = function(type, id){
                 // allUsers es un `let` de otro <script> (no cuelga de window); typeof evita ReferenceError.
                 var u = (typeof allUsers !== 'undefined' ? allUsers : []).find(function(x){ return x.type === type && String(x.id) === String(id); });
                 if (!u) return;
                 var suspended = u.status !== 'active';
                 var items = [
-                    { label: '✏️  Editar', onClick: function(){ openUserEdit(u.type, u.id); } }
+                    { label: '✏️  Editar', onClick: function(){ openUserEdit(u.type, u.id); } },
+                    { label: '🔑  Restablecer contraseña', onClick: function(){ resetUserPassword(u.type, u.id, u.name || u.email || ''); } }
                 ];
                 if (suspended) {
                     items.push({ label: '🔓  Activar', onClick: function(){ toggleUserStatus(u.type, u.id, 'activate'); } });
