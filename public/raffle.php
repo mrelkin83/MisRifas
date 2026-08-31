@@ -207,8 +207,16 @@ header("Expires: 0");
         @media (min-width: 640px) {
             #multi-selection-summary.sheet { left: auto; right: 1.5rem; bottom: 1.5rem; width: 24rem; border-radius: 20px; }
         }
+        /* Con la tab bar del sitio (z-90) presente en móvil: el FAB de
+           selección flota POR ENCIMA de la barra y la hoja/backdrop la CUBREN
+           al abrirse (si no, la barra taparía el botón de continuar). */
+        @media (max-width: 768px) {
+            #selection-fab { bottom: calc(78px + env(safe-area-inset-bottom, 0px)) !important; }
+        }
+        #selection-backdrop { z-index: 95; }
+        #multi-selection-summary.sheet { z-index: 96; }
         #selection-fab {
-            position: fixed; z-index: 60; left: 50%; transform: translateX(-50%); bottom: 16px;
+            position: fixed; z-index: 94; left: 50%; transform: translateX(-50%); bottom: 16px;
             display: flex; align-items: center; gap: 10px; padding: 12px 22px; border-radius: 999px;
             background: linear-gradient(135deg,#f59e0b,#d97706); color: #1c1305; font-weight: 800;
             box-shadow: 0 10px 25px rgba(245,158,11,0.45); cursor: pointer; border: none; font-size: 0.95rem;
@@ -1034,5 +1042,6 @@ document.getElementById('pay-selected-btn').addEventListener('click', async () =
         window.open('https://wa.me/?text=' + encodeURIComponent(message), '_blank');
     }
     </script>
+<?php $tabActive = 'inicio'; include __DIR__ . '/partials/tabbar.php'; ?>
 </body>
 </html>
