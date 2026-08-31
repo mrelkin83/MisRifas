@@ -326,3 +326,116 @@ pantalla de app Android/iOS, no como la página de escritorio encogida:
   (enlaces que solo existen en una página confunden). Unifica el conjunto de
   enlaces y nómbralos por lo que HACEN para el usuario ("Resultados",
   "Verificar boleta"), no por implementación interna.
+
+---
+
+## 15. Página de detalle (producto/rifa) con densidad de app
+
+La ficha de un producto en móvil NO es la versión encogida del escritorio.
+El usuario la describió así: "recuadros demasiado grandes, datos muy
+separados". Reglas:
+
+- **Galería limitada** (~200-210 px de alto, `object-fit:cover`): la foto
+  presenta, no domina la pantalla.
+- **Datos clave como chips/franjas de una línea**: precio, fecha y fuente
+  (lotería) en una fila de 3 con labels de 9-10 px; el contador regresivo
+  como franja compacta (números 17-22 px, cajas de 6-10 px de padding), no
+  cuatro tarjetones.
+- **Paddings de 12-16 px** en todas las tarjetas (`main .p-6 { padding:14px
+  !important }` en el media query), títulos 20-22 px, descripción 13-14 px.
+- **El responsable SIEMPRE visible** en la ficha: bloque "Organiza y
+  responde" con negocio + persona + calificación (★ 4.8 (12)) y botón a su
+  perfil de reputación. La confianza es parte del diseño de la página.
+
+## 16. Hoja de selección interactiva (flujo de compra)
+
+Lo que pidió el usuario, literal: "al seleccionar un número se abre una
+ventana emergente y desde allí puedo agregar o buscar más números o
+continuar". El patrón:
+
+- La hoja se **ABRE con la primera selección** (móvil y escritorio). Nada de
+  arrancar "minimizada para no estorbar": el usuario lo lee como "no
+  funcionó".
+- Dentro de la hoja se puede TODO sin volver al tablero: **campo "agregar
+  otro número"** (con validación: no existe / ya reservado / ya lo tienes),
+  **chips removibles** (tap en el número lo quita, con ✕ visible),
+  formulario y botón de pagar.
+- **"Seguir eligiendo"** como acción secundaria: minimiza la hoja al botón
+  flotante contextual ("Ver selección (N) · $total") sin perder nada.
+- El botón flotante sube por encima de la tab bar
+  (`bottom: calc(78px + safe-area)`) y la hoja/backdrop la cubren (z-index
+  mayor) al abrirse.
+
+## 17. Pantalla de éxito al final del flujo
+
+Terminar un flujo redirigiendo a otra página sin explicación se percibe
+como "me llevó a otra sesión". Todo flujo con un final (compra, registro,
+confirmación) termina en una **pantalla de éxito explícita**:
+
+- ✅ grande + título en pasado ("¡Comprobante recibido!") + el objeto de la
+  transacción (números y rifa).
+- **Los siguientes pasos numerados (1-2-3)** en lenguaje llano: qué va a
+  pasar, por qué canal llega el resultado (WhatsApp/correo) y dónde
+  consultarlo después.
+- Dos salidas claras: la acción probable ("Ver mis resultados") y el
+  escape ("Volver al inicio"). El usuario decide; nunca redirigir por él.
+
+## 18. Tarjetas de confianza (responsable, reputación, reseñas)
+
+En plataformas de dinero entre desconocidos, la confianza es un componente
+de UI con tres capas, cada una en su tarjeta:
+
+1. **Quién responde**: nombre legal, documento PARCIAL (`CC ******8721` —
+   corroborable sin exponerlo completo: habeas data), canal de contacto
+   completo si ya es público (WhatsApp de venta) con botón directo, correo
+   enmascarado (`la***@dominio`), y badges de lo que el SISTEMA verificó
+   (✓ correo, ✓ celular) separados de lo declarado.
+2. **Qué ha hecho**: métricas de hechos no editables (ejecutadas, entregas
+   confirmadas por la contraparte, disputas visibles).
+3. **Qué opinan**: reseñas SOLO de compradores verificados — la credencial
+   es un artefacto que solo existe tras la compra real (el código de la
+   boleta pagada). Una reseña por comprador por transacción (reenviar
+   actualiza), nombres enmascarados ("Carlos G."), y un interruptor global
+   de plataforma para apagar el sistema completo (API 403 + sección
+   desaparece).
+
+## 19. Buscador de un solo campo inteligente
+
+Cuando el usuario puede identificarse de varias formas (celular, código de
+boleta, código de cuenta), NO le pongas tres campos: un solo input que
+CLASIFICA lo escrito (10 dígitos iniciando en 3 → celular; 12 alfanuméricos
+→ código de boleta; más largo → código único) con un hint debajo que
+explica qué hace cada forma. Cada resultado lleva su **veredicto como
+franja de color** (ganador verde con glow / no ganó gris / reprogramada
+ámbar / pendiente azul / cancelada roja) — el usuario busca UNA respuesta,
+no una tabla.
+
+## 20. Más gotchas de producción (2ª tanda)
+
+- **Selector de ID vs clase utilitaria**: `#mi-boton { display:flex }` le
+  GANA a `.hidden { display:none }` por especificidad — el elemento "oculto"
+  queda visible (el FAB "(0) · $0" apareció al cargar). Regla:
+  `#mi-boton.hidden { display:none !important; }` junto a la definición.
+- **Nada de UI puede depender solo de SSE/WebSocket**: mod_deflate bufferea
+  `text/event-stream` y la pantalla del evento en vivo quedó EN BLANCO en
+  producción. Excluye el stream del gzip (`SetEnvIfNoCase Request_URI
+  "sse\.php$" no-gzip dont-vary`) Y arranca la vista + un polling de
+  respaldo cuando la página carga con el evento en curso: el SSE es mejora
+  progresiva, no requisito.
+- **Errores de negocio nunca con estado 5xx detrás de Cloudflare**: CF
+  reemplaza el cuerpo del 502/503 por su propia página y el mensaje útil
+  ("vincula tu WhatsApp…") jamás llega. Usa 4xx (409/422) para todo lo que
+  el usuario deba leer.
+- **confirm() no sirve para flujos con datos**: cualquier acción que
+  requiera un adjunto o un campo (evidencia de entrega) va en un modal
+  propio con preview y botón deshabilitado hasta que el dato exista. Bonus:
+  los confirm() nativos bloquean la automatización de pruebas.
+- **Fondos de hero SIN texto incrustado**: si la imagen trae su propio
+  titular, choca con el texto del slide encima. El texto vive en el HTML
+  (localizable, accesible); la imagen solo ambienta. Y autohospedada —
+  los servicios de placeholder remotos (picsum) fallan en producción.
+- **`only_full_group_by` no infiere dependencia funcional a través de un
+  JOIN con COALESCE**: agrega las columnas del join al GROUP BY.
+- **La consola de Windows manda cp1252**: un `curl -d` con tildes rompe el
+  `json_decode` del servidor (falsos 422). Para probar APIs con UTF-8 usa
+  `--data-binary @archivo.json`.
