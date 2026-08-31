@@ -59,3 +59,5 @@ composer-setup.php
 
 # Boletas y evidencias generadas (viven fuera del repo)
 storage/
+/e2e_*.png
+/*.png
