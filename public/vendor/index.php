@@ -3196,15 +3196,25 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
 
     async function loadEmailSettings() {
         try {
-            const keys = ['mailing_smtp_host', 'mailing_smtp_port', 'mailing_smtp_user', 'mailing_smtp_from', 'mailing_from_name'];
-            for (const key of keys) {
-                const res = await API.get('/settings/get.php?key=' + key);
-                if (res.success) {
-                    const id = key.replace('mailing_smtp_', 'smtp-').replace('mailing_from_name', 'smtp-from-name');
-                    const input = document.getElementById(id);
-                    if (input && res.data) input.value = res.data;
-                }
+            // El endpoint público /settings/get.php no expone (ni debe exponer)
+            // las claves mailing_*: se cargan por el GET autenticado del admin.
+            const res = await API.get('/admin/settings.php');
+            if (!res.success) return;
+            const d = res.data || {};
+            const map = {
+                'mailing_smtp_host': 'smtp-host',
+                'mailing_smtp_port': 'smtp-port',
+                'mailing_smtp_user': 'smtp-user',
+                'mailing_smtp_from': 'smtp-from',
+                'mailing_from_name': 'smtp-from-name'
+            };
+            for (const [key, id] of Object.entries(map)) {
+                const input = document.getElementById(id);
+                if (input && d[key]) input.value = d[key];
             }
+            // La contraseña NUNCA viaja de vuelta al navegador.
+            const pass = document.getElementById('smtp-pass');
+            if (pass) pass.placeholder = 'Deja vacío para no cambiarla';
         } catch (e) { console.error('Error loading email settings', e); }
     }
 
@@ -3223,12 +3233,12 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                 const input = document.getElementById(f.id);
                 if (!input) continue;
                 const val = input.value;
-                if (val || f.key.includes('pass')) {
-                    await API.post('/admin/settings/update.php', { key: f.key, value: val });
-                }
+                // Contraseña vacía = "no cambiarla" (nunca se precarga).
+                if (f.key === 'mailing_smtp_pass' && val === '') continue;
+                await API.post('/admin/settings/update.php', { key: f.key, value: val });
             }
             Utils.showNotification('Configuración SMTP guardada ✅', 'success');
-        } catch (err) { Utils.showNotification('Error al guardar configuración SMTP', 'error'); }
+        } catch (err) { Utils.showNotification(err.message || 'Error al guardar configuración SMTP', 'error'); }
     });
 
     /* ============================================================

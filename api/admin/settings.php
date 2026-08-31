@@ -32,9 +32,13 @@ try {
         $stmt = $db->query("SELECT * FROM system_settings");
         $settings = $stmt->fetchAll();
         
+        // Secretos NUNCA viajan de vuelta al navegador (además este GET lo
+        // puede llamar cualquier vendedor autenticado, no solo super_admin).
+        $secretas = ['mailing_smtp_pass', 'brevo_api_key'];
         $formatted = [];
         foreach ($settings as $s) {
-            $formatted[$s['setting_key']] = $s['setting_value'];
+            $formatted[$s['setting_key']] = in_array($s['setting_key'], $secretas, true)
+                ? '' : $s['setting_value'];
         }
 
         // Add the user's wompi config (vive dentro de vendors.payment_config)

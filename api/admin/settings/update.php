@@ -10,11 +10,10 @@ require_once __DIR__ . '/../../../config/database.php';
 require_once __DIR__ . '/../../../api/utils/Response.php';
 require_once __DIR__ . '/../../../api/utils/Auth.php';
 
-// Verificar autenticación y rol de admin
-$user = Auth::requireAdmin();
-if (!$user || ($user['role'] !== 'admin' && $user['role'] !== 'superadmin')) {
-    Response::error('No autorizado', null, 403);
-}
+// Solo super_admin: son ajustes GLOBALES de la plataforma. El check anterior
+// comparaba contra 'superadmin' (sin guion bajo) — un rol que NO existe — así
+// que TODO el mundo recibía 403 y el formulario SMTP nunca pudo guardar.
+$user = Auth::requireRole('super_admin');
 
 $data = json_decode(file_get_contents('php://input'), true);
 $key = $data['key'] ?? '';
@@ -25,7 +24,13 @@ if (empty($key)) {
 }
 
 // Lista blanca de llaves editables
-$editable_keys = ['home_banners', 'site_name', 'contact_whatsapp', 'contact_email', 'brevo_api_key'];
+$editable_keys = [
+    'home_banners', 'site_name', 'contact_whatsapp', 'contact_email', 'brevo_api_key',
+    'platform_name', 'platform_email',
+    // Correo del sistema (el formulario SMTP del panel guarda clave por clave)
+    'mailing_smtp_host', 'mailing_smtp_port', 'mailing_smtp_user',
+    'mailing_smtp_pass', 'mailing_smtp_from', 'mailing_from_name',
+];
 
 if (!in_array($key, $editable_keys)) {
     Response::error('Llave no editable', null, 403);
