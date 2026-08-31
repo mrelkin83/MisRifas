@@ -400,11 +400,18 @@ $page_description = "La plataforma más confiable para crear y participar en rif
                 MisRifas
             </a>
 
-            <button id="mobile-menu-btn" class="md:hidden text-white p-2 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500" aria-label="Menu">
-                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path>
-                </svg>
-            </button>
+            <div class="md:hidden flex items-center gap-1.5">
+                <!-- Avatar junto a la hamburguesa (solo con sesión): abre el
+                     mismo menú, donde vive la lista de cuenta en móvil. -->
+                <button id="mobile-avatar-btn" class="hidden" aria-label="Menú de usuario" style="background:none;border:none;padding:0;cursor:pointer;">
+                    <span id="mobile-avatar" style="width:36px;height:36px;border-radius:50%;background:#f59e0b;color:#0f172a;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;">U</span>
+                </button>
+                <button id="mobile-menu-btn" class="text-white p-2 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500" aria-label="Menu">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path>
+                    </svg>
+                </button>
+            </div>
 
             <div class="hidden md:flex items-center gap-6" id="nav-menu">
                 <a href="<?= BASE_PATH ?>/public/index.php" class="text-slate-300 hover:text-white font-medium transition-colors">Inicio</a>
@@ -1112,6 +1119,15 @@ $page_description = "La plataforma más confiable para crear y participar en rif
                 document.getElementById('user-name').textContent = name;
                 document.getElementById('user-dd-name').textContent = name;
                 document.getElementById('user-avatar').textContent = name.charAt(0).toUpperCase();
+
+                // Avatar móvil junto a la hamburguesa: visible con sesión y
+                // abre el mismo menú (la lista de cuenta vive ahí en móvil).
+                const mAv = document.getElementById('mobile-avatar-btn');
+                if (mAv) {
+                    document.getElementById('mobile-avatar').textContent = name.charAt(0).toUpperCase();
+                    mAv.classList.remove('hidden');
+                    mAv.addEventListener('click', () => document.getElementById('mobile-menu-btn').click());
+                }
 
                 // Menú desplegable del avatar (antes solo abría el perfil).
                 const btn = document.getElementById('user-avatar-btn');

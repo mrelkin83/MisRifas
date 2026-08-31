@@ -27,12 +27,17 @@ $basePath = defined('BASE_PATH') ? BASE_PATH : '';
             <span class="text-2xl font-black text-amber-400">MisRifas</span>
         </a>
 
-        <!-- Mobile hamburger button -->
-        <button id="mobile-menu-btn" class="md:hidden flex flex-col gap-1.5 p-2 z-50 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500" aria-label="Menu">
-            <span class="block w-6 h-0.5 bg-white rounded-full transition-all duration-300"></span>
-            <span class="block w-6 h-0.5 bg-white rounded-full transition-all duration-300"></span>
-            <span class="block w-6 h-0.5 bg-white rounded-full transition-all duration-300"></span>
-        </button>
+        <!-- Móvil: avatar (con sesión) junto a la hamburguesa -->
+        <div class="md:hidden flex items-center gap-1.5">
+            <button id="mobile-avatar-btn" class="hidden" aria-label="Menú de usuario" style="background:none;border:none;padding:0;cursor:pointer;">
+                <span id="mobile-avatar" style="width:36px;height:36px;border-radius:50%;background:#f59e0b;color:#0f172a;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;">U</span>
+            </button>
+            <button id="mobile-menu-btn" class="flex flex-col gap-1.5 p-2 z-50 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500" aria-label="Menu">
+                <span class="block w-6 h-0.5 bg-white rounded-full transition-all duration-300"></span>
+                <span class="block w-6 h-0.5 bg-white rounded-full transition-all duration-300"></span>
+                <span class="block w-6 h-0.5 bg-white rounded-full transition-all duration-300"></span>
+            </button>
+        </div>
 
         <!-- Desktop nav -->
         <div id="desktop-nav" class="hidden md:flex items-center gap-5" role="navigation">
@@ -94,6 +99,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 window.location.href = '<?= $basePath ?>/public/index.php';
             });
         });
+        // Avatar móvil junto a la hamburguesa: visible con sesión, abre el
+        // mismo menú (ahí vive la lista de cuenta en móvil).
+        var mAv = document.getElementById('mobile-avatar-btn');
+        if (mAv && loggedIn) {
+            var nm = user.full_name || user.name || user.email || 'U';
+            document.getElementById('mobile-avatar').textContent = String(nm).charAt(0).toUpperCase();
+            mAv.classList.remove('hidden');
+            mAv.addEventListener('click', function () { document.getElementById('mobile-menu-btn').click(); });
+        }
     })();
 
     const btn = document.getElementById('mobile-menu-btn');
