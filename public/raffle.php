@@ -877,7 +877,9 @@ document.getElementById('pay-selected-btn').addEventListener('click', async () =
                 reservation_id: data.reservation_id,
                 numeros: data.numeros,
                 ticket_price: currentRaffle.ticket_price,
-                total_amount: data.amount,
+                total_amount: data.amount,           // incluye el sufijo §6
+                payment_suffix: data.payment_suffix,
+                payment_methods: data.payment_methods || [],
                 reserved_until: data.expires_at,
                 raffle_name: data.raffle.name
             }));

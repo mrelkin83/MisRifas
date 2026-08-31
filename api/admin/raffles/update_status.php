@@ -43,6 +43,23 @@ try {
         Response::error('Datos inválidos o estado no permitido', null, 400);
     }
 
+    // §5.1: para PUBLICAR, el dueño de la rifa debe tener al menos una llave
+    // de cobro configurada (Nequi/DaviPlata/Bre-B/efectivo) — sin ella el
+    // comprador no tendría a dónde transferir.
+    if ($newStatus === 'active') {
+        require_once __DIR__ . '/../../../api/services/PaymentKeys.php';
+        $stmt = $db->prepare("SELECT COALESCE(vendor_id, created_by) FROM raffles WHERE id = ?");
+        $stmt->execute([$raffleId]);
+        $ownerId = (int)$stmt->fetchColumn();
+        if ($ownerId && !PaymentKeys::tieneAlguno(PaymentKeys::delVendor($db, $ownerId))) {
+            Response::error(
+                'Antes de publicar configura cómo te pagan tus compradores (Nequi, DaviPlata, llave Bre-B o efectivo) en Mi Perfil.',
+                'PAYMENT_KEYS_REQUIRED',
+                422
+            );
+        }
+    }
+
     // Super admin puede cambiar cualquier rifa, otros solo las suyas
     if ($adminUser['role'] === 'super_admin') {
         $stmt = $db->prepare("UPDATE raffles SET status = ?, updated_at = NOW() WHERE id = ?");

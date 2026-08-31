@@ -110,7 +110,7 @@ try {
     }
 
     // Validar raffle existe y está activa
-    $stmt = $db->prepare("SELECT id, name, ticket_price, total_tickets, status, draw_date FROM raffles WHERE id = ? AND status = 'active'");
+    $stmt = $db->prepare("SELECT id, name, ticket_price, total_tickets, status, draw_date, COALESCE(vendor_id, created_by) AS owner_id FROM raffles WHERE id = ? AND status = 'active'");
     $stmt->execute([$raffleId]);
     $raffle = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -150,7 +150,25 @@ try {
         // TTL configurable (reservation_ttl_minutes, default 45 — §7.4).
         $ttlMin = TicketStateMachine::reservationTtlMinutes($db);
         $expiresAt = date('Y-m-d H:i:s', strtotime("+{$ttlMin} minutes"));
-        $amount = $raffle['ticket_price'] * count($numeros);
+
+        // §6 — Codificación de centavos: sufijo único entre las órdenes
+        // vigentes de la rifa para que el vendedor identifique el pago por el
+        // monto. Un solo número en talonario ≤100 → sufijo = el número de la
+        // boleta; si no, aleatorio [1,999] verificado contra las vigentes.
+        if (count($numeros) === 1 && (int)$raffle['total_tickets'] <= 100) {
+            $paymentSuffix = (int)$numeros[0];
+        } else {
+            $stmt = $db->prepare("
+                SELECT DISTINCT payment_suffix FROM numero_reservas
+                WHERE raffle_id = ? AND estado = 'RESERVADO' AND payment_suffix IS NOT NULL
+            ");
+            $stmt->execute([$raffleId]);
+            $usados = array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN));
+            do {
+                $paymentSuffix = random_int(1, 999);
+            } while (in_array($paymentSuffix, $usados, true));
+        }
+        $amount = $raffle['ticket_price'] * count($numeros) + $paymentSuffix;
 
         // §11: bloquear SIEMPRE en orden ascendente — dos peticiones que
         // bloqueen los mismos números en orden distinto se matan en deadlock.
@@ -196,14 +214,15 @@ try {
             ]);
         }
 
-        // 1. Insertar en numero_reservas (cada número individualmente)
+        // 1. Insertar en numero_reservas (cada número individualmente; todas
+        // las filas de la orden comparten el sufijo de centavos)
         $stmt = $db->prepare("
             INSERT INTO numero_reservas
-                (raffle_id, numero, estado, user_id, reservation_id, reserved_at, expires_at)
-            VALUES (?, ?, 'RESERVADO', ?, ?, NOW(), ?)
+                (raffle_id, numero, estado, user_id, reservation_id, reserved_at, expires_at, payment_suffix)
+            VALUES (?, ?, 'RESERVADO', ?, ?, NOW(), ?, ?)
         ");
         foreach ($numeros as $numero) {
-            $stmt->execute([$raffleId, $numero, $user['id'], $reservationId, $expiresAt]);
+            $stmt->execute([$raffleId, $numero, $user['id'], $reservationId, $expiresAt, $paymentSuffix]);
         }
 
         // payment_intents era exclusivo del gateway automático (eliminado).
@@ -233,6 +252,13 @@ try {
             'currency' => 'COP',
             'numeros' => $numeros,
             'expires_at' => $expiresAt,
+            // §6: el comprador debe transferir EXACTAMENTE este monto.
+            'payment_suffix' => $paymentSuffix,
+            // §5.3: solo los métodos que el vendedor configuró.
+            'payment_methods' => (function () use ($db, $raffle) {
+                require_once __DIR__ . '/../../api/services/PaymentKeys.php';
+                return PaymentKeys::metodosDisponibles(PaymentKeys::delVendor($db, (int)$raffle['owner_id']));
+            })(),
             'raffle' => [
                 'id' => $raffle['id'],
                 'name' => $raffle['name'],

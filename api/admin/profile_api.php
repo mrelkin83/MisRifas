@@ -52,9 +52,10 @@ try {
     $db = Database::getInstance()->getConnection();
 
     if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-        $stmt = $db->prepare("SELECT payment_config FROM vendors WHERE id = ?");
-        $stmt->execute([$adminUser['id']]);
-        $paymentConfig = json_decode($stmt->fetchColumn() ?: '{}', true);
+        require_once __DIR__ . '/../../api/services/PaymentKeys.php';
+        // Solo las llaves de COBRO saneadas (los secretos legados de la era
+        // de pasarelas jamás se exponen).
+        $paymentConfig = PaymentKeys::sanear(PaymentKeys::delVendor($db, (int)$adminUser['id']));
 
         arrancarMotorPara((int)$adminUser['id']);
         $waCfg = WaConfig::paraFrontend(Engine::db());
@@ -81,10 +82,18 @@ try {
         $input = json_decode(file_get_contents('php://input'), true);
         $type  = $input['type'] ?? '';
 
-        // El manejador 'nequi' (credenciales de API de pasarela) se eliminó:
-        // la plataforma no verifica pagos automáticamente. Las llaves de COBRO
-        // del vendedor (celular Nequi/DaviPlata, llave Bre-B, efectivo) se
-        // gestionan con type 'payment_keys' (fase de métodos de pago).
+        // Llaves de COBRO del vendedor (§5.1): dónde recibe la plata. El
+        // manejador 'nequi' de credenciales de pasarela se eliminó — la
+        // plataforma no verifica pagos automáticamente.
+        if ($type === 'payment_keys') {
+            require_once __DIR__ . '/../../api/services/PaymentKeys.php';
+            $saneada = PaymentKeys::guardar($db, (int)$adminUser['id'], $input);
+            Logger::activity('payment_keys_updated', $adminUser['id'], [
+                'metodos' => array_column(PaymentKeys::metodosDisponibles($saneada), 'method'),
+                'cash' => $saneada['accepts_cash'],
+            ]);
+            Response::success(['payment_config' => $saneada], 'Llaves de cobro guardadas');
+        }
 
         if ($type === 'whatsapp') {
             arrancarMotorPara((int)$adminUser['id']);

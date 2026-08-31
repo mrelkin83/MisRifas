@@ -1114,6 +1114,32 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                         </form>
                     </div>
 
+                    <div class="section-card mb-6" id="payment-keys-card">
+                        <h2 class="text-lg font-bold mb-2">💰 Cómo te pagan tus compradores</h2>
+                        <p class="text-sm text-gray-500 mb-4">Tus compradores te transfieren DIRECTO (la plataforma nunca toca tu plata). Configura al menos un método para poder publicar rifas; al comprador solo se le muestran los que llenes.</p>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div class="form-group">
+                                <label for="pk-nequi">Celular Nequi</label>
+                                <input type="tel" id="pk-nequi" class="w-full px-4 py-2 border rounded" placeholder="3001234567" maxlength="10">
+                            </div>
+                            <div class="form-group">
+                                <label for="pk-daviplata">Celular DaviPlata</label>
+                                <input type="tel" id="pk-daviplata" class="w-full px-4 py-2 border rounded" placeholder="3001234567" maxlength="10">
+                            </div>
+                            <div class="form-group">
+                                <label for="pk-breb">Llave Bre-B</label>
+                                <input type="text" id="pk-breb" class="w-full px-4 py-2 border rounded" placeholder="@tullave, celular, cédula o correo">
+                            </div>
+                            <div class="form-group" style="display:flex;align-items:end;">
+                                <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-weight:normal;">
+                                    <input type="checkbox" id="pk-cash" style="width:16px;height:16px;">
+                                    <span>Acepto pagos en <strong>efectivo</strong> (los registro yo desde el panel)</span>
+                                </label>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn--primary mt-4" id="pk-save" onclick="savePaymentKeys()">Guardar llaves de cobro</button>
+                    </div>
+
                     <div class="section-card" id="wa-link-card">
                         <h2 class="text-lg font-bold mb-2">📱 WhatsApp para notificaciones</h2>
                         <p class="text-sm text-gray-500 mb-4">Vincula tu WhatsApp escaneando un código QR. El día del sorteo, el sistema enviará desde TU número el resultado a los participantes de tu rifa (además del correo, que va siempre). Puedes desvincularlo cuando quieras.</p>
@@ -3243,6 +3269,22 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
         } catch (e) { Utils.showNotification('Error al desvincular', 'error'); }
     };
 
+    window.savePaymentKeys = async () => {
+        const btn = document.getElementById('pk-save');
+        btn.disabled = true; btn.textContent = 'Guardando…';
+        try {
+            await API.post('/admin/profile_api.php', {
+                type: 'payment_keys',
+                nequi_phone: document.getElementById('pk-nequi').value.trim(),
+                daviplata_phone: document.getElementById('pk-daviplata').value.trim(),
+                breb_key: document.getElementById('pk-breb').value.trim(),
+                accepts_cash: document.getElementById('pk-cash').checked
+            });
+            Utils.showNotification('Llaves de cobro guardadas ✅', 'success');
+        } catch (e) { Utils.showNotification(e.message || 'Error al guardar', 'error'); }
+        finally { btn.disabled = false; btn.textContent = 'Guardar llaves de cobro'; }
+    };
+
     async function loadPerfilAPI() {
         loadWaLinkStatus();
         try {
@@ -3250,6 +3292,12 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
             const res = await API.get('/admin/profile_api.php');
             if (res.success) {
                 const p = res.data.payment_config || {};
+                if (document.getElementById('pk-nequi')) {
+                    document.getElementById('pk-nequi').value = p.nequi_phone || '';
+                    document.getElementById('pk-daviplata').value = p.daviplata_phone || '';
+                    document.getElementById('pk-breb').value = p.breb_key || '';
+                    document.getElementById('pk-cash').checked = !!p.accepts_cash;
+                }
                 const w = res.data.wa_config || {};
                 if (w.evo_api_url) document.getElementById('cfg-wa-url').value       = w.evo_api_url;
                 if (w.evo_api_key) document.getElementById('cfg-wa-apikey').value    = w.evo_api_key;
@@ -3825,6 +3873,23 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
         </div>
         <div id="raffle-sheet-actions"></div>
     </div>
+    <!-- Modal: registrar venta en efectivo (§5.2 — solo el vendedor) -->
+    <div id="cash-modal-backdrop" onclick="closeCashSale()" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:130;"></div>
+    <div id="cash-modal" style="display:none;position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:131;background:#fff;border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.35);padding:22px;width:min(92vw,380px);">
+        <h3 style="font-weight:800;font-size:16px;margin-bottom:4px;">💵 Venta en efectivo</h3>
+        <p style="font-size:12.5px;color:#6b7280;margin-bottom:14px;">El número queda PAGADO de inmediato. Nombre y celular son obligatorios: sin ellos no hay boleta ni trazabilidad.</p>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+            <input type="text" id="cash-number" placeholder="Número del boleto (ej: 37)" maxlength="4" inputmode="numeric" style="width:100%;padding:11px 12px;border:1px solid #e2e8f0;border-radius:10px;font-size:15px;">
+            <input type="text" id="cash-name" placeholder="Nombre del comprador *" style="width:100%;padding:11px 12px;border:1px solid #e2e8f0;border-radius:10px;font-size:15px;">
+            <input type="tel" id="cash-phone" placeholder="Celular del comprador *" maxlength="10" inputmode="numeric" style="width:100%;padding:11px 12px;border:1px solid #e2e8f0;border-radius:10px;font-size:15px;">
+            <input type="email" id="cash-email" placeholder="Correo (opcional, para avisarle el resultado)" style="width:100%;padding:11px 12px;border:1px solid #e2e8f0;border-radius:10px;font-size:15px;">
+        </div>
+        <p id="cash-msg" style="display:none;font-size:12.5px;margin-top:10px;padding:8px 10px;border-radius:8px;"></p>
+        <div style="display:flex;gap:8px;margin-top:14px;">
+            <button type="button" onclick="closeCashSale()" class="btn btn--sm" style="flex:1;background:#f1f5f9;">Cancelar</button>
+            <button type="button" id="cash-submit" onclick="submitCashSale()" class="btn btn--primary btn--sm" style="flex:2;">Registrar venta</button>
+        </div>
+    </div>
     <script>
         (function () {
             function el(id){ return document.getElementById(id); }
@@ -3881,6 +3946,9 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                 } else {
                     items.push({ label: '🚀  Publicar rifa', onClick: function(){ raffleSheetStatus(id, 'active'); } });
                 }
+                if (r.status === 'active') {
+                    items.push({ label: '💵  Registrar venta en efectivo', onClick: function(){ openCashSale(id); } });
+                }
                 items.push({ label: '🗑️  Eliminar', danger: true, onClick: function(){ if (window.deleteRaffle) deleteRaffle(id, r.name); } });
                 openActionSheet(r.name || 'Rifa', 'Estado: ' + (r.status || '') + ' · ' + (r.sold_tickets || 0) + ' vendidos', items);
             };
@@ -3896,6 +3964,49 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                 items.push({ label: '✅  Aprobar pago', onClick: function(){ approvePayment(p.ticket_id); } });
                 items.push({ label: '❌  Rechazar pago', danger: true, onClick: function(){ rejectPayment(p.ticket_id); } });
                 openActionSheet('Boleto #' + (p.ticket_number || ''), (p.raffle_name || '') + (p.buyer_name ? ' · ' + p.buyer_name : ''), items);
+            };
+
+            // §5.2: venta en efectivo — la registra SOLO el vendedor.
+            var cashRaffleId = null;
+            window.openCashSale = function(raffleId){
+                cashRaffleId = raffleId;
+                ['cash-number','cash-name','cash-phone','cash-email'].forEach(function(i){ el(i).value = ''; });
+                el('cash-msg').style.display = 'none';
+                el('cash-modal').style.display = 'block';
+                el('cash-modal-backdrop').style.display = 'block';
+                el('cash-number').focus();
+            };
+            window.closeCashSale = function(){
+                el('cash-modal').style.display = 'none';
+                el('cash-modal-backdrop').style.display = 'none';
+            };
+            window.submitCashSale = async function(){
+                var msg = el('cash-msg');
+                function showErr(t){ msg.textContent = t; msg.style.display = 'block'; msg.style.background = '#fee2e2'; msg.style.color = '#b91c1c'; }
+                var numero = el('cash-number').value.trim();
+                var nombre = el('cash-name').value.trim();
+                var cel = el('cash-phone').value.replace(/\D+/g, '');
+                if (!/^\d{2,4}$/.test(numero)) { showErr('Escribe el número del boleto (2 a 4 cifras).'); return; }
+                if (nombre.length < 3) { showErr('El nombre del comprador es obligatorio.'); return; }
+                if (!/^3\d{9}$/.test(cel)) { showErr('El celular del comprador es obligatorio (10 dígitos, empieza por 3).'); return; }
+                var btn = el('cash-submit');
+                btn.disabled = true; btn.textContent = 'Registrando…';
+                try {
+                    await API.post('/vendor/cash_sale.php', {
+                        raffle_id: cashRaffleId, ticket_number: numero,
+                        buyer_name: nombre, buyer_phone: cel,
+                        buyer_email: el('cash-email').value.trim()
+                    });
+                    Utils.showNotification('💵 Venta registrada: boleto ' + numero + ' pagado', 'success');
+                    closeCashSale();
+                    if (window.loadDashboard) loadDashboard();
+                    var secMR = document.getElementById('section-mis-rifas');
+                    if (window.loadMyRaffles && secMR && !secMR.classList.contains('hidden')) loadMyRaffles();
+                } catch (e) {
+                    showErr(e.message || 'No se pudo registrar la venta');
+                } finally {
+                    btn.disabled = false; btn.textContent = 'Registrar venta';
+                }
             };
 
             // ⋮ en "Comisiones": ver rifa / marcar como pagada.

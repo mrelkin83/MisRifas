@@ -88,45 +88,29 @@ $page_title = "Pago - MisRifas";
                 </div>
 
                 <div class="mb-8">
-                    <h2 class="text-lg font-bold mb-4">Selecciona método de pago</h2>
-                    <div class="grid grid-cols-1 xs:grid-cols-2 gap-3 payment-methods-grid">
-                        <button onclick="selectPaymentMethod('NEQUI')" class="payment-method" data-method="NEQUI">
-                            <div class="font-bold flex items-center gap-2">
-                                <span class="w-2 h-2 rounded-full bg-purple-400"></span>
-                                Nequi
-                            </div>
-                            <div class="text-xs text-slate-400 mt-1">Transferencia directa</div>
-                        </button>
-                        <button onclick="selectPaymentMethod('BANCOLOMBIA_TRANSFER')" class="payment-method" data-method="BANCOLOMBIA_TRANSFER">
-                            <div class="font-bold flex items-center gap-2">
-                                <span class="w-2 h-2 rounded-full bg-yellow-400"></span>
-                                Bancolombia
-                            </div>
-                            <div class="text-xs text-slate-400 mt-1">Ahorro a la mano/App</div>
-                        </button>
-                        <button onclick="selectPaymentMethod('DAVIPLATA')" class="payment-method" data-method="DAVIPLATA">
-                            <div class="font-bold flex items-center gap-2">
-                                <span class="w-2 h-2 rounded-full bg-red-400"></span>
-                                Daviplata
-                            </div>
-                            <div class="text-xs text-slate-400 mt-1">Desde tu celular</div>
-                        </button>
-                        <button onclick="selectPaymentMethod('EFECTY')" class="payment-method" data-method="EFECTY">
-                            <div class="font-bold flex items-center gap-2">
-                                <span class="w-2 h-2 rounded-full bg-sky-400"></span>
-                                Efecty
-                            </div>
-                            <div class="text-xs text-slate-400 mt-1">Pago en efectivo</div>
-                        </button>
+                    <h2 class="text-lg font-bold mb-4">¿Cómo vas a pagar?</h2>
+                    <div id="methods-grid" class="grid grid-cols-1 xs:grid-cols-2 gap-3 payment-methods-grid">
+                        <!-- Solo los métodos que el organizador configuró (§5.3) -->
                     </div>
+                    <p id="no-methods" class="hidden text-sm text-amber-300 bg-amber-500/10 border border-amber-500/30 rounded-xl p-4">
+                        El organizador aún no publicó sus datos de pago. Escríbele por WhatsApp para coordinar.
+                    </p>
                 </div>
 
+                <!-- Una selección, un dato, un botón de copiar (§5.3) -->
                 <div id="payment-instructions" class="hidden mb-8 animate-in fade-in slide-in-from-top-2 duration-300">
-                    <h3 class="font-bold mb-3 flex items-center gap-2 text-primary">
-                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12h6M9 16h6M9 8h1"/><path d="M8 3h8a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z"/></svg>
-                        Instrucciones:
-                    </h3>
-                    <div id="instructions-content" class="bg-black/20 border border-white/10 rounded-xl p-5 text-slate-300 text-sm leading-relaxed"></div>
+                    <div class="bg-black/20 border border-primary/30 rounded-xl p-5 text-center">
+                        <p class="text-xs uppercase tracking-widest text-slate-400 mb-2" id="dest-label">Transfiere a</p>
+                        <div class="flex items-center justify-center gap-3 flex-wrap">
+                            <span id="dest-value" class="text-2xl sm:text-3xl font-black text-primary font-mono break-all"></span>
+                            <button type="button" id="copy-dest" onclick="copyDestination()" class="px-3 py-2 bg-white/10 border border-white/15 rounded-lg text-sm font-bold hover:bg-white/20 active:scale-95 transition-all">📋 Copiar</button>
+                        </div>
+                        <p class="text-sm text-slate-300 mt-4">
+                            Transfiere <strong class="text-primary">exactamente</strong>
+                            <span id="exact-amount" class="font-black font-mono"></span>
+                            — los últimos dígitos identifican TU compra. Luego vuelve aquí y sube el comprobante.
+                        </p>
+                    </div>
                 </div>
 
                 <div class="mb-8">
@@ -218,36 +202,58 @@ $page_title = "Pago - MisRifas";
 
     let selectedMethod = null;
     let countdownInterval = null;
+    let reservationData = null;
 
-    const paymentInstructions = {
-        'NEQUI': '<ol class="space-y-3">' +
-            '<li>1. Abre tu app <strong>Nequi</strong>.</li>' +
-            '<li>2. Envía el valor exacto al número del organizador.</li>' +
-            '<li>3. Toma una captura de pantalla clara del comprobante.</li>' +
-            '<li>4. Sube la imagen aquí abajo y pulsa "Finalizar".</li>' +
-            '</ol>',
-        'BANCOLOMBIA_TRANSFER': '<ol class="space-y-3">' +
-            '<li>1. Transfiere desde tu App Bancolombia o Ahorro a la mano.</li>' +
-            '<li>2. Verifica que el valor coincida exactamente.</li>' +
-            '<li>3. Envía el comprobante por este medio.</li>' +
-            '</ol>',
-        'DAVIPLATA': '<ol class="space-y-3">' +
-            '<li>1. Usa la opción "Pasar Plata" en tu Daviplata.</li>' +
-            '<li>2. Confirma que el número de destino sea correcto.</li>' +
-            '<li>3. Adjunta la imagen de confirmación aquí.</li>' +
-            '</ol>',
-        'EFECTY': '<ol class="space-y-3">' +
-            '<li>1. Dirígete a un punto Efecty con el valor en efectivo.</li>' +
-            '<li>2. Realiza el giro a los datos proporcionados por el vendedor.</li>' +
-            '<li>3. Sube la foto del recibo físico.</li>' +
-            '</ol>'
+    function esc(s) {
+        return String(s ?? '').replace(/[&<>"']/g, c =>
+            ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+
+    const METHOD_META = {
+        nequi:     { label: 'Nequi',     hint: 'Envía plata al celular',       dot: 'bg-purple-400', destLabel: 'Transfiere al Nequi' },
+        daviplata: { label: 'DaviPlata', hint: 'Pasar plata al celular',       dot: 'bg-red-400',    destLabel: 'Transfiere al DaviPlata' },
+        breb:      { label: 'Bre-B',     hint: 'Transferencia con llave',      dot: 'bg-sky-400',    destLabel: 'Transfiere a la llave Bre-B' },
     };
+
+    // §5.3: solo los métodos configurados por el organizador, como tarjetas.
+    function renderMethods(methods) {
+        const grid = document.getElementById('methods-grid');
+        const none = document.getElementById('no-methods');
+        grid.innerHTML = '';
+        const usables = (methods || []).filter(m => METHOD_META[m.method]);
+        if (!usables.length) {
+            none.classList.remove('hidden');
+            return;
+        }
+        usables.forEach(m => {
+            const meta = METHOD_META[m.method];
+            const btn = document.createElement('button');
+            btn.className = 'payment-method';
+            btn.setAttribute('data-method', m.method);
+            btn.innerHTML = '<div class="font-bold flex items-center gap-2">' +
+                '<span class="w-2 h-2 rounded-full ' + meta.dot + '"></span>' + meta.label + '</div>' +
+                '<div class="text-xs text-slate-400 mt-1">' + meta.hint + '</div>';
+            btn.addEventListener('click', () => selectPaymentMethod(m));
+            grid.appendChild(btn);
+        });
+    }
+
+    function copyDestination() {
+        const val = document.getElementById('dest-value').textContent;
+        navigator.clipboard.writeText(val).then(() => {
+            const b = document.getElementById('copy-dest');
+            b.textContent = '✅ Copiado';
+            setTimeout(() => { b.textContent = '📋 Copiar'; }, 1800);
+        }).catch(() => Utils.showNotification('Copia manualmente: ' + val, 'info'));
+    }
 
     function loadReservation() {
         const reservation = localStorage.getItem('current_reservation');
         if (reservation) {
             try {
                 const data = JSON.parse(reservation);
+                reservationData = data;
+                renderMethods(data.payment_methods);
                 if (data.numeros && data.numeros.length) {
                     // Reserva de varios boletos (selector multiple de raffle.php)
                     document.getElementById('ticket-number-label').textContent = data.numeros.length > 1 ? 'Boletos:' : 'Boleto:';
@@ -300,15 +306,17 @@ $page_title = "Pago - MisRifas";
         }, 1000);
     }
 
-    function selectPaymentMethod(method) {
-        selectedMethod = method;
+    // Una selección → UN dato de destino en grande + copiar (§5.3).
+    function selectPaymentMethod(m) {
+        selectedMethod = m.method;
         document.querySelectorAll('.payment-method').forEach(btn => {
-            btn.classList.remove('payment-method--selected');
+            btn.classList.toggle('payment-method--selected', btn.getAttribute('data-method') === m.method);
         });
-        const selected = document.querySelector('[data-method="' + method + '"]');
-        if (selected) selected.classList.add('payment-method--selected');
-
-        document.getElementById('instructions-content').innerHTML = paymentInstructions[method] || 'Selecciona un método de pago';
+        const meta = METHOD_META[m.method];
+        document.getElementById('dest-label').textContent = meta.destLabel;
+        document.getElementById('dest-value').textContent = m.destination;
+        document.getElementById('exact-amount').textContent =
+            '$' + Number(reservationData?.total_amount || 0).toLocaleString('es-CO');
         document.getElementById('payment-instructions').classList.remove('hidden');
         checkCanConfirm();
     }
