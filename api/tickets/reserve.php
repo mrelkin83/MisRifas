@@ -144,12 +144,13 @@ try {
         $user['email'] = $userEmail;
     }
 
-    // Reservar boleto (con control de concurrencia)
+    // Reservar boleto (con control de concurrencia). El TTL ya no lo elige
+    // el comprador: setting reservation_ttl_minutes (default 45, §7.4).
     $ticket = $ticketRepo->reserveTicket(
         $raffleId,
         $ticketNumber,
         $user['id'],
-        $reservationHours
+        null
     );
 
     if (!$ticket) {

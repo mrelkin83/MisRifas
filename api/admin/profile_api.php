@@ -81,22 +81,10 @@ try {
         $input = json_decode(file_get_contents('php://input'), true);
         $type  = $input['type'] ?? '';
 
-        if ($type === 'nequi') {
-            $stmt = $db->prepare("SELECT payment_config FROM vendors WHERE id = ?");
-            $stmt->execute([$adminUser['id']]);
-            $current = json_decode($stmt->fetchColumn() ?: '{}', true);
-
-            if (isset($input['nequi_key']))    $current['nequi_key']   = trim($input['nequi_key']);
-            // No sobreescribir el secret si viene vacío (el user no lo volvió a escribir)
-            if (!empty($input['nequi_secret'])) $current['nequi_secret'] = trim($input['nequi_secret']);
-            if (isset($input['nequi_phone']))   $current['nequi_phone']  = preg_replace('/[^0-9]/', '', $input['nequi_phone']);
-
-            $stmt = $db->prepare("UPDATE vendors SET payment_config = ? WHERE id = ?");
-            $stmt->execute([json_encode($current), $adminUser['id']]);
-
-            Logger::activity('profile_nequi_updated', $adminUser['id']);
-            Response::success(['message' => 'Credenciales Nequi guardadas']);
-        }
+        // El manejador 'nequi' (credenciales de API de pasarela) se eliminó:
+        // la plataforma no verifica pagos automáticamente. Las llaves de COBRO
+        // del vendedor (celular Nequi/DaviPlata, llave Bre-B, efectivo) se
+        // gestionan con type 'payment_keys' (fase de métodos de pago).
 
         if ($type === 'whatsapp') {
             arrancarMotorPara((int)$adminUser['id']);

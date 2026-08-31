@@ -372,9 +372,9 @@ $page_description = "La plataforma más confiable para crear y participar en rif
                 <div class="hero-slide__bg" style="background-image:url('https://picsum.photos/seed/misrifas-pago-nequi/1600/900');"></div>
                 <div class="hero-slide__overlay"></div>
                 <div class="hero-slide__content">
-                    <span class="hero-slide__tag">Pagos instantáneos</span>
-                    <h2 class="hero-slide__title">Paga con <em>Nequi</em> y gana al instante</h2>
-                    <p class="hero-slide__desc">Con Wompi tu pago se confirma en segundos y tu boleto queda asegurado.</p>
+                    <span class="hero-slide__tag">Pago directo al organizador</span>
+                    <h2 class="hero-slide__title">Paga con <em>Nequi</em> directo al organizador</h2>
+                    <p class="hero-slide__desc">Transfieres directo al organizador, subes tu comprobante y tu número queda asegurado.</p>
                     <div class="hero-slide__actions">
                         <a href="#rifas" class="hero-slide__btn hero-slide__btn--primary">Ver rifas</a>
                         <a href="<?= BASE_PATH ?>/public/mis-boletos.php" class="hero-slide__btn hero-slide__btn--ghost">Consultar boletas</a>
@@ -636,7 +636,7 @@ $page_description = "La plataforma más confiable para crear y participar en rif
                 <div class="text-center">
                     <div class="text-6xl font-bold text-amber-500/25 mb-4 tracking-tight">03</div>
                     <h3 class="text-lg font-bold mb-2 text-white">Pago Seguro</h3>
-                    <p class="text-slate-400 text-sm leading-relaxed">Wompi detecta y confirma tu pago en segundos.</p>
+                    <p class="text-slate-400 text-sm leading-relaxed">Transfieres directo al organizador y él confirma tu pago; tu boleta digital queda emitida.</p>
                 </div>
                 <div class="text-center">
                     <div class="text-6xl font-bold text-amber-500/25 mb-4 tracking-tight">04</div>
@@ -680,8 +680,8 @@ $page_description = "La plataforma más confiable para crear y participar en rif
                     <h4 class="text-xs font-black uppercase tracking-widest text-slate-500 mb-4">Pagos aceptados</h4>
                     <div class="flex flex-wrap gap-2">
                         <span class="px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-xs font-bold text-slate-300">Nequi</span>
-                        <span class="px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-xs font-bold text-slate-300">Wompi</span>
-                        <span class="px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-xs font-bold text-slate-300">Bancolombia</span>
+                        <span class="px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-xs font-bold text-slate-300">DaviPlata</span>
+                        <span class="px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-xs font-bold text-slate-300">Bre-B</span>
                     </div>
                 </div>
             </div>

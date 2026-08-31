@@ -19,7 +19,7 @@
  * casos: pago de pasarela verificado (legitimo), o modo de cobro
  * `contra_entrega` (nunca legitimo para una rifa - no hay entrega que
  * gatille el cobro). El unico webhook/endpoint propio de MisRifas que
- * llega a marcar un ticket pagado (webhook_nequi.php, webhooks/wompi.php,
+ * llega a marcar un ticket pagado (la confirmación manual del vendedor,
  * webhooks/mercadopago.php, admin/payments.php?action=approve) lo hace con
  * su propio UPDATE directo a `tickets` - NINGUNO de ellos llama a este
  * metodo. La proteccion real contra el bypass de "contra_entrega" es que
@@ -195,7 +195,7 @@ class RaffleDomainAdapter implements
         $ticketIds = [];
         $total = 0.0;
         foreach ($numeros as $numero) {
-            $ticket = $this->ticketRepo->reserveTicket($raffleId, (string)$numero, (int)$user['id'], 2);
+            $ticket = $this->ticketRepo->reserveTicket($raffleId, (string)$numero, (int)$user['id'], null, 'whatsapp');
             if ($ticket) {
                 $ticketIds[] = (int)$ticket['id'];
                 $total += (float)$raffle['ticket_price'];

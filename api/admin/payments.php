@@ -15,6 +15,7 @@ require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../api/utils/Response.php';
 require_once __DIR__ . '/../../api/utils/Auth.php';
 require_once __DIR__ . '/../../api/utils/Logger.php';
+require_once __DIR__ . '/../../api/services/TicketStateMachine.php';
 
 try {
     $adminUser = Auth::requireAdmin();
@@ -45,7 +46,7 @@ try {
             LEFT JOIN users u ON t.user_id = u.id
             WHERE COALESCE(r.vendor_id, r.created_by) = ?
               AND p.transaction_status = 'pending'
-              AND t.status = 'reserved'
+              AND t.status IN ('reserved', 'pending_review')
             ORDER BY p.created_at DESC
         ");
         $stmt->execute([$adminUser['id']]);
@@ -92,26 +93,40 @@ try {
         }
 
         if ($action === 'approve') {
-            // Si un cron libero la reserva entre el chequeo de arriba y este
-            // UPDATE (por ejemplo, expiro justo antes de que el admin le
-            // diera aprobar), el WHERE status='reserved' no afecta ninguna
-            // fila y antes se respondia "aprobado" igual - el pago quedaba
-            // marcado completed pero el ticket nunca paid (silencioso).
             $db->beginTransaction();
             try {
-                $stmt = $db->prepare("UPDATE tickets SET status = 'paid', paid_at = NOW() WHERE id = ? AND status = 'reserved'");
+                // La fila se relee CON lock dentro de la transición. Boletos
+                // que aún estén en 'reserved' (comprobantes anteriores a la
+                // máquina de estados) pasan primero por pending_review para
+                // que la bitácora refleje el flujo real.
+                $stmt = $db->prepare('SELECT * FROM tickets WHERE id = ? FOR UPDATE');
                 $stmt->execute([$ticketId]);
-                if ($stmt->rowCount() === 0) {
+                $row = $stmt->fetch(PDO::FETCH_ASSOC);
+                if (!$row || !in_array($row['status'], ['reserved', 'pending_review'], true)) {
                     $db->rollBack();
-                    Response::error('El boleto ya no está reservado (pudo expirar); no se aprobó el pago', null, 409);
+                    Response::error('El boleto ya no está en revisión (pudo expirar); no se aprobó el pago', null, 409);
                 }
+                if ($row['status'] === 'reserved') {
+                    $row = TicketStateMachine::apply($db, $row, 'pending_review', [
+                        'actor' => 'system', 'source' => 'dashboard',
+                        'reason' => 'normalización: comprobante previo a la máquina de estados',
+                    ]);
+                }
+                TicketStateMachine::apply($db, $row, 'paid', [
+                    'actor' => 'vendor', 'source' => 'dashboard', 'actor_id' => (int)$adminUser['id'],
+                    'reason' => 'pago confirmado por el vendedor',
+                    'detail' => ['payment_id' => (int)$ticket['payment_id']],
+                    'fields' => ['paid_at' => date('Y-m-d H:i:s'), 'payment_id' => (int)$ticket['payment_id']],
+                ]);
 
                 $stmt = $db->prepare("UPDATE payments SET transaction_status = 'completed', verified_at = NOW() WHERE id = ?");
                 $stmt->execute([$ticket['payment_id']]);
 
                 $db->commit();
             } catch (Exception $e) {
-                $db->rollBack();
+                if ($db->inTransaction()) {
+                    $db->rollBack();
+                }
                 throw $e;
             }
 
@@ -120,15 +135,33 @@ try {
         }
 
         if ($action === 'reject') {
-            $stmt = $db->prepare("UPDATE payments SET transaction_status = 'failed' WHERE id = ?");
-            $stmt->execute([$ticket['payment_id']]);
-
-            $stmt = $db->prepare("
-                UPDATE tickets
-                SET status = 'available', user_id = NULL, reserved_at = NULL, reserved_until = NULL
-                WHERE id = ?
-            ");
-            $stmt->execute([$ticketId]);
+            $db->beginTransaction();
+            try {
+                $stmt = $db->prepare('SELECT * FROM tickets WHERE id = ? FOR UPDATE');
+                $stmt->execute([$ticketId]);
+                $row = $stmt->fetch(PDO::FETCH_ASSOC);
+                if ($row && in_array($row['status'], ['reserved', 'pending_review'], true)) {
+                    if ($row['status'] === 'reserved') {
+                        $row = TicketStateMachine::apply($db, $row, 'pending_review', [
+                            'actor' => 'system', 'source' => 'dashboard',
+                            'reason' => 'normalización: comprobante previo a la máquina de estados',
+                        ]);
+                    }
+                    TicketStateMachine::apply($db, $row, 'available', [
+                        'actor' => 'vendor', 'source' => 'dashboard', 'actor_id' => (int)$adminUser['id'],
+                        'reason' => 'pago rechazado por el vendedor',
+                        'detail' => ['payment_id' => (int)$ticket['payment_id']],
+                    ]);
+                }
+                $stmt = $db->prepare("UPDATE payments SET transaction_status = 'failed' WHERE id = ?");
+                $stmt->execute([$ticket['payment_id']]);
+                $db->commit();
+            } catch (Exception $e) {
+                if ($db->inTransaction()) {
+                    $db->rollBack();
+                }
+                throw $e;
+            }
             Logger::activity('payment_manual_rejected', $adminUser['id'], ['ticket_id' => $ticketId, 'payment_id' => $ticket['payment_id']]);
             Response::success(['message' => 'Pago rechazado. El boleto volvió a estar disponible.']);
         }

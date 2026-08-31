@@ -64,54 +64,8 @@ class TicketService
         $this->ticketRepo->batchInsertTickets($ticketsData);
     }
 
-    /**
-     * Reserva tickets con prevención de dobles compras usando Transacciones y Lock For Update.
-     */
-    public function reserveTickets(int $raffleId, int $userId, array $requestedTickets)
-    {
-        $conn = $this->db->getConnection();
-        
-        try {
-            $conn->beginTransaction();
-
-            // Lock en FOR UPDATE en los tickets específicos
-            $inClause = implode(',', array_fill(0, count($requestedTickets), '?'));
-            $sql = "SELECT id, status FROM tickets WHERE raffle_id = ? AND ticket_number IN ($inClause) FOR UPDATE";
-            
-            $stmt = $conn->prepare($sql);
-            $params = array_merge([$raffleId], $requestedTickets);
-            $stmt->execute($params);
-            
-            $lockedRows = $stmt->fetchAll();
-
-            if (count($lockedRows) !== count($requestedTickets)) {
-                throw new Exception("Algunos boletos no existen.");
-            }
-
-            foreach ($lockedRows as $row) {
-                if ($row['status'] !== 'available') {
-                    throw new Exception("Uno o más boletos seleccionados ya no están disponibles.");
-                }
-            }
-
-            // Obtener horas de reserva, por defecto 2 (o lo de config)
-            $stmtConf = $conn->prepare("SELECT setting_value FROM system_settings WHERE setting_key = 'reservation_hours_default'");
-            $stmtConf->execute();
-            $confRow = $stmtConf->fetch();
-            $hours = $confRow ? (int)$confRow['setting_value'] : 2;
-
-            // Update status
-            $updateSql = "UPDATE tickets SET status = 'reserved', user_id = ?, reserved_at = NOW(), reserved_until = DATE_ADD(NOW(), INTERVAL ? HOUR) WHERE raffle_id = ? AND ticket_number IN ($inClause)";
-            
-            $updateStmt = $conn->prepare($updateSql);
-            $updateParams = array_merge([$userId, $hours, $raffleId], $requestedTickets);
-            $updateStmt->execute($updateParams);
-
-            $conn->commit();
-            return true;
-        } catch (Exception $e) {
-            $conn->rollBack();
-            throw $e;
-        }
-    }
+    // reserveTickets() (reserva masiva) se eliminó: no tenía ningún llamador
+    // y reservaba SIN bloqueo de fila (condición de carrera). Toda reserva
+    // pasa por TicketRepository::reserveTicket / create-reservation.php, que
+    // usan TicketStateMachine con SELECT ... FOR UPDATE.
 }

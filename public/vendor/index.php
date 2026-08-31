@@ -603,7 +603,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                 </a>
                 <a href="#mi-perfil" class="nav-item" data-section="mi-perfil" onclick="switchTo('mi-perfil')">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
-                    <span class="nav-text">Mi Perfil (Integraciones)</span>
+                    <span class="nav-text">Mi Perfil</span>
                 </a>
                 <a href="#comisiones" class="nav-item" data-section="comisiones" id="nav-comisiones" onclick="switchTo('comisiones')">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
@@ -1069,26 +1069,6 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                                 <input type="password" id="cp-confirm" autocomplete="new-password" class="w-full px-4 py-2 border rounded-lg" required placeholder="Repite la nueva contraseña" minlength="8">
                             </div>
                             <button type="submit" class="btn btn--primary px-8 h-12" id="btn-save-cp">Cambiar Contraseña</button>
-                        </form>
-                    </div>
-
-                    <div class="section-card mb-6">
-                        <h2 class="text-lg font-bold mb-4">Credenciales API Nequi (Automático)</h2>
-                        <p class="text-sm text-gray-500 mb-4">Ingresa tus credenciales API de Nequi/Bancolombia. Si las proporcionas, el sistema habilitará el botón de "Pago Directo Pse/Nequi" en tus rifas.</p>
-                        <form id="nequi-config-form" class="space-y-4">
-                            <div class="form-group">
-                                <label>Nequi API Key / Client ID</label>
-                                <input type="text" id="cfg-nequi-key" class="w-full px-4 py-2 border rounded" placeholder="ej: nequi_test_xyz123">
-                            </div>
-                            <div class="form-group">
-                                <label>Nequi API Secret</label>
-                                <input type="password" id="cfg-nequi-secret" class="w-full px-4 py-2 border rounded" placeholder="••••••••">
-                            </div>
-                            <div class="form-group">
-                                <label>Número Celular Nequi / Cuenta Vendedor</label>
-                                <input type="tel" id="cfg-nequi-phone" class="w-full px-4 py-2 border rounded" placeholder="3001234567">
-                            </div>
-                            <button type="submit" class="btn btn--primary" id="btn-save-nequi">Guardar Nequi API</button>
                         </form>
                     </div>
 
@@ -1613,25 +1593,6 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                 <!-- ===== SECCIÓN CONFIGURACIÓN ===== -->
                 <div id="section-configuracion" class="admin-section hidden">
 
-                    <!-- Wompi -->
-                    <div class="section-card" style="margin-bottom:24px;">
-                        <h2 class="text-lg font-bold mb-2 flex items-center gap-2"><svg class="w-5 h-5 text-primary shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>Configuración Wompi</h2>
-                        <p style="color:#94a3b8;font-size:13px;margin-bottom:20px;">Configura tus credenciales de Wompi para recibir pagos directamente en tu cuenta.</p>
-                        <form id="wompi-config-form" class="form-stack">
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label for="wompi-public-key">Public Key</label>
-                                    <input type="text" id="wompi-public-key" placeholder="pub_prod_...">
-                                </div>
-                                <div class="form-group">
-                                    <label for="wompi-private-key">Private Key</label>
-                                    <input type="password" id="wompi-private-key" placeholder="••••••••">
-                                </div>
-                            </div>
-                            <button type="submit" class="btn btn--primary" id="btn-save-wompi">Guardar Wompi</button>
-                        </form>
-                    </div>
-
                     <!-- Configuración General (solo super_admin: la API no aplica cambios para vendedores) -->
                     <div class="section-card" id="section-platform-settings">
                         <h2 class="text-lg font-bold mb-2 flex items-center gap-2"><svg class="w-5 h-5 text-primary shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18 14 14 0 0 1 0-18Z"/></svg>Configuración General de la Plataforma</h2>
@@ -1810,7 +1771,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                 comisiones: 'Comisiones',
                 configuracion: 'Configuración',
                 pagos: 'Pagos Recibidos',
-                'mi-perfil': 'Mi Perfil (Integraciones)',
+                'mi-perfil': 'Mi Perfil',
                 banners: 'Gestión de Portada',
                 'gestion-rifas': 'Gestión de Rifas',
                 usuarios: 'Gestión de Usuarios',
@@ -2768,8 +2729,6 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
             const response = await API.get('/admin/settings.php');
             if (response.success) {
                 const d = response.data;
-                // Wompi
-                if (d.wompi_public_key) document.getElementById('wompi-public-key').value = d.wompi_public_key;
                 // General
                 if (d.platform_name) document.getElementById('cfg-platform-name').value = d.platform_name;
                 if (d.platform_email) document.getElementById('cfg-platform-email').value = d.platform_email;
@@ -3076,17 +3035,6 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
         }
     });
 
-    document.getElementById('wompi-config-form').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const data = {
-            wompi_public_key: document.getElementById('wompi-public-key').value,
-            wompi_private_key: document.getElementById('wompi-private-key').value
-        };
-        try {
-            await API.post('/admin/settings.php', data);
-            Utils.showNotification('Configuración de Wompi guardada', 'success');
-        } catch (error) { Utils.showNotification('Error al guardar', 'error'); }
-    });
 
     // ================================================================
     // PAGOS MANUALES: Cargar tabla y aprobar/rechazar
@@ -3143,7 +3091,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
     }
 
     // ================================================================
-    // MI PERFIL: Cargar y guardar Nequi + EvolutionAPI
+    // MI PERFIL: datos personales + WhatsApp/EvolutionAPI
     // ================================================================
 
     // ── WhatsApp autoservicio (QR gestionado por la plataforma) ──
@@ -3219,9 +3167,6 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
             if (res.success) {
                 const p = res.data.payment_config || {};
                 const w = res.data.wa_config || {};
-                if (p.nequi_key)   document.getElementById('cfg-nequi-key').value   = p.nequi_key;
-                if (p.nequi_secret) document.getElementById('cfg-nequi-secret').value = p.nequi_secret;
-                if (p.nequi_phone) document.getElementById('cfg-nequi-phone').value  = p.nequi_phone;
                 if (w.evo_api_url) document.getElementById('cfg-wa-url').value       = w.evo_api_url;
                 if (w.evo_api_key) document.getElementById('cfg-wa-apikey').value    = w.evo_api_key;
                 if (w.evo_instance) document.getElementById('cfg-wa-instance').value = w.evo_instance;
@@ -3316,21 +3261,6 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
         finally { btn.disabled = false; btn.textContent = 'Cambiar Contraseña'; }
     });
 
-    document.getElementById('nequi-config-form').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const btn = document.getElementById('btn-save-nequi');
-        btn.disabled = true; btn.textContent = 'Guardando…';
-        try {
-            await API.post('/admin/profile_api.php', {
-                type: 'nequi',
-                nequi_key:    document.getElementById('cfg-nequi-key').value,
-                nequi_secret: document.getElementById('cfg-nequi-secret').value,
-                nequi_phone:  document.getElementById('cfg-nequi-phone').value
-            });
-            Utils.showNotification('Credenciales Nequi guardadas ✅', 'success');
-        } catch (err) { Utils.showNotification('Error al guardar Nequi', 'error'); }
-        finally { btn.disabled = false; btn.textContent = 'Guardar Nequi API'; }
-    });
 
     document.getElementById('wa-config-form').addEventListener('submit', async (e) => {
         e.preventDefault();

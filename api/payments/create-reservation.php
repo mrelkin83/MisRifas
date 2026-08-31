@@ -28,6 +28,7 @@ require_once __DIR__ . '/../../api/utils/Response.php';
 require_once __DIR__ . '/../../api/utils/Logger.php';
 require_once __DIR__ . '/../../api/utils/Validator.php';
 require_once __DIR__ . '/../../api/repositories/UserRepository.php';
+require_once __DIR__ . '/../../api/services/TicketStateMachine.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     Response::error('Método no permitido', null, 405);
@@ -146,8 +147,14 @@ try {
     try {
         // Generar reservation_id único
         $reservationId = 'RES-' . $raffleId . '-' . bin2hex(random_bytes(8));
-        $expiresAt = date('Y-m-d H:i:s', strtotime('+10 minutes'));
+        // TTL configurable (reservation_ttl_minutes, default 45 — §7.4).
+        $ttlMin = TicketStateMachine::reservationTtlMinutes($db);
+        $expiresAt = date('Y-m-d H:i:s', strtotime("+{$ttlMin} minutes"));
         $amount = $raffle['ticket_price'] * count($numeros);
+
+        // §11: bloquear SIEMPRE en orden ascendente — dos peticiones que
+        // bloqueen los mismos números en orden distinto se matan en deadlock.
+        sort($numeros, SORT_STRING);
 
         // 0. `tickets` (usada por api/tickets/reserve.php) y `numero_reservas`
         // (usada por este endpoint) son dos sistemas de inventario que antes
@@ -162,24 +169,31 @@ try {
         // el cron de liberación aún no lo haya marcado 'available'. Sin esto,
         // los tickets quedaban bloqueados hasta que corriera el cron (que en
         // hosting sin scheduler puede no correr nunca) → ventas perdidas.
-        $lockStmt = $db->prepare("SELECT id, status, reserved_until FROM tickets WHERE raffle_id = ? AND ticket_number = ? FOR UPDATE");
-        $updateTicketStmt = $db->prepare("
-            UPDATE tickets SET status = 'reserved', user_id = ?, reserved_at = NOW(), reserved_until = ?
-            WHERE id = ?
-        ");
         foreach ($numeros as $numero) {
-            $lockStmt->execute([$raffleId, $numero]);
-            $ticketRow = $lockStmt->fetch(PDO::FETCH_ASSOC);
-            $reservable = $ticketRow && (
-                $ticketRow['status'] === 'available'
-                || ($ticketRow['status'] === 'reserved'
-                    && !empty($ticketRow['reserved_until'])
-                    && strtotime($ticketRow['reserved_until']) < time())
-            );
-            if (!$reservable) {
-                throw new Exception('El número ' . $numero . ' ya no está disponible. Selecciona otros números para continuar.');
+            $ticketRow = TicketStateMachine::lockByNumber($db, (int)$raffleId, (string)$numero);
+
+            // Una reserva vencida es retomable aunque el cron no la haya
+            // liberado aún: se libera aquí mismo (transición real, con
+            // bitácora) y luego se reserva para el nuevo comprador.
+            if ($ticketRow['status'] === 'reserved'
+                && !empty($ticketRow['reserved_until'])
+                && strtotime($ticketRow['reserved_until']) < time()) {
+                $ticketRow = TicketStateMachine::apply($db, $ticketRow, 'available', [
+                    'actor' => 'system', 'source' => 'web',
+                    'reason' => 'reserva vencida retomada en checkout',
+                ]);
             }
-            $updateTicketStmt->execute([$user['id'], $expiresAt, $ticketRow['id']]);
+            if ($ticketRow['status'] !== 'available') {
+                throw new TicketNotAvailable((int)$raffleId, (string)$numero, (string)$ticketRow['status']);
+            }
+            TicketStateMachine::apply($db, $ticketRow, 'reserved', [
+                'actor' => 'buyer', 'source' => 'web', 'actor_id' => (int)$user['id'],
+                'fields' => [
+                    'user_id' => (int)$user['id'],
+                    'reserved_at' => date('Y-m-d H:i:s'),
+                    'reserved_until' => $expiresAt,
+                ],
+            ]);
         }
 
         // 1. Insertar en numero_reservas (cada número individualmente)
@@ -192,29 +206,10 @@ try {
             $stmt->execute([$raffleId, $numero, $user['id'], $reservationId, $expiresAt]);
         }
 
-        // 2. payment_intent: solo tiene sentido para el gateway automatico
-        // (wompi), que lo usa para hacer seguimiento del webhook. El flujo
-        // manual (comprobante + revision humana) no lo necesita - usa
-        // reservation_id como unica clave de agrupacion, igual que el resto
-        // del flujo manual de la plataforma.
+        // payment_intents era exclusivo del gateway automático (eliminado).
+        // La tabla queda por compatibilidad histórica (§4.4) pero ninguna
+        // ruta la escribe: reservation_id es la única clave de agrupación.
         $paymentIntentId = null;
-        if ($gateway === 'wompi') {
-            $stmt = $db->prepare("
-                INSERT INTO payment_intents
-                    (raffle_id, user_id, amount, gateway, status, created_at)
-                VALUES (?, ?, ?, ?, 'PENDING', NOW())
-            ");
-            $stmt->execute([$raffleId, $user['id'], $amount, $gateway]);
-
-            $paymentIntentId = $db->lastInsertId();
-
-            $stmt = $db->prepare("
-                UPDATE numero_reservas
-                SET payment_intent_id = ?
-                WHERE reservation_id = ?
-            ");
-            $stmt->execute([$paymentIntentId, $reservationId]);
-        }
 
         $db->commit();
 
@@ -245,26 +240,16 @@ try {
             ]
         ];
 
-        if ($gateway === 'wompi') {
-            $wompiData = [
-                'amount_in_cents' => intval($amount * 100),
-                'currency' => 'COP',
-                'customer_email' => $input['customer_email'] ?? '',
-                'customer_name' => $input['customer_name'] ?? '',
-                'reference' => strval($paymentIntentId),
-                'payment_method' => $input['payment_method'] ?? 'nequi',
-                'payment_type' => 'reservation',
-                'redirect_url' => BASE_PATH . '/public/pago-procesando.php?reservation_id=' . $reservationId . '&payment_intent_id=' . $paymentIntentId
-            ];
-
-            $responseData['wompi'] = $wompiData;
-            $responseData['payment_url'] = $wompiData['redirect_url'];
-        } else {
-            $responseData['payment_url'] = BASE_PATH . '/public/payment.php?reservation_id=' . $reservationId;
-        }
+        // Único flujo de pago: manual (el comprador transfiere directo al
+        // vendedor y sube comprobante). Las pasarelas se eliminaron — la
+        // plataforma nunca toca el dinero del comprador.
+        $responseData['payment_url'] = BASE_PATH . '/public/payment.php?reservation_id=' . $reservationId;
 
         Response::success($responseData, 'Reserva creada exitosamente');
 
+    } catch (TicketNotAvailable $e) {
+        $db->rollBack();
+        Response::error('El número ' . $e->ticketNumber . ' ya no está disponible. Selecciona otros números para continuar.', 'TICKET_NOT_AVAILABLE', 409);
     } catch (Exception $e) {
         $db->rollBack();
         Logger::exception($e);

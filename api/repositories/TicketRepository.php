@@ -5,51 +5,38 @@
  */
 
 require_once __DIR__ . '/BaseRepository.php';
+require_once __DIR__ . '/../services/TicketStateMachine.php';
 
 class TicketRepository extends BaseRepository
 {
     protected $table = 'tickets';
 
     /**
-     * Reservar boleto con control de concurrencia (CRÍTICO)
-     * Usa SELECT ... FOR UPDATE para lock pesimista
+     * Reservar boleto con control de concurrencia (CRÍTICO).
+     * Lock pesimista + transición vía TicketStateMachine (bitácora incluida).
+     * $ttlMinutes null = setting reservation_ttl_minutes (default 45).
      */
-    public function reserveTicket(int $raffleId, string $ticketNumber, int $userId, int $hours = 2): ?array
+    public function reserveTicket(int $raffleId, string $ticketNumber, int $userId, ?int $ttlMinutes = null, string $source = 'web'): ?array
     {
         try {
             $this->beginTransaction();
 
-            // Lock pesimista: SELECT FOR UPDATE
-            $sql = "SELECT * FROM tickets
-                    WHERE raffle_id = ? AND ticket_number = ? AND status = ?
-                    FOR UPDATE";
-
-            $stmt = $this->db->prepare($sql);
-            $stmt->execute([$raffleId, $ticketNumber, TICKET_STATUS_AVAILABLE]);
-            $ticket = $stmt->fetch();
-
-            if (!$ticket) {
+            $ticket = TicketStateMachine::lockByNumber($this->db, $raffleId, $ticketNumber);
+            if ($ticket['status'] !== TICKET_STATUS_AVAILABLE) {
                 $this->rollback();
                 return null; // Boleto no disponible
             }
 
-            // Calcular reserva hasta
-            $reservedUntil = date('Y-m-d H:i:s', strtotime("+{$hours} hours"));
+            $ttl = $ttlMinutes ?? TicketStateMachine::reservationTtlMinutes($this->db);
+            $reservedUntil = date('Y-m-d H:i:s', strtotime("+{$ttl} minutes"));
 
-            // Actualizar boleto
-            $updateSql = "UPDATE tickets
-                         SET status = ?,
-                             user_id = ?,
-                             reserved_at = NOW(),
-                             reserved_until = ?
-                         WHERE id = ?";
-
-            $updateStmt = $this->db->prepare($updateSql);
-            $updateStmt->execute([
-                TICKET_STATUS_RESERVED,
-                $userId,
-                $reservedUntil,
-                $ticket['id']
+            TicketStateMachine::apply($this->db, $ticket, TICKET_STATUS_RESERVED, [
+                'actor' => 'buyer', 'source' => $source, 'actor_id' => $userId,
+                'fields' => [
+                    'user_id' => $userId,
+                    'reserved_at' => date('Y-m-d H:i:s'),
+                    'reserved_until' => $reservedUntil,
+                ],
             ]);
 
             $this->commit();
@@ -57,6 +44,9 @@ class TicketRepository extends BaseRepository
             // Obtener boleto actualizado
             return $this->findById($ticket['id']);
 
+        } catch (TicketNotFound $e) {
+            $this->rollback();
+            return null;
         } catch (Exception $e) {
             $this->rollback();
             Logger::exception($e);
@@ -65,55 +55,119 @@ class TicketRepository extends BaseRepository
     }
 
     /**
-     * Marcar boleto como pagado
+     * Marcar boleto como pagado (vía máquina de estados).
+     * Acepta reserved (dato legado, normalizado a pending_review) o
+     * pending_review.
      */
-    public function markAsPaid(int $ticketId, int $paymentId): bool
+    public function markAsPaid(int $ticketId, int $paymentId, string $source = 'dashboard', ?int $actorId = null): bool
     {
         try {
             $this->beginTransaction();
 
-            $sql = "UPDATE tickets
-                    SET status = ?,
-                        paid_at = NOW(),
-                        payment_id = ?
-                    WHERE id = ? AND status = ?";
-
-            $stmt = $this->db->prepare($sql);
-            $result = $stmt->execute([
-                TICKET_STATUS_PAID,
-                $paymentId,
-                $ticketId,
-                TICKET_STATUS_RESERVED
+            $stmt = $this->db->prepare('SELECT * FROM tickets WHERE id = ? FOR UPDATE');
+            $stmt->execute([$ticketId]);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            if (!$row || !in_array($row['status'], [TICKET_STATUS_RESERVED, 'pending_review'], true)) {
+                $this->rollback();
+                return false;
+            }
+            if ($row['status'] === TICKET_STATUS_RESERVED) {
+                $row = TicketStateMachine::apply($this->db, $row, 'pending_review', [
+                    'actor' => 'system', 'source' => $source,
+                    'reason' => 'normalización previa a confirmación',
+                ]);
+            }
+            TicketStateMachine::apply($this->db, $row, TICKET_STATUS_PAID, [
+                'actor' => 'vendor', 'source' => $source, 'actor_id' => $actorId,
+                'reason' => 'pago confirmado',
+                'fields' => ['paid_at' => date('Y-m-d H:i:s'), 'payment_id' => $paymentId],
             ]);
 
             $this->commit();
-            return $result && $stmt->rowCount() > 0;
+            return true;
 
         } catch (Exception $e) {
-            $this->rollback();
+            if ($this->db->inTransaction()) {
+                $this->rollback();
+            }
             Logger::exception($e);
             return false;
         }
     }
 
     /**
-     * Liberar boletos expirados
-     * Usado por cron job
+     * Liberar boletos con reserva vencida (cron). Uno por uno, vía máquina de
+     * estados: cada liberación queda en la bitácora. pending_review NO se
+     * libera aquí (tiene su propio TTL, ver releaseExpiredReviews).
      */
     public function releaseExpiredReservations(): int
     {
         try {
-            $sql = "UPDATE tickets
-                    SET status = ?,
-                        user_id = NULL,
-                        reserved_at = NULL,
-                        reserved_until = NULL
-                    WHERE status = ? AND reserved_until < NOW()";
+            $ids = $this->db->query(
+                "SELECT id FROM tickets WHERE status = 'reserved' AND reserved_until < NOW() ORDER BY id"
+            )->fetchAll(PDO::FETCH_COLUMN);
 
-            $stmt = $this->db->prepare($sql);
-            $stmt->execute([TICKET_STATUS_AVAILABLE, TICKET_STATUS_RESERVED]);
+            $released = 0;
+            foreach ($ids as $id) {
+                try {
+                    TicketStateMachine::transition($this->db, (int)$id, 'available', [
+                        'actor' => 'system', 'source' => 'cron', 'reason' => 'reserva vencida (TTL)',
+                    ]);
+                    $released++;
+                } catch (InvalidTransition $e) {
+                    // Cambió de estado entre el SELECT y el lock (p. ej. subió
+                    // comprobante): no es un error, simplemente ya no aplica.
+                }
+            }
+            return $released;
 
-            return $stmt->rowCount();
+        } catch (Exception $e) {
+            Logger::exception($e);
+            return 0;
+        }
+    }
+
+    /**
+     * Liberar boletos en pending_review sin decisión del vendedor tras el TTL
+     * de revisión (setting pending_review_ttl_hours, default 12) — §7.4.
+     */
+    public function releaseExpiredReviews(): int
+    {
+        try {
+            $stmt = $this->db->prepare("SELECT setting_value FROM system_settings WHERE setting_key = 'pending_review_ttl_hours'");
+            $stmt->execute();
+            $hours = (int)$stmt->fetchColumn();
+            if ($hours <= 0) {
+                $hours = 12;
+            }
+
+            // El "reloj" de la revisión es el último evento pending_review.
+            $ids = $this->db->prepare(
+                "SELECT t.id
+                   FROM tickets t
+                   JOIN (SELECT ticket_id, MAX(created_at) AS at
+                           FROM ticket_events
+                          WHERE to_status = 'pending_review'
+                          GROUP BY ticket_id) ev ON ev.ticket_id = t.id
+                  WHERE t.status = 'pending_review'
+                    AND ev.at < DATE_SUB(NOW(), INTERVAL {$hours} HOUR)
+                  ORDER BY t.id"
+            );
+            $ids->execute();
+
+            $released = 0;
+            foreach ($ids->fetchAll(PDO::FETCH_COLUMN) as $id) {
+                try {
+                    TicketStateMachine::transition($this->db, (int)$id, 'available', [
+                        'actor' => 'system', 'source' => 'cron',
+                        'reason' => 'comprobante sin respuesta del vendedor (TTL revisión)',
+                    ]);
+                    $released++;
+                } catch (InvalidTransition $e) {
+                    // El vendedor decidió justo entre el SELECT y el lock.
+                }
+            }
+            return $released;
 
         } catch (Exception $e) {
             Logger::exception($e);

@@ -8,8 +8,10 @@
  */
 
 require_once __DIR__ . '/../config/app.php';
+require_once __DIR__ . '/../config/constants.php';
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../api/utils/Logger.php';
+require_once __DIR__ . '/../api/repositories/TicketRepository.php';
 
 if (php_sapi_name() !== 'cli') {
     $cronSecret = $_GET['secret'] ?? '';
@@ -32,32 +34,25 @@ try {
     $db->beginTransaction();
 
     try {
-        // Liberar tambien la fila de `tickets` que create-reservation.php
-        // marca 'reserved' (ver hallazgo H6 - dos sistemas de inventario
-        // que antes no se sincronizaban) - antes de que el UPDATE de abajo
-        // borre expires_at/numero_reservas y se pierda la referencia.
-        $stmt = $db->prepare("
+        // Toda liberación pasa por la máquina de estados (bitácora incluida).
+        // Antes de liberar, se completa reserved_until en tickets 'reserved'
+        // huérfanos cuyo vencimiento solo vivía en numero_reservas (legado);
+        // ese UPDATE no toca status, solo el dato de vencimiento.
+        $db->prepare("
             UPDATE tickets t
             INNER JOIN numero_reservas nr
                 ON t.raffle_id = nr.raffle_id AND t.ticket_number = nr.numero
-            SET t.status = 'available', t.user_id = NULL, t.reserved_at = NULL, t.reserved_until = NULL
-            WHERE nr.estado = 'RESERVADO' AND nr.expires_at IS NOT NULL AND nr.expires_at < NOW()
-        ");
-        $stmt->execute();
-        $ticketsReleased = $stmt->rowCount();
+            SET t.reserved_until = nr.expires_at
+            WHERE t.status = 'reserved' AND t.reserved_until IS NULL
+              AND nr.estado = 'RESERVADO' AND nr.expires_at IS NOT NULL
+        ")->execute();
 
-        // Barrido amplio: liberar CUALQUIER ticket 'reserved' vencido aunque
-        // no tenga fila en numero_reservas (reservas directas/antiguas del
-        // flujo por ticket). Antes esto lo cubria el cron separado
-        // release_reservations.php - ahora unificado aqui para que este sea
-        // el unico cron de expiracion.
-        $stmt = $db->prepare("
-            UPDATE tickets
-            SET status = 'available', user_id = NULL, reserved_at = NULL, reserved_until = NULL
-            WHERE status = 'reserved' AND reserved_until IS NOT NULL AND reserved_until < NOW()
-        ");
-        $stmt->execute();
-        $ticketsReleased += $stmt->rowCount();
+        $ticketRepo = new TicketRepository();
+        // Reservas vencidas (TTL de reserva) + comprobantes sin respuesta
+        // del vendedor (TTL de revisión, §7.4).
+        $ticketsReleased = $ticketRepo->releaseExpiredReservations();
+        $reviewsReleased = $ticketRepo->releaseExpiredReviews();
+        $ticketsReleased += $reviewsReleased;
 
         // Buscar números RESERVADOS con expires_at vencido
         $stmt = $db->prepare("
