@@ -1640,7 +1640,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                             <div style="padding:16px;border:1px solid #e2e8f0;border-radius:14px;min-width:0;">
                                 <div style="font-size:11px;font-weight:800;text-transform:uppercase;color:#94a3b8;letter-spacing:.5px;">💰 Costos</div>
                                 <div id="vcfg-billing" class="font-bold mt-1">—</div>
-                                <div class="text-sm text-gray-500">El dinero de tus compradores va <strong>directo a tus llaves de cobro</strong> — la plataforma nunca lo toca.</div>
+                                <div class="text-sm text-gray-500">El dinero de tus compradores va directo a tus billeteras digitales <strong>Nequi o DaviPlata</strong>, o a tu <strong>llave Bre-B</strong> — la plataforma nunca lo toca.</div>
                             </div>
                             <div style="padding:16px;border:1px solid #e2e8f0;border-radius:14px;min-width:0;">
                                 <div style="font-size:11px;font-weight:800;text-transform:uppercase;color:#94a3b8;letter-spacing:.5px;">⏱️ Reservas</div>
