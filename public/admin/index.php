@@ -37,7 +37,12 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
         .sidebar-header { padding: 20px; border-bottom: 1px solid #334155; }
         .logo { display: flex; align-items: center; gap: 10px; font-size: 20px; font-weight: 700; font-family: 'Outfit', 'Inter', sans-serif; }
         .logo__icon { width: 26px; height: 26px; color: #f59e0b; flex-shrink: 0; }
-        .sidebar-nav { flex: 1; padding: 12px 0; }
+        /* El sidebar es fixed y el menú creció: SIN overflow-y los items de
+           abajo (Comisiones, Configuración, Mi Perfil…) quedaban INALCANZABLES
+           en pantallas bajas — parecía que "no existían". */
+        .sidebar-nav { flex: 1; padding: 12px 0; overflow-y: auto; min-height: 0; scrollbar-width: thin; scrollbar-color: #475569 transparent; }
+        .sidebar-nav::-webkit-scrollbar { width: 5px; }
+        .sidebar-nav::-webkit-scrollbar-thumb { background: #475569; border-radius: 99px; }
         .nav-item { display: flex; align-items: center; gap: 12px; padding: 12px 20px; padding-left: 17px; border-left: 3px solid transparent; color: #94a3b8; text-decoration: none; transition: background-color 0.2s, color 0.2s, border-color 0.2s; cursor: pointer; }
         .nav-item:hover { background: #334155; color: white; }
         .nav-item--active { background: rgba(245, 158, 11, 0.12); color: #fbbf24; border-left-color: #f59e0b; }
