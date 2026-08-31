@@ -1491,6 +1491,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                     <div class="section-card">
                         <div class="section-header">
                             <h2 class="flex items-center gap-2"><svg class="w-5 h-5 text-primary shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h11l-1 15a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 3Zm11 4h2.5a2 2 0 0 1 2 2.2l-.4 4A2 2 0 0 1 18.1 15H16"/></svg>El Tapazo - Crear Nueva Rifa Rápida</h2>
+                            <a href="<?= BASE_PATH ?>/tapazo/index.php" target="_blank" class="btn btn--sm btn--outline" style="white-space:nowrap;">🍻 Pantalla pública del Tapazo</a>
                         </div>
                         <form id="tapazo-form" class="form-stack">
                             <div class="form-row">
@@ -2072,7 +2073,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
         const btn = e.target.querySelector('button[type="submit"]');
         btn.disabled = true; btn.textContent = 'Creando…';
         try {
-            await API.post('/tapazo/admin_list.php', {
+            const created = await API.post('/tapazo/admin_list.php', {
                 name: document.getElementById('tapazo-name').value,
                 description: document.getElementById('tapazo-desc').value,
                 prize: document.getElementById('tapazo-prize').value,
@@ -2083,6 +2084,11 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
             Utils.showNotification('🍺 Tapazo creado exitosamente', 'success');
             e.target.reset();
             loadTapazos();
+            // Llevar al organizador a la pantalla pública original del Tapazo
+            // (la experiencia de juego/compartir canónica) con su código.
+            if (created && created.data && created.data.codigo) {
+                window.open(BASE_PATH + '/tapazo/index.php?codigo=' + encodeURIComponent(created.data.codigo), '_blank');
+            }
         } catch (error) {
             Utils.showNotification(error.message || 'Error al crear tapazo', 'error');
         } finally {
@@ -3686,9 +3692,13 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
             window.openTapazoSheet = function(id){
                 var t = (window.__tapazos || []).find(function(x){ return String(x.id) === String(id); });
                 if (!t) return;
-                var items = [
-                    { label: '👁️  Ver participantes', onClick: function(){ viewTapazo(t.id); } }
-                ];
+                var items = [];
+                // La pantalla pública original (/tapazo) es la experiencia de juego
+                // canónica; el panel solo administra.
+                if (t.codigo) {
+                    items.push({ label: '🍻  Abrir Tapazo (pantalla de juego)', onClick: function(){ window.open(BASE_PATH + '/tapazo/index.php?codigo=' + encodeURIComponent(t.codigo), '_blank'); } });
+                }
+                items.push({ label: '👁️  Ver participantes', onClick: function(){ viewTapazo(t.id); } });
                 if (t.status === 'active') {
                     items.push({ label: '✅  Completar (sortear ganador)', onClick: function(){ completeTapazo(t.id); } });
                 }

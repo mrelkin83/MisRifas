@@ -617,6 +617,10 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>
                     <span class="nav-text">Crear Rifa</span>
                 </a>
+                <a href="#mis-rifas" class="nav-item" data-section="mis-rifas" onclick="switchTo('mis-rifas')">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h11l-1 15a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 3Zm11 4h2.5a2 2 0 0 1 2 2.2l-.4 4A2 2 0 0 1 18.1 15H16"/></svg>
+                    <span class="nav-text">Mis Rifas</span>
+                </a>
                 <a href="#pagos" class="nav-item" data-section="pagos" onclick="switchTo('pagos')">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="3"/></svg>
                     <span class="nav-text">Pagos Recibidos</span>
@@ -954,6 +958,46 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                                 Crear Rifa
                             </button>
                         </form>
+                    </div>
+                </div>
+
+                <div id="section-mis-rifas" class="admin-section hidden">
+                    <style>
+                        .mr-card { background:#fff; border:1px solid #eef2f7; border-radius:16px; overflow:hidden; box-shadow:0 1px 2px rgba(15,23,42,.06); display:flex; flex-direction:column; transition:box-shadow .15s ease, transform .15s ease; }
+                        .mr-card:hover { box-shadow:0 8px 24px rgba(15,23,42,.12); transform:translateY(-2px); }
+                        .mr-media { position:relative; aspect-ratio:16/9; background:linear-gradient(135deg,#0f172a,#334155); display:flex; align-items:center; justify-content:center; font-size:36px; }
+                        .mr-media img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+                        .mr-badge { position:absolute; top:10px; left:10px; z-index:2; }
+                        .mr-kebab { position:absolute; top:8px; right:8px; z-index:2; width:34px; height:34px; border-radius:50%; background:rgba(255,255,255,.94); border:none; cursor:pointer; font-size:18px; font-weight:700; line-height:1; color:#0f172a; box-shadow:0 2px 8px rgba(0,0,0,.22); }
+                        .mr-kebab:active { transform:scale(.92); }
+                        .mr-body { padding:12px 14px 14px; display:flex; flex-direction:column; gap:9px; flex:1; }
+                        .mr-name { font-weight:800; font-size:15px; color:#0f172a; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+                        .mr-place { font-size:12px; color:#94a3b8; margin-top:-5px; }
+                        .mr-row { display:flex; align-items:center; justify-content:space-between; gap:8px; font-size:13px; color:#475569; }
+                        .mr-chip { font-size:11.5px; font-weight:700; padding:3px 9px; border-radius:99px; white-space:nowrap; }
+                        .mr-chip--soon { background:#fef3c7; color:#92400e; }
+                        .mr-chip--ok { background:#e0f2fe; color:#075985; }
+                        .mr-chip--past { background:#f1f5f9; color:#64748b; }
+                        .mr-progress { height:8px; border-radius:99px; background:#e2e8f0; overflow:hidden; }
+                        .mr-progress > div { height:100%; border-radius:99px; background:linear-gradient(90deg,#f59e0b,#d97706); }
+                        .mr-progress > div.mr-full { background:linear-gradient(90deg,#10b981,#059669); }
+                        .mr-meta { display:flex; justify-content:space-between; align-items:baseline; font-size:12px; color:#64748b; }
+                        .mr-meta strong { color:#0f172a; }
+                        .mr-revenue { margin-top:auto; padding-top:9px; border-top:1px dashed #e2e8f0; display:flex; justify-content:space-between; font-size:12.5px; color:#64748b; }
+                        .mr-revenue b { color:#059669; font-size:13.5px; }
+                    </style>
+                    <div class="section-card">
+                        <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+                            <h2 class="text-lg font-bold">Mis Rifas</h2>
+                            <button class="btn btn--primary btn--sm" onclick="switchTo('crear')">+ Crear rifa</button>
+                        </div>
+                        <div id="my-raffles-loading" class="text-center text-gray-400 py-10">Cargando tus rifas…</div>
+                        <div id="my-raffles-empty" class="text-center py-10 hidden">
+                            <div style="font-size:44px;margin-bottom:8px;">🎟️</div>
+                            <p class="text-gray-500 mb-4">Aún no has creado rifas.</p>
+                            <button class="btn btn--primary" onclick="switchTo('crear')">Crear mi primera rifa</button>
+                        </div>
+                        <div id="my-raffles-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
                     </div>
                 </div>
 
@@ -1531,6 +1575,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                     <div class="section-card">
                         <div class="section-header">
                             <h2 class="flex items-center gap-2"><svg class="w-5 h-5 text-primary shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h11l-1 15a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 3Zm11 4h2.5a2 2 0 0 1 2 2.2l-.4 4A2 2 0 0 1 18.1 15H16"/></svg>El Tapazo - Crear Nueva Rifa Rápida</h2>
+                            <a href="<?= BASE_PATH ?>/tapazo/index.php" target="_blank" class="btn btn--sm btn--outline" style="white-space:nowrap;">🍻 Pantalla pública del Tapazo</a>
                         </div>
                         <form id="tapazo-form" class="form-stack">
                             <div class="form-row">
@@ -1769,6 +1814,9 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
         // Add active to clicked link
         var activeLink = document.querySelector('[data-section="' + section + '"]');
         if (activeLink) activeLink.classList.add('nav-item--active');
+
+        // Reflejar la pestaña activa en la tab bar móvil.
+        if (window.syncVendorTab) window.syncVendorTab(section);
         
         // Hide all sections
         var sections = document.querySelectorAll('.admin-section');
@@ -1788,6 +1836,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
             var titles = {
                 dashboard: 'Dashboard',
                 rifas: 'Mis Rifas',
+                'mis-rifas': 'Mis Rifas',
                 crear: 'Crear Rifa',
                 comisiones: 'Comisiones',
                 configuracion: 'Configuración',
@@ -1806,6 +1855,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
         
         // Load section data
         if (section === 'dashboard') loadDashboard();
+        if (section === 'mis-rifas') loadMyRaffles();
         if (section === 'boletas-compradas') loadUserBoughtTickets();
         if (section === 'rifas') loadAllRaffles();
         if (section === 'comisiones') loadCommissions();
@@ -1848,6 +1898,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                     tbody.innerHTML = '<tr><td colspan="6" class="text-center text-gray-500 py-6">No hay comisiones registradas</td></tr>';
                     return;
                 }
+                window.__commissions = data;
                 tbody.innerHTML = data.map(c => {
                     const isPaid    = parseInt(c.commission_paid) === 1;
                     const isOverdue = !isPaid && new Date(c.commission_due_date) < new Date();
@@ -1858,11 +1909,11 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                         ? `<input type="number" value="${commissionAmount}" min="0" step="1000" class="commission-edit-input w-28 px-2 py-1 border border-slate-300 rounded text-sm font-bold" data-raffle-id="${c.raffle_id}" onchange="updateCommissionAmount(${c.raffle_id}, this.value)">`
                         : `<span class="font-bold text-slate-700">$${commissionAmount.toLocaleString('es-CO')}</span>`;
                     const actionBtn   = !isPaid
-                        ? `<button class="btn btn--sm" style="background:#10b981;color:white;margin-right:4px;" onclick="markCommissionPaid(${c.raffle_id})">✅ Pagar</button>`
+                        ? `<button class="btn btn--sm" aria-label="Acciones" title="Acciones" onclick="openCommissionSheet(${parseInt(c.raffle_id, 10)})" style="font-size:20px;line-height:1;padding:2px 10px;">⋮</button>`
                         : '<span style="color:#10b981;font-size:12px;">&#10003; Cobrada</span>';
                     return '<tr>' +
-                        '<td class="font-medium">' + (c.raffle_name || '') + '</td>' +
-                        '<td style="color:#94a3b8;font-size:13px;">' + (c.creator_name || 'Vendedor') + '</td>' +
+                        '<td class="font-medium">' + userEsc(c.raffle_name || '') + '</td>' +
+                        '<td style="color:#94a3b8;font-size:13px;">' + userEsc(c.creator_name || 'Vendedor') + '</td>' +
                         '<td>' + Utils.formatPrice(c.total_sales || 0) + '</td>' +
                         '<td>' + commissionEditable + '</td>' +
                         '<td><span class="badge badge--' + statusClass + '">' + statusText + '</span></td>' +
@@ -1959,16 +2010,86 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
             tbody.innerHTML = '<tr><td colspan="5" class="text-center">No hay rifas</td></tr>';
             return;
         }
+        window.__dashRaffles = raffles;
         tbody.innerHTML = raffles.map(r => {
             const statusClass = r.status || 'pending';
             return '<tr>' +
-                '<td class="font-medium">' + (r.name || '') + '</td>' +
+                '<td class="font-medium">' + userEsc(r.name || '') + '</td>' +
                 '<td><span class="badge badge--' + statusClass + '">' + statusClass + '</span></td>' +
                 '<td>' + (r.sold_tickets || 0) + '</td>' +
                 '<td>' + (r.draw_date ? new Date(r.draw_date).toLocaleDateString('es-CO') : '--') + '</td>' +
-                '<td><button class="btn btn--sm btn--outline" onclick="viewRaffle(' + r.id + ')">Ver</button></td>' +
+                '<td><button class="btn btn--sm" aria-label="Acciones" title="Acciones" onclick="openRaffleSheet(' + parseInt(r.id, 10) + ')" style="font-size:20px;line-height:1;padding:2px 10px;">⋮</button></td>' +
             '</tr>';
         }).join('');
+    }
+
+    // Sección "Mis Rifas": lista completa del vendedor en tarjetas, con menú ⋮.
+    async function loadMyRaffles() {
+        const loading = document.getElementById('my-raffles-loading');
+        const empty = document.getElementById('my-raffles-empty');
+        const grid = document.getElementById('my-raffles-grid');
+        loading.classList.remove('hidden');
+        empty.classList.add('hidden');
+        grid.innerHTML = '';
+        try {
+            const res = await API.get('/vendor/list_raffles.php');
+            loading.classList.add('hidden');
+            const raffles = (res.success && res.data) ? res.data : [];
+            if (!raffles.length) { empty.classList.remove('hidden'); return; }
+            window.__myRaffles = raffles;
+            const statusMap = { draft: 'Borrador', active: 'Activa', blocked: 'Bloqueada', completed: 'Completada', cancelled: 'Cancelada' };
+            grid.innerHTML = raffles.map(r => {
+                const sold = parseInt(r.sold_tickets || 0, 10);
+                const total = parseInt(r.total_tickets || 0, 10);
+                const pct = total > 0 ? Math.min(100, Math.round(sold * 100 / total)) : 0;
+                const statusClass = r.status === 'active' ? 'active' : (r.status === 'completed' ? 'completed' : (r.status === 'cancelled' ? 'cancelled' : 'pending'));
+                const place = [r.city, r.department].filter(Boolean).join(', ');
+                const price = parseFloat(r.ticket_price || 0);
+                const img = r.image_url ? fixUrl(r.image_url) : '';
+
+                // Chip de tiempo al sorteo (solo rifas no terminadas)
+                let chip = '';
+                if (r.draw_date && r.status !== 'completed' && r.status !== 'cancelled') {
+                    const days = Math.ceil((new Date(r.draw_date) - Date.now()) / 86400000);
+                    if (days < 0)       chip = '<span class="mr-chip mr-chip--past">Sorteo vencido</span>';
+                    else if (days === 0) chip = '<span class="mr-chip mr-chip--soon">¡Sorteo hoy!</span>';
+                    else if (days === 1) chip = '<span class="mr-chip mr-chip--soon">Sorteo mañana</span>';
+                    else if (days <= 7)  chip = '<span class="mr-chip mr-chip--soon">Faltan ' + days + ' días</span>';
+                    else                 chip = '<span class="mr-chip mr-chip--ok">Faltan ' + days + ' días</span>';
+                } else if (r.status === 'completed') {
+                    chip = '<span class="mr-chip mr-chip--past">Finalizada</span>';
+                }
+
+                return '<div class="mr-card">' +
+                    '<div class="mr-media">🎟️' +
+                        (img ? '<img src="' + userEsc(img) + '" alt="" loading="lazy" onerror="this.remove()">' : '') +
+                        '<span class="mr-badge"><span class="badge badge--' + statusClass + '">' + (statusMap[r.status] || r.status || '') + '</span></span>' +
+                        '<button class="mr-kebab" aria-label="Acciones" title="Acciones" onclick="openRaffleSheet(' + parseInt(r.id, 10) + ')">⋮</button>' +
+                    '</div>' +
+                    '<div class="mr-body">' +
+                        '<div class="mr-name">' + userEsc(r.name || 'Rifa') + '</div>' +
+                        (place ? '<div class="mr-place">📍 ' + userEsc(place) + '</div>' : '') +
+                        '<div class="mr-row">' +
+                            '<span>' + Utils.formatPrice(price) + ' / boleta</span>' + chip +
+                        '</div>' +
+                        '<div>' +
+                            '<div class="mr-meta" style="margin-bottom:4px;">' +
+                                '<span><strong>' + sold + '</strong> de ' + total + ' vendidas</span><span>' + pct + '%</span>' +
+                            '</div>' +
+                            '<div class="mr-progress"><div class="' + (pct >= 100 ? 'mr-full' : '') + '" style="width:' + pct + '%;"></div></div>' +
+                        '</div>' +
+                        '<div class="mr-revenue">' +
+                            '<span>Sorteo: ' + (r.draw_date ? new Date(r.draw_date).toLocaleDateString('es-CO') : '--') + '</span>' +
+                            '<span>Recaudado <b>' + Utils.formatPrice(sold * price) + '</b></span>' +
+                        '</div>' +
+                    '</div>' +
+                '</div>';
+            }).join('');
+        } catch (e) {
+            loading.classList.add('hidden');
+            empty.classList.remove('hidden');
+            console.error('Error loading my raffles:', e);
+        }
     }
 
     async function loadAllRaffles() {
@@ -1980,16 +2101,17 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                     tbody.innerHTML = '<tr><td colspan="7" class="text-center">No hay rifas</td></tr>';
                     return;
                 }
+                window.__allRaffles = response.data;
                 tbody.innerHTML = response.data.map(r => {
                     const statusClass = r.status || 'pending';
                     return '<tr>' +
-                        '<td class="font-medium">' + (r.name || '') + '</td>' +
-                        '<td>' + (r.city || '') + '</td>' +
+                        '<td class="font-medium">' + userEsc(r.name || '') + '</td>' +
+                        '<td>' + userEsc(r.city || '') + '</td>' +
                         '<td><span class="badge badge--' + statusClass + '">' + statusClass + '</span></td>' +
                         '<td>' + (r.sold_tickets || 0) + '</td>' +
                         '<td>' + Utils.formatPrice(r.ticket_price || 0) + '</td>' +
                         '<td>' + (r.draw_date ? new Date(r.draw_date).toLocaleDateString('es-CO') : '--') + '</td>' +
-                        '<td><button class="btn btn--sm btn--outline" onclick="viewRaffle(' + r.id + ')">Ver</button></td>' +
+                        '<td><button class="btn btn--sm" aria-label="Acciones" title="Acciones" onclick="openRaffleSheet(' + parseInt(r.id, 10) + ')" style="font-size:20px;line-height:1;padding:2px 10px;">⋮</button></td>' +
                     '</tr>';
                 }).join('');
             }
@@ -2012,18 +2134,16 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                 const modeMap = { highest: '🔼 Más alto gana', lowest: '🔽 Más bajo gana' };
                 const statusMap = { draft: 'Borrador', active: 'Activo', completed: 'Completado', cancelled: 'Cancelado' };
                 const statusClass = { draft: 'pending', active: 'active', completed: 'completed', cancelled: 'cancelled' };
+                window.__tapazos = res.data;
                 tbody.innerHTML = res.data.map(t => {
                     return '<tr>' +
-                        '<td class="font-bold">' + (t.name || '') + '</td>' +
+                        '<td class="font-bold">' + userEsc(t.name || '') + '</td>' +
                         '<td>' + (t.joined_count || 0) + ' / ' + t.total_participants + '</td>' +
-                        '<td>' + (t.prize || '--') + '</td>' +
+                        '<td>' + userEsc(t.prize || '--') + '</td>' +
                         '<td>' + (modeMap[t.win_mode] || t.win_mode) + '</td>' +
                         '<td><span class="badge badge--' + (statusClass[t.status] || 'pending') + '">' + (statusMap[t.status] || t.status) + '</span></td>' +
                         '<td>' + new Date(t.created_at).toLocaleDateString('es-CO') + '</td>' +
-                        '<td class="flex gap-2">' +
-                            '<button onclick="viewTapazo(' + t.id + ')" class="btn btn--sm" style="background:#3b82f6;color:white;">👁️ Ver</button>' +
-                            (t.status === 'active' ? '<button onclick="completeTapazo(' + t.id + ')" class="btn btn--sm" style="background:#10b981;color:white;">✅ Completar</button>' : '') +
-                        '</td>' +
+                        '<td><button class="btn btn--sm" aria-label="Acciones" title="Acciones" onclick="openTapazoSheet(' + parseInt(t.id, 10) + ')" style="font-size:20px;line-height:1;padding:2px 10px;">⋮</button></td>' +
                     '</tr>';
                 }).join('');
             } else {
@@ -2037,7 +2157,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
         const btn = e.target.querySelector('button[type="submit"]');
         btn.disabled = true; btn.textContent = 'Creando…';
         try {
-            await API.post('/tapazo/admin_list.php', {
+            const created = await API.post('/tapazo/admin_list.php', {
                 name: document.getElementById('tapazo-name').value,
                 description: document.getElementById('tapazo-desc').value,
                 prize: document.getElementById('tapazo-prize').value,
@@ -2048,6 +2168,11 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
             Utils.showNotification('🍺 Tapazo creado exitosamente', 'success');
             e.target.reset();
             loadTapazos();
+            // Llevar al organizador a la pantalla pública original del Tapazo
+            // (la experiencia de juego/compartir canónica) con su código.
+            if (created && created.data && created.data.codigo) {
+                window.open(BASE_PATH + '/tapazo/index.php?codigo=' + encodeURIComponent(created.data.codigo), '_blank');
+            }
         } catch (error) {
             Utils.showNotification(error.message || 'Error al crear tapazo', 'error');
         } finally {
@@ -2103,6 +2228,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
             loading.classList.add('hidden');
             
             if (res.success && res.data && res.data.tickets && res.data.tickets.length > 0) {
+                window.__userTickets = res.data.tickets;
                 container.innerHTML = res.data.tickets.map(ticket => {
                     const opps = typeof ticket.opportunities === 'string' ? JSON.parse(ticket.opportunities) : (ticket.opportunities || []);
                     const statusClass = ticket.status === 'paid' ? 'completed' : 'pending';
@@ -2115,8 +2241,11 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                     return `
                         <div class="section-card" style="border-left: 5px solid #3b82f6; background: #f8fafc;">
                             <div class="flex justify-between items-start mb-2">
-                                <h3 class="font-bold text-lg">${ticket.raffle_name || 'Rifa'}</h3>
-                                <span class="badge badge--${statusClass}">${statusText}</span>
+                                <h3 class="font-bold text-lg">${userEsc(ticket.raffle_name || 'Rifa')}</h3>
+                                <div class="flex items-center gap-2">
+                                    <span class="badge badge--${statusClass}">${statusText}</span>
+                                    <button class="btn btn--sm" aria-label="Acciones" title="Acciones" onclick="openTicketSheet(${parseInt(ticket.id, 10)})" style="font-size:20px;line-height:1;padding:2px 10px;">⋮</button>
+                                </div>
                             </div>
                             <div class="flex items-center gap-6">
                                 <div style="font-size: 2.5rem; font-weight: 900; color: #2563eb; background: white; padding: 10px 20px; border-radius: 12px; border: 2px solid #e2e8f0;">
@@ -2263,9 +2392,6 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
             const statusBadge = suspended
                 ? '<span class="badge badge--cancelled">Suspendido</span>'
                 : '<span class="badge badge--active">Activo</span>';
-            const toggleBtn = suspended
-                ? '<button onclick="toggleUserStatus(\'' + u.type + '\',' + u.id + ',\'activate\')" class="btn btn--sm" style="background:#10b981;color:white;" title="Activar">Activar</button>'
-                : '<button onclick="toggleUserStatus(\'' + u.type + '\',' + u.id + ',\'suspend\')" class="btn btn--sm" style="background:#f59e0b;color:#1c1305;" title="Suspender">Suspender</button>';
             return '<tr>' +
                 '<td><span class="badge badge--' + (u.type === 'vendor' ? 'completed' : 'pending') + '">' + typeLabel[u.type] + '</span></td>' +
                 '<td class="font-medium">' + userEsc(u.name) + (u.deps ? ' <span class="text-gray-400 text-xs">(' + u.deps + ')</span>' : '') + '</td>' +
@@ -2274,11 +2400,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                 '<td>' + (roleLabel[u.role] || u.role) + '</td>' +
                 '<td>' + statusBadge + '</td>' +
                 '<td style="color:#94a3b8;font-size:12px;">' + (u.created_at ? new Date(u.created_at).toLocaleDateString('es-CO') : '—') + '</td>' +
-                '<td class="flex gap-2 flex-wrap">' +
-                    '<button onclick="openUserEdit(\'' + u.type + '\',' + u.id + ')" class="btn btn--sm" style="background:#3b82f6;color:white;" title="Editar">Editar</button>' +
-                    toggleBtn +
-                    '<button onclick="deleteUser(\'' + u.type + '\',' + u.id + ',\'' + userEsc(u.name).replace(/'/g, "\\'") + '\')" class="btn btn--sm" style="background:#ef4444;color:white;" title="Eliminar">Eliminar</button>' +
-                '</td>' +
+                '<td><button class="btn btn--sm" aria-label="Acciones" title="Acciones" onclick="openUserSheet(\'' + u.type + '\',' + parseInt(u.id, 10) + ')" style="font-size:20px;line-height:1;padding:2px 10px;">⋮</button></td>' +
             '</tr>';
         }).join('');
     }
@@ -2400,16 +2522,13 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
             const statusClass = r.status === 'active' ? 'active' : (r.status === 'completed' ? 'completed' : (r.status === 'cancelled' ? 'cancelled' : (r.status === 'blocked' ? 'pending' : 'pending')));
             return '<tr>' +
                 '<td class="text-gray-400 text-sm">' + (r.id || '') + '</td>' +
-                '<td class="font-medium">' + (r.name || '') + '</td>' +
-                '<td style="color:#64748b;font-size:13px;">' + (r.creator_name || '--') + '</td>' +
-                '<td>' + (r.city || '--') + '</td>' +
+                '<td class="font-medium">' + userEsc(r.name || '') + '</td>' +
+                '<td style="color:#64748b;font-size:13px;">' + userEsc(r.creator_name || '--') + '</td>' +
+                '<td>' + userEsc(r.city || '--') + '</td>' +
                 '<td><span class="badge badge--' + statusClass + '">' + (statusMap[r.status] || r.status) + '</span></td>' +
                 '<td class="font-bold">' + (r.sold_tickets || 0) + '</td>' +
                 '<td>' + (r.draw_date ? new Date(r.draw_date).toLocaleDateString('es-CO') : '--') + '</td>' +
-                '<td class="flex gap-2 flex-wrap">' +
-                    '<button onclick="openEditModal(' + r.id + ')" class="btn btn--sm" style="background:#3b82f6;color:white;" title="Editar">✏️ Editar</button>' +
-                    '<button onclick="deleteRaffle(' + r.id + ', \'' + (r.name || '').replace(/'/g, "\\'") + '\')" class="btn btn--sm" style="background:#ef4444;color:white;" title="Eliminar">🗑️ Eliminar</button>' +
-                '</td>' +
+                '<td><button class="btn btn--sm" aria-label="Acciones" title="Acciones" onclick="openGestionSheet(' + parseInt(r.id, 10) + ')" style="font-size:20px;line-height:1;padding:2px 10px;">⋮</button></td>' +
             '</tr>';
         }).join('');
     }
@@ -2516,6 +2635,9 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
             await API.post('/admin/raffles/delete.php', { raffle_id: raffleId });
             Utils.showNotification('Rifa "' + raffleName + '" eliminada ✅', 'success');
             loadGestionRaffles();
+            loadDashboard();
+            const secMR = document.getElementById('section-mis-rifas');
+            if (secMR && !secMR.classList.contains('hidden')) loadMyRaffles();
         } catch (error) {
             Utils.showNotification(error.message || 'Error al eliminar rifa', 'error');
         }
@@ -2990,20 +3112,20 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                     tbody.innerHTML = '<tr><td colspan="7" class="text-center text-gray-500 py-6">No hay pagos pendientes de validar</td></tr>';
                     return;
                 }
+                window.__payments = data;
                 tbody.innerHTML = data.map(p => {
                     const statusMap = { pending: 'Pendiente', verifying: 'Por verificar', approved: 'Aprobado', rejected: 'Rechazado' };
                     const proofBtn = p.payment_proof_url
                         ? `<a href="<?= BASE_PATH ?>/public${p.payment_proof_url}" target="_blank" style="color:#2563eb;text-decoration:underline;font-size:13px;">Ver comprobante</a>`
                         : `<span style="color:#9ca3af;font-size:12px;">Sin comprobante</span>`;
                     const actions = (p.payment_status === 'pending' || p.payment_status === 'verifying')
-                        ? `<button class="btn btn--sm" style="background:#10b981;color:white;margin-right:6px;" onclick="approvePayment(${p.ticket_id})">✅ Aprobar</button>
-                           <button class="btn btn--sm" style="background:#ef4444;color:white;" onclick="rejectPayment(${p.ticket_id})">❌ Rechazar</button>`
+                        ? `<button class="btn btn--sm" aria-label="Acciones" title="Acciones" onclick="openPaymentSheet(${parseInt(p.ticket_id, 10)})" style="font-size:20px;line-height:1;padding:2px 10px;">⋮</button>`
                         : `<span style="color:#94a3b8;font-size:12px;">${statusMap[p.payment_status] || p.payment_status}</span>`;
                     return `<tr>
-                        <td class="font-medium">${p.raffle_name || ''}</td>
-                        <td><strong>#${p.ticket_number}</strong></td>
-                        <td>${p.buyer_name || '—'}<br><span style="color:#94a3b8;font-size:12px;">${p.buyer_phone || ''}</span></td>
-                        <td>${p.payment_method || '—'}</td>
+                        <td class="font-medium">${userEsc(p.raffle_name || '')}</td>
+                        <td><strong>#${userEsc(p.ticket_number)}</strong></td>
+                        <td>${userEsc(p.buyer_name || '—')}<br><span style="color:#94a3b8;font-size:12px;">${userEsc(p.buyer_phone || '')}</span></td>
+                        <td>${userEsc(p.payment_method || '—')}</td>
                         <td><span class="badge badge--pending">${statusMap[p.payment_status] || p.payment_status}</span></td>
                         <td>${proofBtn}</td>
                         <td>${actions}</td>
@@ -3548,6 +3670,241 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
             switchTo(initialSection);
         }
     });
+    </script>
+    <!-- ============ Navegación móvil: tab bar inferior + FAB ============ -->
+    <style>
+        #vendor-fab, #vendor-tabbar { display: none; }
+        @media (max-width: 768px) {
+            .admin-main { padding-bottom: 78px; }
+            #vendor-tabbar {
+                display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 90;
+                background: #0f172a; border-top: 1px solid #1e293b;
+                padding: 6px 4px calc(6px + env(safe-area-inset-bottom, 0px));
+                box-shadow: 0 -6px 20px rgba(0,0,0,.25);
+            }
+            .vtab {
+                flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+                gap: 3px; background: none; border: none; cursor: pointer; padding: 6px 2px;
+                color: #94a3b8; font-size: 11px; font-weight: 600; border-radius: 12px;
+            }
+            .vtab svg { width: 22px; height: 22px; }
+            .vtab--on { color: #f59e0b; }
+            #vendor-fab {
+                display: flex; align-items: center; justify-content: center;
+                position: fixed; right: 18px; bottom: 84px; z-index: 91;
+                width: 58px; height: 58px; border-radius: 50%; border: none; cursor: pointer;
+                background: linear-gradient(135deg, #f59e0b, #d97706); color: #1c1305;
+                box-shadow: 0 10px 25px rgba(245,158,11,.5);
+            }
+            #vendor-fab:active { transform: scale(.94); }
+            #vendor-fab svg { width: 28px; height: 28px; }
+        }
+    </style>
+    <button id="vendor-fab" type="button" aria-label="Crear rifa" onclick="switchTo('crear')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+    </button>
+    <nav id="vendor-tabbar" aria-label="Navegación">
+        <button class="vtab" data-tab="dashboard" onclick="switchTo('dashboard')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+            <span>Panel</span>
+        </button>
+        <button class="vtab" data-tab="mis-rifas" onclick="switchTo('mis-rifas')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h11l-1 15a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 3Zm11 4h2.5a2 2 0 0 1 2 2.2l-.4 4A2 2 0 0 1 18.1 15H16"/></svg>
+            <span>Rifas</span>
+        </button>
+        <button class="vtab" data-tab="pagos" onclick="switchTo('pagos')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+            <span>Pagos</span>
+        </button>
+        <button class="vtab" data-tab="boletas-compradas" onclick="switchTo('boletas-compradas')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v1a2 2 0 0 0 0 4v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1a2 2 0 0 0 0-4Z"/><path d="M13 5v14" stroke-dasharray="2 3"/></svg>
+            <span>Boletas</span>
+        </button>
+        <button class="vtab" data-tab="mi-perfil" onclick="switchTo('mi-perfil')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
+            <span>Perfil</span>
+        </button>
+    </nav>
+    <script>
+        window.syncVendorTab = function (section) {
+            document.querySelectorAll('#vendor-tabbar .vtab').forEach(function (t) {
+                t.classList.toggle('vtab--on', t.getAttribute('data-tab') === section);
+            });
+        };
+    </script>
+
+    <!-- ============ Bottom sheet de acciones de rifa (menú 3 puntos) ============ -->
+    <style>
+        #raffle-sheet-backdrop { display:none; position:fixed; inset:0; background:rgba(15,23,42,.5); z-index:120; }
+        #raffle-sheet { display:none; position:fixed; left:0; right:0; bottom:0; z-index:121; background:#fff; border-radius:20px 20px 0 0; box-shadow:0 -12px 40px rgba(0,0,0,.25); padding:10px 12px calc(12px + env(safe-area-inset-bottom,0px)); animation:rsUp .22s ease-out; max-width:520px; margin:0 auto; }
+        @keyframes rsUp { from{transform:translateY(100%);} to{transform:translateY(0);} }
+        #raffle-sheet .rs-handle { width:40px; height:4px; border-radius:99px; background:#e5e7eb; margin:4px auto 10px; }
+        #raffle-sheet .rs-head { padding:0 8px 10px; border-bottom:1px solid #f1f5f9; margin-bottom:6px; }
+        #raffle-sheet .rs-title { font-weight:800; color:#111827; font-size:16px; }
+        #raffle-sheet .rs-sub { font-size:12px; color:#6b7280; margin-top:2px; }
+        .rs-item { display:flex; align-items:center; gap:12px; width:100%; text-align:left; background:none; border:none; cursor:pointer; padding:14px 10px; border-radius:12px; font-size:15px; font-weight:600; color:#374151; }
+        .rs-item:hover { background:#f3f4f6; }
+        .rs-item--danger { color:#dc2626; }
+    </style>
+    <div id="raffle-sheet-backdrop" onclick="closeRaffleSheet()"></div>
+    <div id="raffle-sheet" role="dialog" aria-modal="true">
+        <div class="rs-handle"></div>
+        <div class="rs-head">
+            <div class="rs-title" id="raffle-sheet-title">Rifa</div>
+            <div class="rs-sub" id="raffle-sheet-status"></div>
+        </div>
+        <div id="raffle-sheet-actions"></div>
+    </div>
+    <script>
+        (function () {
+            function el(id){ return document.getElementById(id); }
+            function rsItem(label, onClick, danger){
+                var b = document.createElement('button');
+                b.className = 'rs-item' + (danger ? ' rs-item--danger' : '');
+                b.textContent = label;
+                b.addEventListener('click', onClick);
+                return b;
+            }
+            window.showRaffleSheet = function(){ el('raffle-sheet').style.display='block'; el('raffle-sheet-backdrop').style.display='block'; document.body.style.overflow='hidden'; };
+            window.closeRaffleSheet = function(){ el('raffle-sheet').style.display='none'; el('raffle-sheet-backdrop').style.display='none'; document.body.style.overflow=''; };
+
+            // Sheet genérico: título, subtítulo y lista de acciones {label, onClick, danger}.
+            window.openActionSheet = function(title, sub, items){
+                el('raffle-sheet-title').textContent = title || '';
+                el('raffle-sheet-status').textContent = sub || '';
+                var body = el('raffle-sheet-actions');
+                body.innerHTML = '';
+                (items || []).forEach(function(it){
+                    body.appendChild(rsItem(it.label, function(){ closeRaffleSheet(); it.onClick(); }, it.danger));
+                });
+                showRaffleSheet();
+            };
+
+            function visible(id){
+                var el2 = document.getElementById(id);
+                return el2 && !el2.classList.contains('hidden');
+            }
+            function refreshRaffleViews(){
+                if (window.loadDashboard) loadDashboard();
+                if (window.loadMyRaffles && visible('section-mis-rifas')) loadMyRaffles();
+                if (window.loadAllRaffles && visible('section-rifas')) loadAllRaffles();
+                if (window.loadGestionRaffles && visible('section-gestion-rifas')) loadGestionRaffles();
+            }
+
+            window.raffleSheetStatus = async function(id, status){
+                try {
+                    await API.post('/admin/raffles/update_status.php', { raffle_id: id, status: status });
+                    Utils.showNotification(status === 'active' ? 'Rifa publicada ✅' : 'Rifa ocultada (borrador)', 'success');
+                } catch (e) { Utils.showNotification(e.message || 'Error al cambiar estado', 'error'); }
+                refreshRaffleViews();
+            };
+
+            window.openRaffleSheet = function(id){
+                var list = (window.__dashRaffles || []).concat(window.__myRaffles || [], window.__allRaffles || []);
+                var r = list.find(function(x){ return String(x.id) === String(id); });
+                if (!r) return;
+                var items = [
+                    { label: '👁️  Ver rifa', onClick: function(){ viewRaffle(id); } }
+                ];
+                if (r.status === 'active') {
+                    items.push({ label: '🙈  Ocultar (pasar a borrador)', onClick: function(){ raffleSheetStatus(id, 'draft'); } });
+                } else {
+                    items.push({ label: '🚀  Publicar rifa', onClick: function(){ raffleSheetStatus(id, 'active'); } });
+                }
+                items.push({ label: '🗑️  Eliminar', danger: true, onClick: function(){ if (window.deleteRaffle) deleteRaffle(id, r.name); } });
+                openActionSheet(r.name || 'Rifa', 'Estado: ' + (r.status || '') + ' · ' + (r.sold_tickets || 0) + ' vendidos', items);
+            };
+
+            // ⋮ en "Pagos Recibidos": comprobante + aprobar/rechazar en sheet.
+            window.openPaymentSheet = function(ticketId){
+                var p = (window.__payments || []).find(function(x){ return String(x.ticket_id) === String(ticketId); });
+                if (!p) return;
+                var items = [];
+                if (p.payment_proof_url) {
+                    items.push({ label: '🧾  Ver comprobante', onClick: function(){ window.open(BASE_PATH + '/public' + p.payment_proof_url, '_blank'); } });
+                }
+                items.push({ label: '✅  Aprobar pago', onClick: function(){ approvePayment(p.ticket_id); } });
+                items.push({ label: '❌  Rechazar pago', danger: true, onClick: function(){ rejectPayment(p.ticket_id); } });
+                openActionSheet('Boleto #' + (p.ticket_number || ''), (p.raffle_name || '') + (p.buyer_name ? ' · ' + p.buyer_name : ''), items);
+            };
+
+            // ⋮ en "Comisiones": ver rifa / marcar como pagada.
+            window.openCommissionSheet = function(raffleId){
+                var c = (window.__commissions || []).find(function(x){ return String(x.raffle_id) === String(raffleId); });
+                if (!c) return;
+                var items = [
+                    { label: '👁️  Ver rifa', onClick: function(){ viewRaffle(c.raffle_id); } },
+                    { label: '✅  Marcar como pagada', onClick: function(){ markCommissionPaid(c.raffle_id); } }
+                ];
+                openActionSheet(c.raffle_name || 'Comisión',
+                    'Comisión: ' + Utils.formatPrice(c.commission_amount || 0) + ' · ' + (c.creator_name || ''), items);
+            };
+
+            // ⋮ en "El Tapazo": ver participantes / completar si está activo.
+            window.openTapazoSheet = function(id){
+                var t = (window.__tapazos || []).find(function(x){ return String(x.id) === String(id); });
+                if (!t) return;
+                var items = [];
+                // La pantalla pública original (/tapazo) es la experiencia de juego
+                // canónica; el panel solo administra.
+                if (t.codigo) {
+                    items.push({ label: '🍻  Abrir Tapazo (pantalla de juego)', onClick: function(){ window.open(BASE_PATH + '/tapazo/index.php?codigo=' + encodeURIComponent(t.codigo), '_blank'); } });
+                }
+                items.push({ label: '👁️  Ver participantes', onClick: function(){ viewTapazo(t.id); } });
+                if (t.status === 'active') {
+                    items.push({ label: '✅  Completar (sortear ganador)', onClick: function(){ completeTapazo(t.id); } });
+                }
+                openActionSheet(t.name || 'Tapazo',
+                    (t.joined_count || 0) + ' / ' + (t.total_participants || 0) + ' participantes · ' + (t.status || ''), items);
+            };
+
+            // ⋮ en "Usuarios": editar / activar-suspender / eliminar.
+            window.openUserSheet = function(type, id){
+                // allUsers es un `let` de otro <script> (no cuelga de window); typeof evita ReferenceError.
+                var u = (typeof allUsers !== 'undefined' ? allUsers : []).find(function(x){ return x.type === type && String(x.id) === String(id); });
+                if (!u) return;
+                var suspended = u.status !== 'active';
+                var items = [
+                    { label: '✏️  Editar', onClick: function(){ openUserEdit(u.type, u.id); } }
+                ];
+                if (suspended) {
+                    items.push({ label: '🔓  Activar', onClick: function(){ toggleUserStatus(u.type, u.id, 'activate'); } });
+                } else {
+                    items.push({ label: '⏸️  Suspender', onClick: function(){ toggleUserStatus(u.type, u.id, 'suspend'); } });
+                }
+                items.push({ label: '🗑️  Eliminar', danger: true, onClick: function(){ deleteUser(u.type, u.id, u.name || ''); } });
+                openActionSheet(u.name || 'Usuario',
+                    (u.email || u.phone || '') + ' · ' + (suspended ? 'Suspendido' : 'Activo'), items);
+            };
+
+            // ⋮ en "Gestión de Rifas" (super_admin): ver / editar / estado / eliminar.
+            window.openGestionSheet = function(id){
+                var r = (typeof allGestionRaffles !== 'undefined' ? allGestionRaffles : []).find(function(x){ return String(x.id) === String(id); });
+                if (!r) return;
+                var items = [
+                    { label: '👁️  Ver rifa', onClick: function(){ viewRaffle(r.id); } },
+                    { label: '✏️  Editar', onClick: function(){ openEditModal(r.id); } }
+                ];
+                if (r.status === 'active') {
+                    items.push({ label: '🙈  Ocultar (pasar a borrador)', onClick: function(){ changeRaffleStatus(r.id, 'draft'); } });
+                } else if (r.status === 'draft' || r.status === 'blocked') {
+                    items.push({ label: '🚀  Publicar rifa', onClick: function(){ changeRaffleStatus(r.id, 'active'); } });
+                }
+                items.push({ label: '🗑️  Eliminar', danger: true, onClick: function(){ deleteRaffle(r.id, r.name || ''); } });
+                openActionSheet(r.name || 'Rifa',
+                    'Estado: ' + (r.status || '') + ' · ' + (r.sold_tickets || 0) + ' vendidos · ' + (r.creator_name || ''), items);
+            };
+
+            // ⋮ en "Boletas Compradas": ir a la rifa del boleto.
+            window.openTicketSheet = function(ticketId){
+                var t = (window.__userTickets || []).find(function(x){ return String(x.id) === String(ticketId); });
+                if (!t) return;
+                var items = [];
+                if (t.raffle_id) items.push({ label: '👁️  Ver rifa', onClick: function(){ viewRaffle(t.raffle_id); } });
+                if (!items.length) return;
+                openActionSheet('Boleto #' + (t.ticket_number || ''), t.raffle_name || '', items);
+            };
+        })();
     </script>
 </body>
 </html>

@@ -117,6 +117,9 @@ try {
     $tapazos = array_map(function ($t) {
         return [
             'id'                 => (int)$t['id'],
+            // codigo_unico enlaza a la pantalla pública original (/tapazo/index.php?codigo=…),
+            // que es la experiencia de juego canónica.
+            'codigo'             => $t['codigo_unico'],
             'name'               => $t['titulo'],
             'prize'              => '',
             'total_participants' => (int)$t['cantidad_jugadores'],
