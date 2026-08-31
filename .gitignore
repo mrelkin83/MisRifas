@@ -56,3 +56,6 @@ composer-setup.php
 /MisRifas*.zip
 /database/backups/
 .playwright-cli/
+
+# Boletas y evidencias generadas (viven fuera del repo)
+storage/
