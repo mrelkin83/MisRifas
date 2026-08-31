@@ -44,11 +44,18 @@ class EvolutionClient implements ChannelInterface
         // mensaje que llegara.
         $cfg = WaConfig::cargar($db);
         if (!$cfg || empty($cfg['evolution_instancia'])) return null;
-        // URL y apikey: primero las del negocio; si no las tiene, las que la
-        // PLATAFORMA da por defecto (un solo servidor Evolution compartido en el
-        // SaaS). Así el negocio solo configura su instancia y su número.
-        $url    = !empty($cfg['evolution_url']) ? $cfg['evolution_url'] : \ElkinLinan\WhatsappAiEngine\Engine::config()->canalUrlPorDefecto();
+        // URL y apikey van EN PAREJA: si el negocio tiene su propia URL, se usan
+        // sus credenciales; si usa el servidor de la PLATAFORMA (url vacía →
+        // modo gestionado), manda la apikey de la plataforma. Mezclarlas (URL de
+        // plataforma + apikey suelta del negocio) producía HTTP 401 en cuanto
+        // quedaba una clave vieja guardada en wa_config.
+        $urlPropia = !empty($cfg['evolution_url']);
+        $url = $urlPropia ? $cfg['evolution_url'] : \ElkinLinan\WhatsappAiEngine\Engine::config()->canalUrlPorDefecto();
         $apikey = WaConfig::secreto($cfg, 'evolution_apikey');
+        if (!$urlPropia) {
+            $dePlataforma = \ElkinLinan\WhatsappAiEngine\Engine::config()->canalApikeyPorDefecto();
+            if ($dePlataforma !== '') $apikey = $dePlataforma;
+        }
         if ($apikey === '') $apikey = \ElkinLinan\WhatsappAiEngine\Engine::config()->canalApikeyPorDefecto();
         if ($url === '') return null;
         return new self($url, $cfg['evolution_instancia'], $apikey);
