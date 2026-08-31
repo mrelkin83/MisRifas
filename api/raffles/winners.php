@@ -22,6 +22,8 @@ try {
             u.city as winner_city,
             rw.acceptance_status,
             rw.accepted_at,
+            rw.delivery_status,
+            rw.delivery_confirmed_at,
             r.draw_rescheduled_count,
             r.id AS raffle_id
         FROM raffle_winners rw

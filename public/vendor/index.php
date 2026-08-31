@@ -3875,6 +3875,9 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                 if (r.status === 'pending_reschedule') {
                     items.push({ label: '📅  Reprogramar sorteo', onClick: function(){ openRescheduleModal(id); } });
                 }
+                if (r.status === 'completed') {
+                    items.push({ label: '📦  Reportar entrega del premio', onClick: function(){ reportDelivery(id); } });
+                }
                 items.push({ label: '🗑️  Eliminar', danger: true, onClick: function(){ if (window.deleteRaffle) deleteRaffle(id, r.name); } });
                 openActionSheet(r.name || 'Rifa', 'Estado: ' + (r.status || '') + ' · ' + (r.sold_tickets || 0) + ' vendidos', items);
             };
@@ -4056,6 +4059,18 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                     if (window.loadMyRaffles && secMR && !secMR.classList.contains('hidden')) loadMyRaffles();
                 } catch (e) { reschedMsg(e.message || 'No se pudo reprogramar', false); }
                 finally { btn.disabled = false; btn.textContent = 'Confirmar reprogramación'; }
+            };
+
+            // §13.4 paso 3: el vendedor declara que entregó; el GANADOR es
+            // quien confirma con SU enlace (token distinto al de aceptación).
+            window.reportDelivery = async function(raffleId){
+                if (!confirm('¿Reportar que ya ENTREGASTE el premio?
+
+El ganador recibirá un enlace para confirmarlo — hasta entonces figura como "pendiente de confirmación".')) return;
+                try {
+                    var r = await API.post('/vendor/delivery.php', { raffle_id: raffleId });
+                    Utils.showNotification(r.message || 'Entrega reportada 📦', 'success');
+                } catch (e) { Utils.showNotification(e.message || 'No se pudo reportar', 'error'); }
             };
 
             // ⋮ en "Comisiones": ver rifa / marcar como pagada.

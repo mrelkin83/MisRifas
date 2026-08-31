@@ -63,7 +63,7 @@ $e = fn($s) => htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8');
         <div class="fila"><span class="k">Rifa</span><span class="v"><?= $e($b['raffle_name']) ?></span></div>
         <div class="fila"><span class="k">Sorteo</span><span class="v"><?= $e(date('d/m/Y', strtotime($b['draw_date']))) ?> · <?= $e($b['lottery_name']) ?></span></div>
         <div class="fila"><span class="k">Modalidad</span><span class="v"><?= $e(Boleta::MODE_LABELS[$b['winning_mode']] ?? $b['winning_mode']) ?> (<?= (int)$b['digits'] ?> cifras)</span></div>
-        <div class="fila"><span class="k">Organiza</span><span class="v"><?= $e($b['vendor_name']) ?></span></div>
+        <div class="fila"><span class="k">Organiza</span><span class="v"><a href="<?= BASE_PATH ?>/public/organizador.php?slug=<?= $e($b['vendor_slug']) ?>" style="color:#fbbf24;text-decoration:none;"><?= $e($b['vendor_name']) ?> →</a></span></div>
         <div class="fila"><span class="k">Comprador</span><span class="v"><?= $e(Boleta::nombreEnmascarado($b['buyer_name'])) ?> · <?= $e(Boleta::celularEnmascarado($b['buyer_phone'])) ?></span></div>
         <div class="fila"><span class="k">Pagado</span><span class="v">$<?= number_format((float)$b['amount'], 0, ',', '.') ?></span></div>
         <div class="fila" style="border-bottom:none;"><span class="k">Emitida</span><span class="v"><?= $e(date('d/m/Y H:i', strtotime($b['issued_at']))) ?></span></div>

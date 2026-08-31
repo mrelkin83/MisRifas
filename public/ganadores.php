@@ -209,6 +209,14 @@ $page_title = "Ganadores - MisRifas";
                                                 : (winner.acceptance_status === 'declined'
                                                     ? `<p class="mt-2"><span class="inline-flex items-center gap-1 text-xs font-bold text-slate-300 bg-slate-500/10 px-2.5 py-1 rounded-full">Premio rechazado</span></p>`
                                                     : `<p class="mt-2"><span class="inline-flex items-center gap-1 text-xs font-bold text-amber-400 bg-amber-500/10 px-2.5 py-1 rounded-full">Confirmación pendiente</span></p>`)}
+                                            ${(function (d) {
+                                                // §13.2: SOLO la confirmación del GANADOR va en verde; la
+                                                // declaración del vendedor queda "pendiente"; la disputa no se oculta.
+                                                if (d === 'delivery_confirmed') return `<p class="mt-1"><span class="inline-flex items-center gap-1 text-xs font-bold text-green-400 bg-green-500/10 px-2.5 py-1 rounded-full">📦 Entrega confirmada por el ganador${winner.delivery_confirmed_at ? ' · ' + new Date(winner.delivery_confirmed_at).toLocaleDateString('es-CO') : ''}</span></p>`;
+                                                if (d === 'delivery_reported') return `<p class="mt-1"><span class="inline-flex items-center gap-1 text-xs font-bold text-amber-400 bg-amber-500/10 px-2.5 py-1 rounded-full">📦 Entrega pendiente de confirmación del ganador</span></p>`;
+                                                if (d === 'disputed') return `<p class="mt-1"><span class="inline-flex items-center gap-1 text-xs font-bold text-red-400 bg-red-500/10 px-2.5 py-1 rounded-full">⚠️ Entrega en disputa</span></p>`;
+                                                return '';
+                                            })(winner.delivery_status)}
                                         </div>
                                     </div>
                                 </div>

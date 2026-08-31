@@ -97,6 +97,47 @@ try {
 
     $details['status'] = $newStatus;
     $details['accepted_at'] = date('Y-m-d H:i:s');
+
+    // §13.4 paso 2: al aceptar, el VENDEDOR recibe aviso con los datos de
+    // contacto del ganador para coordinar la entrega.
+    if ($newStatus === 'accepted') {
+        try {
+            $stmt = $db->prepare("
+                SELECT r.id AS raffle_id, r.name AS raffle_name,
+                       COALESCE(r.vendor_id, r.created_by) AS vendor_id,
+                       v.phone AS vendor_phone, v.email AS vendor_email,
+                       u.name AS winner_name, u.phone_whatsapp AS winner_phone, u.email AS winner_email,
+                       t.ticket_number
+                FROM raffle_winners rw
+                JOIN raffles r ON r.id = rw.raffle_id
+                JOIN vendors v ON v.id = COALESCE(r.vendor_id, r.created_by)
+                JOIN users u ON u.id = rw.user_id
+                JOIN tickets t ON t.id = rw.ticket_id
+                WHERE rw.id = ?
+            ");
+            $stmt->execute([$w['id']]);
+            if ($ctx = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                $texto = "🏆 El ganador de tu rifa \"{$ctx['raffle_name']}\" ACEPTÓ su premio.\n\n"
+                    . "Ganador: {$ctx['winner_name']}\nBoleto: #{$ctx['ticket_number']}\n"
+                    . "Celular: {$ctx['winner_phone']}\nCorreo: " . ($ctx['winner_email'] ?: '—') . "\n\n"
+                    . "Coordina la entrega y márcala en tu panel cuando entregues — el ganador deberá confirmarla.";
+                $ins = $db->prepare("
+                    INSERT INTO message_queue
+                        (raffle_id, vendor_id, recipient_phone, recipient_email, channel, message_type, subject, body_text, status, scheduled_at, created_at)
+                    VALUES (?, ?, ?, ?, ?, 'winner', ?, ?, 'pending', NOW(), NOW())
+                ");
+                if (!empty($ctx['vendor_email'])) {
+                    $ins->execute([$ctx['raffle_id'], $ctx['vendor_id'], null, $ctx['vendor_email'], 'email', 'El ganador aceptó su premio — ' . $ctx['raffle_name'], $texto]);
+                }
+                if (!empty($ctx['vendor_phone'])) {
+                    $ins->execute([$ctx['raffle_id'], $ctx['vendor_id'], $ctx['vendor_phone'], null, 'whatsapp', 'El ganador aceptó su premio', $texto]);
+                }
+            }
+        } catch (Throwable $e) {
+            error_log('winners/accept aviso vendedor: ' . $e->getMessage());
+        }
+    }
+
     jr(['success' => true, 'winner' => $details]);
 
 } catch (Throwable $e) {
