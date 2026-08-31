@@ -18,6 +18,15 @@ error_reporting(E_ALL & ~E_DEPRECATED & ~E_NOTICE);
 define('TEST_BASE_URL', rtrim(getenv('TEST_BASE_URL') ?: 'http://localhost/MisRifas', '/'));
 
 // Salvaguarda: solo local.
+// Limpiar contadores del RateLimiter (archivos ratelimit_*.tmp) de corridas
+// anteriores: la suite hace varios logins/registros y correrla seguido
+// disparaba 429 falsos. Solo aplica en local (guard de localhost abajo).
+foreach ([sys_get_temp_dir(), 'C:\\Windows\\Temp', '/tmp', 'C:\\laragon\\tmp'] as $rlDir) {
+    foreach (glob(rtrim($rlDir, '/\\') . DIRECTORY_SEPARATOR . 'ratelimit_*.tmp') ?: [] as $rlFile) {
+        @unlink($rlFile);
+    }
+}
+
 $host = parse_url(TEST_BASE_URL, PHP_URL_HOST);
 if (!in_array($host, ['localhost', '127.0.0.1', '::1'], true)) {
     fwrite(STDERR, "ABORTADO: los tests solo corren contra localhost (URL: " . TEST_BASE_URL . ")\n");
@@ -150,8 +159,10 @@ function fxBuyer(?string $phone = null): array {
     $db = testdb();
     $phone = $phone ?: ('39' . random_int(10000000, 99999999));
     $uuid = sprintf('%s-%s-%s-%s-%s', bin2hex(random_bytes(4)), bin2hex(random_bytes(2)), bin2hex(random_bytes(2)), bin2hex(random_bytes(2)), bin2hex(random_bytes(6)));
-    // Email incluido: es el canal por defecto de notificación de resultados.
-    $stmt = $db->prepare("INSERT INTO users (unique_id, name, phone_whatsapp, email) VALUES (?, '__TEST__ Comprador', ?, ?)");
+    // Email incluido (canal por defecto de resultados) y cuenta verificada
+    // (simula cuentas previas al OTP de v4.0; el flujo de verificación de
+    // registros nuevos tiene su propio grupo de tests).
+    $stmt = $db->prepare("INSERT INTO users (unique_id, name, phone_whatsapp, email, email_verified_at) VALUES (?, '__TEST__ Comprador', ?, ?, NOW())");
     $stmt->execute([$uuid, $phone, 'test-' . $phone . '@test.local']);
     $id = (int)$db->lastInsertId();
     onTeardown(function () use ($db, $id) {

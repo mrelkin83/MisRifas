@@ -117,8 +117,12 @@ try {
             'full_name' => $name,
             'role' => $finalRole,
             'phone' => $phone,
-            'source' => $finalRole === 'vendor' ? 'vendor' : 'buyer'
-        ]
+            'source' => $finalRole === 'vendor' ? 'vendor' : 'buyer',
+            // Las cuentas nuevas nacen sin verificar: el frontend lleva al
+            // usuario a la pantalla de verificación OTP (WhatsApp o correo).
+            'verified' => false
+        ],
+        'requires_verification' => true
     ], 'Registro exitoso');
 
 } catch (Exception $e) {

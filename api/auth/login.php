@@ -84,7 +84,8 @@ try {
                 'role' => $vendor['role'],
                 'phone' => $vendor['phone'],
                 'slug' => $vendor['slug'],
-                'source' => 'vendor'
+                'source' => 'vendor',
+                'verified' => !empty($vendor['email_verified_at']) || !empty($vendor['phone_verified_at'])
             ]
         ], 'Login exitoso');
     }
@@ -130,7 +131,8 @@ try {
                     'role' => $provVendor['role'],
                     'phone' => $provVendor['phone'],
                     'slug' => $provVendor['slug'],
-                    'source' => 'vendor'
+                    'source' => 'vendor',
+                    'verified' => !empty($provVendor['email_verified_at']) || !empty($provVendor['phone_verified_at'])
                 ]
             ], 'Login exitoso');
         }
@@ -159,7 +161,8 @@ try {
                 'full_name' => $user['name'],
                 'role' => 'buyer',
                 'phone' => $user['phone_whatsapp'] ?? '',
-                'source' => 'buyer'
+                'source' => 'buyer',
+                'verified' => !empty($user['email_verified_at']) || !empty($user['phone_verified_at'])
             ]
         ], 'Login exitoso');
     }
@@ -209,10 +212,14 @@ function ensureVendorForUser(PDO $db, array $user): ?array
         if ($taken) { $slug = $base . '-' . (++$i); }
     } while ($taken && $i < 100);
 
+    // La identidad de organizador HEREDA la verificación OTP del usuario:
+    // un usuario grandfathered/verificado no repite la verificación, pero un
+    // registro nuevo sin verificar no la esquiva por esta vía.
     $ins = $db->prepare("INSERT INTO vendors
-        (slug, business_name, email, password_hash, phone, role, status, payment_config, created_at)
-        VALUES (?, ?, ?, ?, ?, 'vendor', 'active', '{\"mode\":\"manual\"}', NOW())");
-    $ins->execute([$slug, $name, $email, $user['password_hash'], $phone]);
+        (slug, business_name, email, password_hash, phone, role, status, payment_config, email_verified_at, phone_verified_at, created_at)
+        VALUES (?, ?, ?, ?, ?, 'vendor', 'active', '{\"mode\":\"manual\"}', ?, ?, NOW())");
+    $ins->execute([$slug, $name, $email, $user['password_hash'], $phone,
+        $user['email_verified_at'] ?? null, $user['phone_verified_at'] ?? null]);
     $newId = (int)$db->lastInsertId();
 
     $sel = $db->prepare("SELECT * FROM vendors WHERE id = ?");

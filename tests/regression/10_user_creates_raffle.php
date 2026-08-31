@@ -12,7 +12,9 @@ $email = 'unifytest_' . bin2hex(random_bytes(4)) . '@misrifas.test';
 $phone = '39' . random_int(10000000, 99999999);
 $hash = password_hash('demo1234', PASSWORD_DEFAULT);
 $uuid = sprintf('%s-%s-%s-%s-%s', bin2hex(random_bytes(4)), bin2hex(random_bytes(2)), bin2hex(random_bytes(2)), bin2hex(random_bytes(2)), bin2hex(random_bytes(6)));
-$db->prepare("INSERT INTO users (unique_id,name,phone_whatsapp,email,password_hash,role,active) VALUES (?, '__TEST__ Comprador', ?, ?, ?, 'buyer', 1)")
+// email_verified_at: cuenta "existente" (pre-OTP); el vendor provisionado
+// hereda la verificación y puede crear rifas.
+$db->prepare("INSERT INTO users (unique_id,name,phone_whatsapp,email,password_hash,role,active,email_verified_at) VALUES (?, '__TEST__ Comprador', ?, ?, ?, 'buyer', 1, NOW())")
    ->execute([$uuid, $phone, $email, $hash]);
 
 // Limpieza: usuario, vendor provisionado y cualquier rifa __TEST__ suya.

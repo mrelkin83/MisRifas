@@ -106,6 +106,13 @@ if ($mensaje === null) {
     responder(200);
 }
 
+// OTP inverso de registro: si el texto es un código VERIFY-XXXXX, se procesa
+// como verificación de cuenta y NO entra al motor conversacional.
+require_once __DIR__ . '/OtpInbound.php';
+if (OtpInbound::procesar($mensaje, $canal)) {
+    responder(200, ['ok' => true, 'otp' => true]);
+}
+
 $log = new AuditLogger(Engine::db());
 $convManager = new ConversationManager(Engine::db());
 $conv = $convManager->obtenerOCrear($mensaje['telefono'], $mensaje['nombre'] ?? '');

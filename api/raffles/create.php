@@ -32,6 +32,12 @@ $db = null;
 
 try {
     $adminUser = Auth::requireAdmin();
+
+    // Verificación OTP: solo cuentas verificadas pueden crear rifas (las
+    // cuentas previas a v4.0 quedaron verificadas por la migración).
+    if (empty($adminUser['email_verified_at']) && empty($adminUser['phone_verified_at'])) {
+        Response::error('Debes verificar tu cuenta (WhatsApp o correo) antes de crear rifas', 'ACCOUNT_NOT_VERIFIED', 403);
+    }
     $input = json_decode(file_get_contents('php://input'), true);
 
     if (json_last_error() !== JSON_ERROR_NONE) {

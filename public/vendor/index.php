@@ -430,7 +430,10 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                 localStorage.setItem('misrifas_user', JSON.stringify(user));
                 showAuthNotification('¡Bienvenido!', 'success');
 
-                if (user.role === 'buyer') {
+                if (user.verified === false) {
+                    // Cuenta sin verificar: pasa por la pantalla OTP.
+                    setTimeout(() => window.location.href = BASE_PATH + '/public/verificar.php', 500);
+                } else if (user.role === 'buyer') {
                     setTimeout(() => window.location.href = BASE_PATH + '/public/dashboard.php', 500);
                 } else {
                     setTimeout(() => window.location.href = BASE_PATH + '/public/vendor/index.php', 500);
@@ -483,8 +486,12 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
             });
             const result = await res.json();
             if (result.success) {
-                showAuthNotification('¡Registro exitoso! Ahora puedes iniciar sesión.', 'success');
-                setTimeout(() => window.location.href = '?auth=login', 1500);
+                // Guardar la sesión recién creada e ir directo a la
+                // verificación OTP (WhatsApp o correo).
+                localStorage.setItem('misrifas_token', result.data.token);
+                localStorage.setItem('misrifas_user', JSON.stringify(result.data.user));
+                showAuthNotification('¡Registro exitoso! Verifica tu cuenta para activarla.', 'success');
+                setTimeout(() => window.location.href = BASE_PATH + '/public/verificar.php', 900);
             } else {
                 errorDiv.textContent = result.message || 'Error al registrar';
                 errorDiv.classList.remove('hidden');
@@ -1331,8 +1338,8 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                         <div class="p-6 bg-slate-50 rounded-xl border border-slate-200 mb-6">
                             <div class="flex items-center justify-between mb-4">
                                 <div>
-                                    <h3 class="font-bold text-lg">Cobro de Comisiones</h3>
-                                    <p class="text-sm text-slate-500">Activa o desactiva el cobro de comisión sobre las ventas de rifas</p>
+                                    <h3 class="font-bold text-lg">Cobro de la Plataforma</h3>
+                                    <p class="text-sm text-slate-500">Activa o desactiva el cobro por las rifas creadas (comisión o tarifa por talonario)</p>
                                 </div>
                                 <label class="toggle-label" style="cursor:pointer;">
                                     <input type="checkbox" id="commission-enabled" onchange="toggleCommissionUI()">
@@ -1341,7 +1348,20 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                                 </label>
                             </div>
                             <div id="commission-settings" class="pt-4 border-t border-slate-200">
-                                <div class="flex items-center gap-6">
+                                <div class="mb-5">
+                                    <label class="text-sm font-bold text-slate-600 block mb-2">Modalidad de cobro</label>
+                                    <div class="flex gap-6 flex-wrap">
+                                        <label class="flex items-center gap-2" style="cursor:pointer;">
+                                            <input type="radio" name="billing-mode" id="billing-mode-commission" value="commission" onchange="toggleBillingModeUI()">
+                                            <span class="text-sm font-medium">Comisión % sobre el valor total</span>
+                                        </label>
+                                        <label class="flex items-center gap-2" style="cursor:pointer;">
+                                            <input type="radio" name="billing-mode" id="billing-mode-talonario" value="talonario" onchange="toggleBillingModeUI()">
+                                            <span class="text-sm font-medium">Tarifa fija por talonario</span>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div id="billing-commission-ui" class="flex items-center gap-6">
                                     <div class="flex-1">
                                         <label class="text-sm font-bold text-slate-600 block mb-2">Porcentaje de Comisión (%)</label>
                                         <div class="flex items-center gap-4">
@@ -1354,6 +1374,11 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                                         <p class="text-xs text-slate-400 uppercase font-bold">Comisión sobre $1,000,000</p>
                                         <p class="text-2xl font-black text-blue-600" id="commission-preview">$50,000</p>
                                     </div>
+                                </div>
+                                <div id="billing-talonario-ui" style="display:none;">
+                                    <label class="text-sm font-bold text-slate-600 block mb-2" for="talonario-fee">Tarifa por talonario (COP)</label>
+                                    <input type="number" id="talonario-fee" min="0" step="500" value="0" class="w-40 px-3 py-2 border border-slate-300 rounded-lg text-center font-bold text-lg">
+                                    <p class="text-xs text-slate-400 mt-2">Un <strong>talonario</strong> es la rifa completa con su rango de números (ej. 2 cifras: 00–99). La tarifa se cobra al crear la rifa, sin importar el precio del boleto ni cuánto venda.</p>
                                 </div>
                             </div>
                             <div class="mt-6">
@@ -1696,7 +1721,8 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
     function logout() {
         localStorage.removeItem('misrifas_token');
         localStorage.removeItem('misrifas_user');
-        window.location.href = BASE_PATH + '/public/vendor/index.php?auth=login';
+        // Al cerrar sesión se vuelve a la página inicial, no al login.
+        window.location.href = BASE_PATH + '/public/index.php';
     }
 
     // Menú del círculo de usuario (antes el avatar no hacía nada).
@@ -2732,7 +2758,16 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                     document.getElementById('commission-percentage').value = d.commission_percentage;
                     document.getElementById('commission-percentage-slider').value = d.commission_percentage;
                 }
+                // Modalidad de cobro: comisión % o tarifa por talonario.
+                const mode = d.billing_mode === 'talonario' ? 'talonario' : 'commission';
+                const radio = document.getElementById('billing-mode-' + mode);
+                if (radio) radio.checked = true;
+                if (d.talonario_fee !== undefined) {
+                    const fee = document.getElementById('talonario-fee');
+                    if (fee) fee.value = d.talonario_fee;
+                }
                 toggleCommissionUI();
+                toggleBillingModeUI();
                 updateCommissionPreview();
             }
         } catch (error) { console.error('Error loading settings:', error); }
@@ -2768,6 +2803,14 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
         if (statusText) statusText.textContent = enabled ? 'Activado' : 'Desactivado';
     }
 
+    function toggleBillingModeUI() {
+        const talonario = document.getElementById('billing-mode-talonario')?.checked;
+        const commUI = document.getElementById('billing-commission-ui');
+        const talUI = document.getElementById('billing-talonario-ui');
+        if (commUI) commUI.style.display = talonario ? 'none' : 'flex';
+        if (talUI) talUI.style.display = talonario ? 'block' : 'none';
+    }
+
     function updateCommissionPreview() {
         const pct = parseFloat(document.getElementById('commission-percentage').value || 0);
         const amount = Math.round(1000000 * pct / 100);
@@ -2783,7 +2826,9 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
         try {
             await API.post('/admin/settings.php', {
                 commission_enabled: enabled ? '1' : '0',
-                commission_percentage: percentage
+                commission_percentage: percentage,
+                billing_mode: document.getElementById('billing-mode-talonario')?.checked ? 'talonario' : 'commission',
+                talonario_fee: document.getElementById('talonario-fee')?.value || '0'
             });
             Utils.showNotification('Configuración de comisiones guardada ✅', 'success');
         } catch (error) { Utils.showNotification('Error al guardar', 'error'); }

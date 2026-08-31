@@ -34,6 +34,7 @@ try {
             'phone'         => $account['phone'] ?? null,
             'city'          => $account['city'] ?? null,
             'department'    => $account['department'] ?? null,
+            'verified'      => !empty($account['email_verified_at']) || !empty($account['phone_verified_at']),
         ];
     } else {
         $user = [
@@ -46,6 +47,7 @@ try {
             'phone'         => $account['phone_whatsapp'] ?? null,
             'department'    => $account['department'] ?? null,
             'city'          => $account['city'] ?? null,
+            'verified'      => !empty($account['email_verified_at']) || !empty($account['phone_verified_at']),
         ];
     }
 

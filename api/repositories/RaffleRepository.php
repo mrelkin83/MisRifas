@@ -133,17 +133,30 @@ class RaffleRepository extends BaseRepository
     }
 
     /**
-     * Crear rifa con cálculo automático de comisión
+     * Crear rifa con cálculo automático del cobro a la plataforma.
+     *
+     * Dos modos (setting `billing_mode`), ambos sobre la misma tubería de
+     * commission_amount/commission_due_date/commission_paid:
+     *  - 'commission': porcentaje sobre el valor total de la rifa
+     *    (commission_percentage), el modo histórico.
+     *  - 'talonario': tarifa PLANA por talonario creado (talonario_fee) — un
+     *    talonario = la rifa completa con su rango de números (p. ej. 2
+     *    cifras 00-99). Independiente del precio y ventas.
+     * `commission_enabled` sigue siendo el interruptor maestro on/off.
      */
     public function createRaffle(array $data): int
     {
-        // Calcular comisión
         $commissionEnabled = $this->getSettingValue('commission_enabled');
-        $commissionPercentage = $this->getSettingValue('commission_percentage');
 
         if ($commissionEnabled) {
-            $totalValue = $data['ticket_price'] * $data['total_tickets'];
-            $data['commission_amount'] = $totalValue * ($commissionPercentage / 100);
+            $mode = $this->getSettingValue('billing_mode') ?: 'commission';
+            if ($mode === 'talonario') {
+                $data['commission_amount'] = (float)($this->getSettingValue('talonario_fee') ?: 0);
+            } else {
+                $commissionPercentage = $this->getSettingValue('commission_percentage');
+                $totalValue = $data['ticket_price'] * $data['total_tickets'];
+                $data['commission_amount'] = $totalValue * ($commissionPercentage / 100);
+            }
             $data['commission_due_date'] = date('Y-m-d H:i:s',
                 strtotime($data['draw_date'] . ' -8 days'));
         }
