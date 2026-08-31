@@ -124,6 +124,10 @@ require_once __DIR__ . '/../config/database.php';
                         Buscar mis Boletas
                     </button>
                 </form>
+                <p class="text-center text-sm text-slate-400 mt-4">
+                    ¿Solo tienes el código de UNA boleta (XXXX-XXXX-XXXX)?
+                    <a href="<?= BASE_PATH ?>/public/comprobar-boleta.php" class="text-amber-400 hover:text-amber-300 font-bold">Compruébala aquí</a>
+                </p>
             </div>
 
             <div id="loading" class="hidden text-center py-8">

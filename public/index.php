@@ -280,12 +280,11 @@ $page_description = "La plataforma más confiable para crear y participar en rif
             #nav-menu.active {
                 display: flex !important;
             }
-            /* En el menú móvil, el menú de usuario se muestra como lista siempre
-               abierta (el dropdown absoluto de escritorio no aplica aquí). */
-            #user-menu { flex-direction: column; align-items: stretch; gap: .5rem; width: 100%; }
-            #user-avatar-btn { justify-content: flex-start; width: 100%; }
-            #user-caret { display: none; }
-            #user-dropdown { display: block !important; position: static; width: 100%; box-shadow: none; background: rgba(255,255,255,.03); margin-top: 6px; }
+            /* El menú de usuario vive en el HEADER (avatar junto a la
+               hamburguesa): en móvil solo se ve el círculo y su dropdown
+               normal — la cuenta ya NO se repite dentro de la hamburguesa. */
+            #user-name, #user-caret { display: none; }
+            #user-avatar { width: 36px; height: 36px; font-size: 16px; }
             #auth-buttons { flex-direction: column; align-items: stretch; width: 100%; }
 
             /* Hero: de portada de navegador a banner-card de app */
@@ -400,18 +399,9 @@ $page_description = "La plataforma más confiable para crear y participar en rif
                 MisRifas
             </a>
 
-            <div class="md:hidden flex items-center gap-1.5">
-                <!-- Avatar junto a la hamburguesa (solo con sesión): abre el
-                     mismo menú, donde vive la lista de cuenta en móvil. -->
-                <button id="mobile-avatar-btn" class="hidden" aria-label="Menú de usuario" style="background:none;border:none;padding:0;cursor:pointer;">
-                    <span id="mobile-avatar" style="width:36px;height:36px;border-radius:50%;background:#f59e0b;color:#0f172a;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;">U</span>
-                </button>
-                <button id="mobile-menu-btn" class="text-white p-2 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500" aria-label="Menu">
-                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path>
-                    </svg>
-                </button>
-            </div>
+<!-- El menú de usuario real vive AQUÍ (header), visible también en móvil
+     junto a la hamburguesa. La hamburguesa queda solo para navegación:
+     así el avatar/cuenta no se duplica dentro del menú. -->
 
             <div class="hidden md:flex items-center gap-6" id="nav-menu">
                 <a href="<?= BASE_PATH ?>/public/index.php" class="text-slate-300 hover:text-white font-medium transition-colors">Inicio</a>
@@ -432,13 +422,19 @@ $page_description = "La plataforma más confiable para crear y participar en rif
                     <a href="<?= BASE_PATH ?>/public/register.php" class="px-5 py-2.5 bg-gradient-to-r from-amber-400 to-amber-600 text-slate-950 rounded-xl hover:from-amber-300 hover:to-amber-500 active:scale-[0.97] transition-all font-bold shadow-lg shadow-amber-500/30">Crear Cuenta</a>
                 </div>
 
+            </div>
+
+            <!-- Derecha del header: menú de usuario (móvil Y escritorio) +
+                 hamburguesa (solo móvil). El avatar abre SU dropdown; la
+                 hamburguesa abre SOLO la navegación — sin duplicados. -->
+            <div class="flex items-center gap-2">
                 <div id="user-menu" class="hidden items-center gap-3" style="position:relative;">
                     <button id="user-avatar-btn" type="button" aria-haspopup="true" aria-expanded="false" class="flex items-center gap-2 group focus:outline-none" style="background:none;border:none;cursor:pointer;padding:0;">
                         <div class="w-10 h-10 rounded-full bg-amber-500 text-slate-950 flex items-center justify-center text-lg font-bold group-hover:scale-110 transition-transform" id="user-avatar">U</div>
                         <span class="text-slate-200 font-bold group-hover:text-white" id="user-name">Usuario</span>
                         <svg id="user-caret" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color:#94a3b8;transition:transform .2s;"><path d="m6 9 6 6 6-6"/></svg>
                     </button>
-                    <div id="user-dropdown" style="display:none;position:absolute;right:0;top:calc(100% + 10px);width:15rem;background:#1e293b;border:1px solid rgba(255,255,255,.1);border-radius:16px;box-shadow:0 20px 40px rgba(0,0,0,.5);padding:8px;z-index:60;">
+                    <div id="user-dropdown" style="display:none;position:absolute;right:0;top:calc(100% + 10px);width:15rem;background:#1e293b;border:1px solid rgba(255,255,255,.1);border-radius:16px;box-shadow:0 20px 40px rgba(0,0,0,.5);padding:8px;z-index:110;">
                         <div style="padding:8px 12px 10px;border-bottom:1px solid rgba(255,255,255,.06);margin-bottom:6px;">
                             <p style="font-size:11px;color:#94a3b8;margin:0;">Sesión iniciada</p>
                             <p id="user-dd-name" style="font-size:14px;font-weight:700;color:#fff;margin:2px 0 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Usuario</p>
@@ -455,6 +451,11 @@ $page_description = "La plataforma más confiable para crear y participar en rif
                     .udd-item:hover{background:rgba(255,255,255,.06);}
                     #user-avatar-btn[aria-expanded="true"] #user-caret{transform:rotate(180deg);}
                 </style>
+                <button id="mobile-menu-btn" class="md:hidden text-white p-2 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500" aria-label="Menu">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path>
+                    </svg>
+                </button>
             </div>
         </nav>
     </header>
@@ -1119,15 +1120,6 @@ $page_description = "La plataforma más confiable para crear y participar en rif
                 document.getElementById('user-name').textContent = name;
                 document.getElementById('user-dd-name').textContent = name;
                 document.getElementById('user-avatar').textContent = name.charAt(0).toUpperCase();
-
-                // Avatar móvil junto a la hamburguesa: visible con sesión y
-                // abre el mismo menú (la lista de cuenta vive ahí en móvil).
-                const mAv = document.getElementById('mobile-avatar-btn');
-                if (mAv) {
-                    document.getElementById('mobile-avatar').textContent = name.charAt(0).toUpperCase();
-                    mAv.classList.remove('hidden');
-                    mAv.addEventListener('click', () => document.getElementById('mobile-menu-btn').click());
-                }
 
                 // Menú desplegable del avatar (antes solo abría el perfil).
                 const btn = document.getElementById('user-avatar-btn');

@@ -1169,26 +1169,10 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                     </div>
 
                     <div class="section-card">
-                        <h2 class="text-lg font-bold mb-4">Bot WhatsApp Vendedor (EvolutionAPI)</h2>
-                        <p class="text-sm text-gray-500 mb-4">Si tienes una instancia propia de EvolutionAPI, ingresa los datos para notificar automáticamente a tus compradores desde TU número celular.</p>
-                        <form id="wa-config-form" class="space-y-4">
-                            <div class="form-group">
-                                <label>EvolutionAPI Base URL</label>
-                                <input type="text" id="cfg-wa-url" class="w-full px-4 py-2 border rounded" placeholder="http://tu-vps:8080">
-                            </div>
-                            <div class="form-group">
-                                <label>Global API Key</label>
-                                <input type="password" id="cfg-wa-apikey" class="w-full px-4 py-2 border rounded" placeholder="Tu Global ApiKey">
-                            </div>
-                            <div class="form-group">
-                                <label>Nombre Instancia (Instance Name)</label>
-                                <input type="text" id="cfg-wa-instance" class="w-full px-4 py-2 border rounded" placeholder="InstanciaX">
-                            </div>
-                            <button type="submit" class="btn" style="background:#25D366;color:white;" id="btn-save-wa">Guardar Bot WhatsApp</button>
-                        </form>
-
-                        <hr class="my-6">
-
+                        <!-- La configuración técnica del canal (URL EvolutionAPI, API key,
+                             instancia) es gestionada por la plataforma (.env + instancia
+                             auto-generada); aquí solo queda el proveedor de IA. La config
+                             avanzada del motor vive en la sección WhatsApp IA. -->
                         <h3 class="text-md font-bold mb-2">Proveedor de IA</h3>
                         <p class="text-sm text-gray-500 mb-4">El modelo que atiende la conversación por WhatsApp. Sin esto configurado el bot no puede responder.</p>
                         <form id="wa-llm-form" class="space-y-4">
@@ -1747,6 +1731,45 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                 <div id="section-configuracion" class="admin-section hidden">
 
                     <!-- Configuración General (solo super_admin: la API no aplica cambios para vendedores) -->
+                    <!-- Configuración del ORGANIZADOR (vendedor): resumen de su cuenta,
+                         parámetros de la plataforma que le aplican (lectura) y accesos
+                         directos. La tarjeta de plataforma de abajo es solo super_admin. -->
+                    <div class="section-card hidden" id="vendor-settings-card">
+                        <h2 class="text-lg font-bold mb-2 flex items-center gap-2"><svg class="w-5 h-5 text-primary shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/></svg>Mi configuración</h2>
+                        <p class="text-sm text-gray-500 mb-5">Resumen de tu cuenta y de las reglas de la plataforma que aplican a tus rifas.</p>
+                        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;">
+                            <div style="padding:16px;border:1px solid #e2e8f0;border-radius:14px;min-width:0;">
+                                <div style="font-size:11px;font-weight:800;text-transform:uppercase;color:#94a3b8;letter-spacing:.5px;">👤 Cuenta</div>
+                                <div id="vcfg-nombre" class="font-bold mt-1" style="word-break:break-word;">—</div>
+                                <div id="vcfg-email" class="text-sm text-gray-500" style="word-break:break-word;">—</div>
+                                <div id="vcfg-phone" class="text-sm text-gray-500">—</div>
+                            </div>
+                            <div style="padding:16px;border:1px solid #e2e8f0;border-radius:14px;min-width:0;">
+                                <div style="font-size:11px;font-weight:800;text-transform:uppercase;color:#94a3b8;letter-spacing:.5px;">💰 Cobro de la plataforma</div>
+                                <div id="vcfg-billing" class="font-bold mt-1">—</div>
+                                <div class="text-sm text-gray-500">Se cobra por rifa publicada; el pago de tus compradores va directo a tus llaves.</div>
+                            </div>
+                            <div style="padding:16px;border:1px solid #e2e8f0;border-radius:14px;min-width:0;">
+                                <div style="font-size:11px;font-weight:800;text-transform:uppercase;color:#94a3b8;letter-spacing:.5px;">⏱️ Reservas</div>
+                                <div id="vcfg-ttl" class="font-bold mt-1">—</div>
+                                <div class="text-sm text-gray-500">Tiempo que un comprador tiene para reportar su pago antes de que el número se libere.</div>
+                            </div>
+                            <div style="padding:16px;border:1px solid #e2e8f0;border-radius:14px;min-width:0;">
+                                <div style="font-size:11px;font-weight:800;text-transform:uppercase;color:#94a3b8;letter-spacing:.5px;">📱 WhatsApp</div>
+                                <div id="vcfg-wa" class="font-bold mt-1">—</div>
+                                <div class="text-sm text-gray-500">La conexión es automática: solo escaneas un QR. La plataforma gestiona lo técnico.</div>
+                            </div>
+                        </div>
+                        <div class="flex gap-2 flex-wrap mt-5">
+                            <button type="button" class="btn btn--primary btn--sm" onclick="switchTo('mi-perfil')">💳 Llaves de cobro</button>
+                            <button type="button" class="btn btn--sm btn--outline" onclick="switchTo('mi-perfil')">📱 Vincular WhatsApp</button>
+                            <button type="button" class="btn btn--sm btn--outline" onclick="switchTo('crear')">➕ Crear rifa</button>
+                            <a href="<?= BASE_PATH ?>/public/index.php" class="btn btn--sm btn--outline" style="text-decoration:none;">🌐 Volver al sitio</a>
+                        </div>
+                    </div>
+
+
+                    <!-- Configuración General (solo super_admin) -->
                     <div class="section-card" id="section-platform-settings">
                         <h2 class="text-lg font-bold mb-2 flex items-center gap-2"><svg class="w-5 h-5 text-primary shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18 14 14 0 0 1 0-18Z"/></svg>Configuración General de la Plataforma</h2>
                         <p style="color:#94a3b8;font-size:13px;margin-bottom:20px;">Ajusta los par&aacute;metros globales de la plataforma.</p>
@@ -2963,8 +2986,35 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                 toggleCommissionUI();
                 toggleBillingModeUI();
                 updateCommissionPreview();
+
+                // Tarjeta "Mi configuración" del vendedor (lectura).
+                if (document.getElementById('vcfg-billing')) {
+                    if (d.commission_enabled !== '1') {
+                        document.getElementById('vcfg-billing').textContent = 'Gratis por ahora 🎉';
+                    } else if (d.billing_mode === 'talonario') {
+                        document.getElementById('vcfg-billing').textContent = 'Tarifa por talonario: $' + parseFloat(d.talonario_fee || 0).toLocaleString('es-CO');
+                    } else {
+                        document.getElementById('vcfg-billing').textContent = 'Comisión del ' + (d.commission_percentage || 5) + '% por rifa';
+                    }
+                    document.getElementById('vcfg-ttl').textContent = (d.reservation_ttl_minutes || d.reservation_minutes || 45) + ' minutos';
+                }
             }
         } catch (error) { console.error('Error loading settings:', error); }
+        // Datos de cuenta y estado del canal WA para la tarjeta del vendedor.
+        try {
+            if (document.getElementById('vcfg-nombre')) {
+                var vu = JSON.parse(localStorage.getItem('misrifas_user') || '{}');
+                document.getElementById('vcfg-nombre').textContent = vu.full_name || vu.name || vu.business_name || '—';
+                document.getElementById('vcfg-email').textContent = vu.email || '—';
+                document.getElementById('vcfg-phone').textContent = vu.phone ? ('📞 ' + vu.phone) : '';
+                const rw = await API.get('/vendor/whatsapp.php', { action: 'estado' });
+                const est = rw && rw.data ? rw.data.estado : '';
+                document.getElementById('vcfg-wa').textContent =
+                    est === 'conectado' ? 'Conectado ✓' + (rw.data.numero ? (' (+' + rw.data.numero + ')') : '')
+                    : est === 'no_disponible' ? 'Próximamente'
+                    : 'Sin vincular';
+            }
+        } catch (e) { console.error('vcfg', e); }
     }
 
     async function saveGeneralSettings() {
@@ -3437,9 +3487,6 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                     document.getElementById('pk-cash').checked = !!p.accepts_cash;
                 }
                 const w = res.data.wa_config || {};
-                if (w.evo_api_url) document.getElementById('cfg-wa-url').value       = w.evo_api_url;
-                if (w.evo_api_key) document.getElementById('cfg-wa-apikey').value    = w.evo_api_key;
-                if (w.evo_instance) document.getElementById('cfg-wa-instance').value = w.evo_instance;
 
                 const provSelect = document.getElementById('cfg-llm-proveedor');
                 if (provSelect && provSelect.options.length <= 1 && w.llm_proveedores) {
@@ -3548,22 +3595,6 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
         finally { btn.disabled = false; btn.textContent = 'Cambiar Contraseña'; }
     });
 
-
-    document.getElementById('wa-config-form').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const btn = document.getElementById('btn-save-wa');
-        btn.disabled = true; btn.textContent = 'Guardando…';
-        try {
-            await API.post('/admin/profile_api.php', {
-                type: 'whatsapp',
-                evo_api_url:  document.getElementById('cfg-wa-url').value,
-                evo_api_key:  document.getElementById('cfg-wa-apikey').value,
-                evo_instance: document.getElementById('cfg-wa-instance').value
-            });
-            Utils.showNotification('Bot WhatsApp configurado ✅', 'success');
-        } catch (err) { Utils.showNotification('Error al guardar WhatsApp', 'error'); }
-        finally { btn.disabled = false; btn.textContent = 'Guardar Bot WhatsApp'; }
-    });
 
     document.getElementById('wa-llm-form').addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -3874,6 +3905,9 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
             // un vendedor lo dejaba "guardar" cambios que nunca se aplicaban.
             var platformSettings = document.getElementById('section-platform-settings');
             if (platformSettings) platformSettings.style.display = 'none';
+            // En su lugar, el vendedor ve SU configuración (lectura + atajos).
+            var vendorSettings = document.getElementById('vendor-settings-card');
+            if (vendorSettings) vendorSettings.classList.remove('hidden');
         }
         var userName = user.full_name || user.name || user.email || 'Usuario';
         if (document.getElementById('user-name')) {
