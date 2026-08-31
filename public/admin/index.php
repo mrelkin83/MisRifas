@@ -1771,38 +1771,18 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                             </div>
                         </div>
 
-                        <h3 class="text-md font-bold mb-2">📝 Plantillas que envía el sistema (texto actual)</h3>
-                        <p class="text-sm text-gray-500 mb-3">Vista de solo lectura. Los textos viven en el código (<code>api/services/MessageBuilderService.php</code> y los crons); si quieres editarlos desde aquí, pide el editor de plantillas.</p>
-                        <div style="display:flex;flex-direction:column;gap:10px;">
-                            <details style="border:1px solid #e2e8f0;border-radius:12px;padding:10px 14px;">
-                                <summary style="font-weight:700;font-size:13px;cursor:pointer;">🏆 Al GANADOR (WhatsApp y correo)</summary>
-                                <pre style="white-space:pre-wrap;font-size:12px;background:#f8fafc;border-radius:8px;padding:10px;margin-top:8px;">Felicitaciones {nombre}! Ganaste la rifa *{rifa}* con el numero *{boleto}*. El numero ganador de la {lotería} del {fecha} fue *{número}*. Confirma que aceptas tu premio aqui: {enlace} . Pronto te contactaremos para la entrega del premio.</pre>
-                                <p style="font-size:11.5px;color:#64748b;">El correo lleva además el botón verde "Confirmar aceptación del premio" con el mismo enlace tokenizado.</p>
-                            </details>
-                            <details style="border:1px solid #e2e8f0;border-radius:12px;padding:10px 14px;">
-                                <summary style="font-weight:700;font-size:13px;cursor:pointer;">🎟️ A los demás participantes (resultado)</summary>
-                                <pre style="white-space:pre-wrap;font-size:12px;background:#f8fafc;border-radius:8px;padding:10px;margin-top:8px;">Resultado de la rifa *{rifa}*: el numero ganador de la {lotería} fue *{número}*. Felicitaciones a *{ganador}*, quien gano con el boleto *{boleto ganador}*. Gracias por participar — tus boletos fueron: {tus boletos}.</pre>
-                            </details>
-                            <details style="border:1px solid #e2e8f0;border-radius:12px;padding:10px 14px;">
-                                <summary style="font-weight:700;font-size:13px;cursor:pointer;">📦 Entrega del premio (al ganador)</summary>
-                                <pre style="white-space:pre-wrap;font-size:12px;background:#f8fafc;border-radius:8px;padding:10px;margin-top:8px;">El organizador reporta que TE ENTREGÓ el premio de la rifa "{rifa}" (boleto #{boleto}). ¿Lo recibiste? Confírmalo aquí (o repórtalo si NO lo has recibido): {enlace}. Tu confirmación queda pública en el hall de ganadores.</pre>
-                                <p style="font-size:11.5px;color:#64748b;">El enlace muestra la foto de evidencia que subió el organizador (obligatoria).</p>
-                            </details>
-                            <details style="border:1px solid #e2e8f0;border-radius:12px;padding:10px 14px;">
-                                <summary style="font-weight:700;font-size:13px;cursor:pointer;">🔁 Reprogramación / cancelación</summary>
-                                <pre style="white-space:pre-wrap;font-size:12px;background:#f8fafc;border-radius:8px;padding:10px;margin-top:8px;">El numero {número} no estaba vendido/pagado, asi que el sorteo de *{rifa}* se reprogramó para el {nueva fecha} con la MISMA lotería. Tu boleto sigue participando tal cual. (Máximo 3 reprogramaciones; a la 4ª la rifa se cancela y el organizador debe devolver el dinero.)</pre>
-                            </details>
-                            <details style="border:1px solid #e2e8f0;border-radius:12px;padding:10px 14px;">
-                                <summary style="font-weight:700;font-size:13px;cursor:pointer;">🧾 Pago por confirmar (al organizador) y 🤝 recordatorio de apartado</summary>
-                                <pre style="white-space:pre-wrap;font-size:12px;background:#f8fafc;border-radius:8px;padding:10px;margin-top:8px;">🧾 Nuevo pago por confirmar — Rifa / Comprador / Número(s) / Monto exacto / Comprobante (enlace) + responde SI {id} o NO {id} {motivo}.
+                        <h3 class="text-md font-bold mb-2">📝 Editor de plantillas</h3>
+                        <p class="text-sm text-gray-500 mb-3">Edita el texto que envía el sistema por WhatsApp y correo. Las palabras entre llaves <code>{así}</code> se reemplazan solas al enviar — toca una para insertarla. Si borras una variable crítica (como el enlace del ganador), el sistema la repone al enviar.</p>
+                        <div id="tpl-editor" class="space-y-3"><p class="text-sm text-gray-400">Cargando plantillas…</p></div>
 
-🤝 Hola {nombre} 👋 Te recuerdo tu número *{boleto}* apartado en la rifa *{rifa}*. Valor: {precio}. Puedes pagar por: {llaves de cobro del organizador}.</pre>
-                            </details>
-                            <details style="border:1px solid #e2e8f0;border-radius:12px;padding:10px 14px;">
-                                <summary style="font-weight:700;font-size:13px;cursor:pointer;">🔐 OTP de verificación de cuenta</summary>
-                                <pre style="white-space:pre-wrap;font-size:12px;background:#f8fafc;border-radius:8px;padding:10px;margin-top:8px;">¡Casi listos! Tu código de verificación es VERIFY-XXXXX (por correo). Por WhatsApp funciona al revés: el usuario ENVÍA ese código al número del sistema y su cuenta queda verificada.</pre>
-                            </details>
-                        </div>
+                        <details style="border:1px solid #e2e8f0;border-radius:12px;padding:10px 14px;margin-top:12px;">
+                            <summary style="font-weight:700;font-size:13px;cursor:pointer;">🔒 Mensajes fijos del sistema (no editables, por seguridad)</summary>
+                            <div style="font-size:12px;color:#64748b;margin-top:8px;line-height:1.6;">
+                                <p><strong>📦 Entrega del premio:</strong> "El organizador reporta que TE ENTREGÓ el premio… confírmalo aquí: {enlace}" — lleva el enlace tokenizado y la foto de evidencia; editarlo podría romper la cadena de confirmación.</p>
+                                <p style="margin-top:6px;"><strong>🧾 Pago por confirmar:</strong> incluye los comandos <code>SI {id}</code> / <code>NO {id} {motivo}</code> que el sistema interpreta al responder.</p>
+                                <p style="margin-top:6px;"><strong>🔐 OTP:</strong> el código <code>VERIFY-XXXXX</code> tiene formato fijo para la verificación automática.</p>
+                            </div>
+                        </details>
                     </div>
 
                     <div class="section-card">
@@ -2065,7 +2045,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
             console.log('Running onTotalTicketsChange for section crear');
             onTotalTicketsChange();
         }
-        if (section === 'configuracion') { loadSettings(); loadEmailSettings(); }
+        if (section === 'configuracion') { loadSettings(); loadEmailSettings(); loadTemplates(); }
         if (section === 'tapazo') loadTapazos();
         if (section === 'email-campaigns') { loadCampaigns(); loadEmailSettings(); }
     }
@@ -3155,6 +3135,84 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
             Utils.showNotification('Configuración de cobro guardada ✅', 'success');
         } catch (error) { Utils.showNotification('Error al guardar', 'error'); }
         finally { btn.disabled = false; btn.textContent = 'Guardar Configuración de Comisiones'; }
+    }
+
+
+    // ── Editor de plantillas (v4.13, solo super_admin) ──
+    async function loadTemplates() {
+        const box = document.getElementById('tpl-editor');
+        if (!box) return;
+        try {
+            const res = await API.get('/admin/templates.php');
+            const tpls = res.data || [];
+            box.innerHTML = '';
+            tpls.forEach(t => {
+                const d = document.createElement('details');
+                d.style.cssText = 'border:1px solid #e2e8f0;border-radius:12px;padding:10px 14px;';
+                const badge = t.custom_text
+                    ? '<span style="margin-left:8px;padding:2px 8px;border-radius:99px;background:#fef3c7;color:#92400e;font-size:10px;font-weight:800;">PERSONALIZADA</span>'
+                    : '<span style="margin-left:8px;padding:2px 8px;border-radius:99px;background:#e2e8f0;color:#475569;font-size:10px;font-weight:800;">ORIGINAL</span>';
+                d.innerHTML =
+                    '<summary style="font-weight:700;font-size:13px;cursor:pointer;">' + userEsc(t.nombre) + badge + '</summary>' +
+                    '<p style="font-size:11.5px;color:#64748b;margin:8px 0;">' + userEsc(t.descripcion) + '</p>' +
+                    '<div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px;">' +
+                        t.vars.map(v => '<button type="button" class="tpl-var" data-var="{' + v + '}" style="padding:2px 8px;border-radius:99px;background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;font-size:11px;font-weight:700;cursor:pointer;">{' + v + '}</button>').join('') +
+                    '</div>' +
+                    '<textarea data-key="' + t.key + '" style="width:100%;min-height:96px;padding:10px 12px;border:1px solid #e2e8f0;border-radius:10px;font-size:13px;line-height:1.5;resize:vertical;"></textarea>' +
+                    '<div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">' +
+                        '<button type="button" class="btn btn--primary btn--sm tpl-save" data-key="' + t.key + '">Guardar</button>' +
+                        (t.custom_text ? '<button type="button" class="btn btn--sm btn--outline tpl-restore" data-key="' + t.key + '">↩ Restaurar original</button>' : '') +
+                        '<button type="button" class="btn btn--sm btn--outline tpl-preview" data-key="' + t.key + '">👁 Vista previa</button>' +
+                    '</div>' +
+                    '<pre class="tpl-prev" style="display:none;white-space:pre-wrap;font-size:12px;background:#f8fafc;border-radius:8px;padding:10px;margin-top:8px;"></pre>';
+                d.querySelector('textarea').value = t.custom_text || t.default_text;
+                box.appendChild(d);
+            });
+            window.__tpls = tpls;
+
+            box.onclick = async (e) => {
+                const varBtn = e.target.closest('.tpl-var');
+                if (varBtn) {
+                    const ta = varBtn.closest('details').querySelector('textarea');
+                    const pos = ta.selectionStart || ta.value.length;
+                    ta.value = ta.value.slice(0, pos) + varBtn.dataset.var + ta.value.slice(pos);
+                    ta.focus();
+                    return;
+                }
+                const prevBtn = e.target.closest('.tpl-preview');
+                if (prevBtn) {
+                    const det = prevBtn.closest('details');
+                    const pre = det.querySelector('.tpl-prev');
+                    const ejemplo = { nombre: 'Camila', raffle_name: 'iPhone 15', ticket_number: '0007', lottery_name: 'Lotería de Bogotá', winning_number: '7307', full_number: '7307', draw_date: '31/08/2026', confirm_url: 'https://misrifas.online/…', tickets: '0003, 0011', winner_name: 'Camila T.', winner_ticket: '0007', next_date: '07/09/2026', price: '$10.000', whatsapp: '3001234567', winner_phone: '3102000008' };
+                    pre.textContent = det.querySelector('textarea').value.replace(/\{(\w+)\}/g, (m, v) => ejemplo[v] || m);
+                    pre.style.display = 'block';
+                    return;
+                }
+                const saveBtn = e.target.closest('.tpl-save');
+                if (saveBtn) {
+                    saveBtn.disabled = true;
+                    try {
+                        const ta = saveBtn.closest('details').querySelector('textarea');
+                        const r = await API.post('/admin/templates.php', { key: saveBtn.dataset.key, body_text: ta.value });
+                        Utils.showNotification(r.message || 'Plantilla guardada ✅', (r.data && r.data.variables_sin_usar && r.data.variables_sin_usar.length) ? 'warning' : 'success');
+                        loadTemplates();
+                    } catch (err) { Utils.showNotification(err.message || 'Error al guardar', 'error'); }
+                    saveBtn.disabled = false;
+                    return;
+                }
+                const restBtn = e.target.closest('.tpl-restore');
+                if (restBtn) {
+                    if (!confirm('¿Volver al texto original de esta plantilla?')) return;
+                    try {
+                        await API.post('/admin/templates.php', { key: restBtn.dataset.key, restore: true });
+                        Utils.showNotification('Plantilla restaurada ↩', 'success');
+                        loadTemplates();
+                    } catch (err) { Utils.showNotification(err.message || 'Error', 'error'); }
+                }
+            };
+        } catch (e) {
+            box.innerHTML = '<p class="text-sm text-gray-400">Solo el super administrador puede editar plantillas.</p>';
+        }
     }
 
     async function loadEmailSettings() {
