@@ -59,8 +59,36 @@ class SystemStatus
             }
         }
 
+        // ── Autenticación del dominio remitente (SPF/DKIM) ──
+        // Que el SMTP acepte el correo NO es entrega: Gmail/Outlook exigen que
+        // el dominio del remitente publique SPF o DKIM y sin eso lo descartan
+        // en silencio (el usuario ve "enviado" y nunca le llega nada). Esto se
+        // comprueba EN VIVO contra el DNS real.
+        $fromDom = substr(strrchr($from, '@') ?: '', 1);
+        $esCapturaLocal = in_array($smtpHost, ['127.0.0.1', 'localhost'], true);
+        if ($smtpHost !== '' && !$esCapturaLocal && $fromDom !== '') {
+            $spf = false;
+            foreach ((array)@dns_get_record($fromDom, DNS_TXT) as $t) {
+                foreach ((array)($t['entries'] ?? [$t['txt'] ?? '']) as $txt) {
+                    if (stripos((string)$txt, 'v=spf1') === 0) { $spf = true; break 2; }
+                }
+            }
+            $dkim = false;
+            foreach (['hostingermail-a', 'default', 'mail', 'postal'] as $sel) {
+                if (@dns_get_record("{$sel}._domainkey.{$fromDom}", DNS_CNAME) || @dns_get_record("{$sel}._domainkey.{$fromDom}", DNS_TXT)) {
+                    $dkim = true;
+                    break;
+                }
+            }
+            $out[] = self::c('correo_dns', 'Autenticación del correo (SPF/DKIM)',
+                ($spf || $dkim) ? ($spf && $dkim ? 'ok' : 'warn') : 'fail',
+                "Dominio remitente: {$fromDom} — SPF: " . ($spf ? 'publicado' : 'FALTA') . ' · DKIM: ' . ($dkim ? 'publicado' : 'FALTA')
+                . (($spf || $dkim) ? '.' : '. Sin ninguno de los dos, Gmail/Outlook DESCARTAN los correos aunque el SMTP diga "enviado".'),
+                ($spf && $dkim) ? '' : "Agrega en el DNS de {$fromDom} los registros SPF (TXT) y DKIM (CNAME) que indique tu proveedor de correo.");
+        }
+
         // ── OTP por correo (depende del SMTP) ──
-        $smtp = end($out);
+        $smtp = $out[1];
         $smtpOk = $smtp['estado'] !== 'fail';
         $out[] = self::c('otp_email', 'OTP por correo', $smtpOk ? $smtp['estado'] : 'fail',
             $smtpOk ? "Envía el código VERIFY-XXXXX desde $from usando el SMTP de arriba (hereda su estado)."
