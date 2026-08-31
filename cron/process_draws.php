@@ -52,7 +52,9 @@ try {
                 $resorteos++;
             }
             $processed++;
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
+            // Throwable, no Exception: un TypeError en una rifa con datos
+            // rotos no debe impedir que las DEMÁS rifas se procesen.
             Logger::error("Error procesando rifa: " . $raffle['id'], [
                 'error' => $e->getMessage()
             ]);
@@ -113,6 +115,14 @@ function processRaffleDraw(array $raffle): array
     $stmt = $db->prepare("SELECT id, business_name, phone, email FROM vendors WHERE id = ?");
     $stmt->execute([$raffle['vendor_id']]);
     $vendor = $stmt->fetch(PDO::FETCH_ASSOC);
+    if (!$vendor) {
+        // Rifa huérfana (vendedor borrado): antes esto reventaba el cron
+        // ENTERO con un TypeError y ninguna otra rifa se procesaba.
+        Logger::error('Rifa con vendedor inexistente — se omite', [
+            'raffle_id' => $raffle['id'], 'vendor_id' => $raffle['vendor_id'],
+        ]);
+        return ['has_winner' => false, 'reason' => 'Vendedor inexistente (rifa huérfana)'];
+    }
 
     $scheduledAt = date('Y-m-d') . ' 05:00:00';
 
