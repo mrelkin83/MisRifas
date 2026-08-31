@@ -823,7 +823,8 @@ header("Expires: 0");
         // Responsable visible SIEMPRE, con enlace a su reputación pública.
         if (r.organizer_name) {
             document.getElementById('organizer-row').style.display = 'flex';
-            document.getElementById('organizer-name').textContent = r.organizer_name;
+            document.getElementById('organizer-name').textContent = r.organizer_name
+                + (r.organizer_rating ? ' · ★ ' + r.organizer_rating + ' (' + r.organizer_reviews + ')' : '');
             document.getElementById('responsible-name').textContent = r.responsible_person ? ('Responsable: ' + r.responsible_person) : '';
             document.getElementById('organizer-link').href = BASE_PATH + '/public/organizador.php?slug=' + encodeURIComponent(r.organizer_slug || '');
         }

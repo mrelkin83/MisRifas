@@ -1713,6 +1713,12 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                                 <label for="cfg-max-tickets-buyer">M&aacute;x. Boletos por Compra</label>
                                 <input type="number" id="cfg-max-tickets-buyer" value="10" min="1" max="100" class="w-full px-4 py-2 border rounded-lg">
                             </div>
+                            <div class="form-group" style="display:flex;align-items:end;">
+                                <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-weight:normal;">
+                                    <input type="checkbox" id="cfg-reviews-enabled" style="width:16px;height:16px;">
+                                    <span>Rese&ntilde;as de compradores <strong>habilitadas</strong> (perfiles de organizador)</span>
+                                </label>
+                            </div>
                         </div>
                         <button class="btn btn--primary mt-4" onclick="saveGeneralSettings()">Guardar Configuraci&oacute;n General</button>
                     </div>
@@ -2882,6 +2888,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                 if (d.max_ticket_price) document.getElementById('cfg-max-ticket-price').value = d.max_ticket_price;
                 if (d.reservation_minutes) document.getElementById('cfg-reservation-minutes').value = d.reservation_minutes;
                 if (d.max_tickets_per_purchase) document.getElementById('cfg-max-tickets-buyer').value = d.max_tickets_per_purchase;
+                if (d.reviews_enabled !== undefined) document.getElementById('cfg-reviews-enabled').checked = d.reviews_enabled === '1';
                 // Comisiones
                 if (d.commission_enabled !== undefined) {
                     document.getElementById('commission-enabled').checked = d.commission_enabled === '1';
@@ -2940,7 +2947,8 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                 min_ticket_price: document.getElementById('cfg-min-ticket-price').value,
                 max_ticket_price: document.getElementById('cfg-max-ticket-price').value,
                 reservation_minutes: document.getElementById('cfg-reservation-minutes').value,
-                max_tickets_per_purchase: document.getElementById('cfg-max-tickets-buyer').value
+                max_tickets_per_purchase: document.getElementById('cfg-max-tickets-buyer').value,
+                reviews_enabled: document.getElementById('cfg-reviews-enabled').checked ? '1' : '0'
             });
             Utils.showNotification('Configuración general guardada ✅', 'success');
         } catch (error) { Utils.showNotification('Error al guardar', 'error'); }

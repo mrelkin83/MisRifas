@@ -20,6 +20,11 @@ $db = Database::getInstance()->getConnection();
 $vendor = null;
 $stats = null;
 $activas = [];
+// Reseñas de compradores verificados: interruptor de plataforma (v4.12).
+$reviewsEnabled = $db->query("SELECT setting_value FROM system_settings WHERE setting_key = 'reviews_enabled'")->fetchColumn() === '1';
+$reviews = [];
+$reviewAvg = null;
+$reviewCount = 0;
 
 if ($slug !== '') {
     $stmt = $db->prepare("SELECT id, business_name, city, department, created_at FROM vendors WHERE slug = ? AND status = 'active'");
@@ -48,13 +53,48 @@ if ($vendor) {
     $stats = array_merge($stats ?: [], $entregas ?: []);
 
     $q = $db->prepare("
-        SELECT id, name, ticket_price, draw_date FROM raffles
+        SELECT id, public_code, name, ticket_price, draw_date FROM raffles
         WHERE COALESCE(vendor_id, created_by) = ? AND status = 'active'
         ORDER BY draw_date ASC LIMIT 10
     ");
     $q->execute([$vid]);
     $activas = $q->fetchAll(PDO::FETCH_ASSOC);
+
+    if ($reviewsEnabled) {
+        $rq = $db->prepare("
+            SELECT vr.rating, vr.comment, vr.created_at, u.name AS buyer_name, r.name AS raffle_name
+            FROM vendor_reviews vr
+            JOIN users u ON u.id = vr.user_id
+            JOIN raffles r ON r.id = vr.raffle_id
+            WHERE vr.vendor_id = ?
+            ORDER BY vr.updated_at DESC LIMIT 30
+        ");
+        $rq->execute([$vid]);
+        $reviews = $rq->fetchAll(PDO::FETCH_ASSOC);
+        $agg = $db->prepare("SELECT ROUND(AVG(rating), 1) AS avg_rating, COUNT(*) AS n FROM vendor_reviews WHERE vendor_id = ?");
+        $agg->execute([$vid]);
+        $a = $agg->fetch(PDO::FETCH_ASSOC);
+        $reviewAvg = $a['avg_rating'] !== null ? (float)$a['avg_rating'] : null;
+        $reviewCount = (int)($a['n'] ?? 0);
+    }
 }
+
+/** "Carlos Gómez [PRUEBA]" → "Carlos G." (privacidad del comprador). */
+function nombreCorto(string $n): string
+{
+    $n = trim(preg_replace('/\s*\[[^\]]*\]\s*/', ' ', $n));
+    $partes = preg_split('/\s+/', $n) ?: [];
+    if (!$partes || $partes[0] === '') {
+        return 'Comprador';
+    }
+    $out = $partes[0];
+    if (isset($partes[1]) && $partes[1] !== '') {
+        $out .= ' ' . mb_substr($partes[1], 0, 1) . '.';
+    }
+    return $out;
+}
+
+$estrellas = fn(int $r) => str_repeat('★', max(0, min(5, $r))) . str_repeat('☆', 5 - max(0, min(5, $r)));
 
 $e = fn($s) => htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8');
 ?>
@@ -110,11 +150,91 @@ $e = fn($s) => htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8');
         <h2 style="font-size:15px;margin-bottom:6px;">Rifas activas</h2>
         <?php foreach ($activas as $r): ?>
         <div class="rifa">
-            <a href="<?= BASE_PATH ?>/public/raffle.php?id=<?= (int)$r['id'] ?>"><?= $e($r['name']) ?></a>
+            <a href="<?= BASE_PATH ?>/public/raffle.php?<?= !empty($r['public_code']) ? 'c=' . $e($r['public_code']) : 'id=' . (int)$r['id'] ?>"><?= $e($r['name']) ?></a>
             <span style="color:#94a3b8;">$<?= number_format((float)$r['ticket_price'], 0, ',', '.') ?> · <?= $e(date('d/m/Y', strtotime((string)$r['draw_date']))) ?></span>
         </div>
         <?php endforeach; ?>
     </div>
+    <?php endif; ?>
+
+    <?php if ($reviewsEnabled): ?>
+    <!-- Reseñas de COMPRADORES VERIFICADOS (v4.12): la credencial es el
+         código de la boleta pagada. Se apaga con reviews_enabled. -->
+    <div class="card" id="resenas">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
+            <h2 style="font-size:15px;">⭐ Reseñas de compradores</h2>
+            <?php if ($reviewCount > 0): ?>
+            <span style="font-weight:900;color:#fbbf24;font-size:15px;"><?= number_format($reviewAvg, 1) ?> <span style="font-size:12px;">★</span> <span style="color:#94a3b8;font-weight:600;font-size:12px;">(<?= $reviewCount ?>)</span></span>
+            <?php endif; ?>
+        </div>
+        <p style="font-size:11.5px;color:#64748b;margin:6px 0 12px;">Solo pueden opinar compradores con una <strong>boleta pagada</strong> de este organizador (su código es la llave).</p>
+
+        <?php if (!$reviews): ?>
+        <p style="font-size:13px;color:#94a3b8;text-align:center;padding:8px 0 14px;">Aún no hay reseñas. ¡Sé el primero!</p>
+        <?php else: foreach ($reviews as $rv): ?>
+        <div style="padding:10px 0;border-bottom:1px dashed rgba(255,255,255,.07);">
+            <div style="display:flex;justify-content:space-between;gap:8px;font-size:13px;">
+                <strong style="color:#fff;"><?= $e(nombreCorto((string)$rv['buyer_name'])) ?></strong>
+                <span style="color:#fbbf24;letter-spacing:1px;"><?= $estrellas((int)$rv['rating']) ?></span>
+            </div>
+            <?php if (!empty($rv['comment'])): ?>
+            <p style="font-size:13px;color:#cbd5e1;margin-top:4px;line-height:1.45;"><?= $e($rv['comment']) ?></p>
+            <?php endif; ?>
+            <p style="font-size:10.5px;color:#64748b;margin-top:4px;"><?= $e($rv['raffle_name']) ?> · <?= $e(date('d/m/Y', strtotime((string)$rv['created_at']))) ?></p>
+        </div>
+        <?php endforeach; endif; ?>
+
+        <!-- Formulario: boleta + estrellas + comentario -->
+        <div style="margin-top:14px;padding-top:14px;border-top:1px solid rgba(255,255,255,.08);">
+            <p style="font-size:13px;font-weight:700;color:#fff;margin-bottom:8px;">Deja tu reseña</p>
+            <input type="text" id="rv-code" placeholder="Código de tu boleta (XXXX-XXXX-XXXX)" maxlength="14" autocomplete="off"
+                   style="width:100%;padding:11px 12px;border-radius:10px;background:#0f172a;border:1px solid rgba(255,255,255,.12);color:#4ade80;font-family:ui-monospace,monospace;font-weight:700;text-transform:uppercase;letter-spacing:1px;font-size:14px;outline:none;">
+            <div id="rv-stars" style="display:flex;gap:6px;justify-content:center;margin:10px 0;font-size:28px;cursor:pointer;user-select:none;">
+                <span data-v="1">☆</span><span data-v="2">☆</span><span data-v="3">☆</span><span data-v="4">☆</span><span data-v="5">☆</span>
+            </div>
+            <textarea id="rv-comment" maxlength="500" placeholder="Cuéntanos tu experiencia (opcional)"
+                      style="width:100%;min-height:70px;padding:11px 12px;border-radius:10px;background:#0f172a;border:1px solid rgba(255,255,255,.12);color:#fff;font-size:13.5px;resize:vertical;outline:none;"></textarea>
+            <button type="button" id="rv-send"
+                    style="display:block;width:100%;margin-top:10px;padding:13px;border:none;border-radius:12px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#1c1305;font-weight:800;font-size:14px;cursor:pointer;">Publicar reseña</button>
+            <p id="rv-msg" style="display:none;margin-top:10px;padding:10px;border-radius:10px;font-size:13px;text-align:center;"></p>
+        </div>
+    </div>
+    <script>
+        (function () {
+            const BASE_PATH = '<?= BASE_PATH ?>';
+            let rating = 0;
+            const stars = document.querySelectorAll('#rv-stars span');
+            stars.forEach(s => s.addEventListener('click', () => {
+                rating = parseInt(s.dataset.v, 10);
+                stars.forEach(x => { x.textContent = parseInt(x.dataset.v, 10) <= rating ? '★' : '☆'; x.style.color = parseInt(x.dataset.v, 10) <= rating ? '#fbbf24' : '#64748b'; });
+            }));
+            document.getElementById('rv-code').addEventListener('input', function () {
+                const raw = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 12);
+                this.value = raw.replace(/(.{4})(?=.)/g, '$1-');
+            });
+            document.getElementById('rv-send').addEventListener('click', async function () {
+                const msg = document.getElementById('rv-msg');
+                const show = (t, ok) => { msg.style.display = 'block'; msg.textContent = t; msg.style.background = ok ? 'rgba(34,197,94,.12)' : 'rgba(239,68,68,.12)'; msg.style.color = ok ? '#86efac' : '#fca5a5'; };
+                if (!rating) { show('Elige de 1 a 5 estrellas', false); return; }
+                this.disabled = true; this.textContent = 'Publicando…';
+                try {
+                    const r = await fetch(BASE_PATH + '/api/vendors/reviews.php', {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            slug: '<?= $e($slug) ?>',
+                            ticket_code: document.getElementById('rv-code').value,
+                            rating: rating,
+                            comment: document.getElementById('rv-comment').value
+                        })
+                    });
+                    const j = await r.json();
+                    if (j.success) { show(j.message || 'Reseña publicada', true); setTimeout(() => location.reload(), 1400); }
+                    else show(j.message || 'No se pudo publicar', false);
+                } catch (e) { show('Error de conexión', false); }
+                this.disabled = false; this.textContent = 'Publicar reseña';
+            });
+        })();
+    </script>
     <?php endif; ?>
 <?php endif; ?>
     <p class="foot"><a href="<?= BASE_PATH ?>/public/index.php">← MisRifas</a> · <a href="<?= BASE_PATH ?>/public/ganadores.php">Hall de ganadores</a></p>
