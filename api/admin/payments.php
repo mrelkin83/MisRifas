@@ -65,6 +65,12 @@ try {
         foreach ($tickets as &$row) {
             $gw = json_decode($row['payment_gateway_response'] ?? '{}', true);
             $row['proof_url'] = $gw['proof_url'] ?? null;
+            // §16: comprobantes nuevos se sirven por controlador con token;
+            // los legados conservan su ruta directa.
+            $row['proof_link'] = !empty($gw['proof_token'])
+                ? '/api/vendor/proof.php?t=' . $gw['proof_token']
+                : (!empty($gw['proof_url']) ? '/public' . $gw['proof_url'] : null);
+            $row['flags'] = is_array($gw['flags'] ?? null) ? $gw['flags'] : [];
             $row['order_amount'] = null;
             if (!empty($gw['reservation_id'])) {
                 $suffixStmt->execute([$gw['reservation_id']]);

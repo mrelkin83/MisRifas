@@ -3166,16 +3166,21 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                 window.__payments = data;
                 document.getElementById('approve-all-btn')?.classList.toggle('hidden', data.length < 2);
                 tbody.innerHTML = data.map(p => {
-                    // Miniatura del comprobante (§10.2), no solo un enlace.
-                    const proofCell = p.proof_url
-                        ? `<a href="<?= BASE_PATH ?>/public${p.proof_url}" target="_blank"><img src="<?= BASE_PATH ?>/public${p.proof_url}" alt="Comprobante" loading="lazy" style="width:44px;height:44px;object-fit:cover;border-radius:8px;border:1px solid #e2e8f0;"></a>`
+                    // Miniatura del comprobante (§10.2) servida por controlador (§16).
+                    const proofCell = p.proof_link
+                        ? `<a href="<?= BASE_PATH ?>${p.proof_link}" target="_blank"><img src="<?= BASE_PATH ?>${p.proof_link}" alt="Comprobante" loading="lazy" style="width:44px;height:44px;object-fit:cover;border-radius:8px;border:1px solid #e2e8f0;"></a>`
                         : `<span style="color:#9ca3af;font-size:12px;">Sin comprobante</span>`;
+                    // §16: señales antifraude — informan, el vendedor decide.
+                    const FLAG_LABELS = { comprobante_repetido: 'Comprobante repetido', fecha_fuera_de_rango: 'Fecha sospechosa', comprador_con_rechazos: 'Comprador con rechazos' };
+                    const flagChips = (p.flags || []).map(f =>
+                        `<span style="display:inline-block;margin-top:3px;padding:1px 7px;border-radius:99px;background:#fef3c7;color:#92400e;font-size:10.5px;font-weight:700;">⚠️ ${FLAG_LABELS[f] || f}</span>`
+                    ).join(' ');
                     const monto = p.order_amount != null ? p.order_amount : p.amount;
                     const mins = parseInt(p.age_minutes || 0, 10);
                     const age = mins < 60 ? (mins + ' min') : (mins < 1440 ? Math.floor(mins / 60) + ' h' : Math.floor(mins / 1440) + ' d');
                     const ageColor = mins > 600 ? '#dc2626' : (mins > 120 ? '#d97706' : '#64748b');
                     return `<tr>
-                        <td class="font-medium">${userEsc(p.raffle_name || '')}</td>
+                        <td class="font-medium">${userEsc(p.raffle_name || '')}${flagChips ? '<br>' + flagChips : ''}</td>
                         <td><strong>#${userEsc(p.ticket_number)}</strong></td>
                         <td>${userEsc(p.buyer_name || '—')}<br><span style="color:#94a3b8;font-size:12px;">${userEsc(p.buyer_phone || '')}</span></td>
                         <td class="font-bold" style="font-variant-numeric:tabular-nums;">$${Number(monto || 0).toLocaleString('es-CO')}<br><span style="color:#94a3b8;font-size:11px;font-weight:400;">${userEsc(p.payment_method || '')}</span></td>

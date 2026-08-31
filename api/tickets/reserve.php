@@ -100,6 +100,9 @@ try {
     if ($raffle['status'] !== RAFFLE_STATUS_ACTIVE) {
         Response::error('La rifa no está activa', null, 400);
     }
+    if (!empty($raffle['sales_blocked'])) {
+        Response::error('Las ventas de esta rifa están suspendidas temporalmente por el organizador.', 'SALES_BLOCKED', 423);
+    }
 
     // Integridad del sorteo: no permitir reservar cuando la fecha del sorteo ya
     // pasó (evita comprar el número ganador ya conocido antes de que el cron

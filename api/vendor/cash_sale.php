@@ -54,7 +54,7 @@ try {
 
     // La rifa debe ser del vendedor autenticado y estar activa.
     $stmt = $db->prepare("
-        SELECT id, name, status FROM raffles
+        SELECT id, name, status, sales_blocked FROM raffles
         WHERE id = ? AND COALESCE(vendor_id, created_by) = ?
     ");
     $stmt->execute([$raffleId, (int)$vendor['id']]);
@@ -64,6 +64,9 @@ try {
     }
     if ($raffle['status'] !== 'active') {
         Response::error('Solo se registran ventas sobre rifas activas (estado: ' . $raffle['status'] . ')', null, 409);
+    }
+    if (!empty($raffle['sales_blocked'])) {
+        Response::error('Esta rifa está en mora con la plataforma: las ventas nuevas están suspendidas hasta pagar la comisión/tarifa pendiente.', 'SALES_BLOCKED', 423);
     }
 
     // Comprador en `users` (con user_id el boleto entra al sorteo y a las

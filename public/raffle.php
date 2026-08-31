@@ -47,7 +47,7 @@ if ($raffleId) {
             $dh = $db->prepare("SELECT attempt, draw_date, winning_number, ticket_status, outcome, rescheduled_to FROM raffle_draws WHERE raffle_id = ? ORDER BY attempt");
             $dh->execute([$raffleId]);
             $drawHistory = $dh->fetchAll(PDO::FETCH_ASSOC);
-            $rs = $db->prepare("SELECT status, draw_rescheduled_count FROM raffles WHERE id = ?");
+            $rs = $db->prepare("SELECT status, sales_blocked, draw_rescheduled_count FROM raffles WHERE id = ?");
             $rs->execute([$raffleId]);
             $raffleStatusRow = $rs->fetch(PDO::FETCH_ASSOC);
         } catch (Exception $e) {}
@@ -512,6 +512,13 @@ header("Expires: 0");
                 </div>
             </div>
         </div>
+        <?php if (!empty($raffleStatusRow['sales_blocked'])): ?>
+        <section class="container mx-auto px-4 mt-6">
+            <div class="max-w-3xl mx-auto p-4 rounded-xl bg-amber-500/10 border border-amber-500/40 text-amber-300 text-sm">
+                ⚠️ El organizador tiene un saldo pendiente con la plataforma: las <strong>ventas nuevas están suspendidas</strong>. Los boletos ya pagados no se afectan y el sorteo se realizará normalmente.
+            </div>
+        </section>
+        <?php endif; ?>
         <?php if (!empty($drawHistory) || (($raffleStatusRow['status'] ?? '') === 'cancelled')): ?>
         <section class="container mx-auto px-4 mt-10" aria-label="Historial de sorteos">
             <div class="max-w-3xl mx-auto bg-white/5 border border-white/10 rounded-2xl p-6">

@@ -38,6 +38,20 @@ try {
     if (empty($adminUser['email_verified_at']) && empty($adminUser['phone_verified_at'])) {
         Response::error('Debes verificar tu cuenta (WhatsApp o correo) antes de crear rifas', 'ACCOUNT_NOT_VERIFIED', 403);
     }
+
+    // §15.3: con saldo vencido con la plataforma no se crean rifas nuevas.
+    // (Los sorteos y boletos de las rifas existentes NUNCA se bloquean.)
+    $morStmt = Database::getInstance()->getConnection()->prepare("
+        SELECT COUNT(*) FROM raffles
+        WHERE COALESCE(vendor_id, created_by) = ?
+          AND commission_paid = 0 AND commission_amount > 0
+          AND commission_due_date IS NOT NULL AND commission_due_date <= NOW()
+          AND status IN ('active', 'pending_reschedule', 'completed')
+    ");
+    $morStmt->execute([(int)$adminUser['id']]);
+    if ((int)$morStmt->fetchColumn() > 0) {
+        Response::error('Tienes un saldo vencido con la plataforma. Paga la comisión/tarifa pendiente para poder crear rifas nuevas.', 'VENDOR_BILLING_OVERDUE', 403);
+    }
     $input = json_decode(file_get_contents('php://input'), true);
 
     if (json_last_error() !== JSON_ERROR_NONE) {

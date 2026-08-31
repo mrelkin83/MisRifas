@@ -35,7 +35,7 @@ try {
 
     $raffleDelVendedor = function (int $raffleId) use ($db, $vendorId): ?array {
         $stmt = $db->prepare("
-            SELECT id, name, status, ticket_price, draw_date, cutoff_at
+            SELECT id, name, status, sales_blocked, ticket_price, draw_date, cutoff_at
             FROM raffles WHERE id = ? AND COALESCE(vendor_id, created_by) = ?
         ");
         $stmt->execute([$raffleId, $vendorId]);
@@ -91,6 +91,9 @@ try {
         }
         if ($raffle['status'] !== 'active') {
             Response::error('Solo se aparta en rifas activas', null, 409);
+        }
+        if (!empty($raffle['sales_blocked'])) {
+            Response::error('Esta rifa está en mora con la plataforma: las ventas nuevas están suspendidas hasta pagar la comisión/tarifa pendiente.', 'SALES_BLOCKED', 423);
         }
         if (!preg_match('/^\d{2,4}$/', $number)) {
             Response::error('Número inválido', null, 422);

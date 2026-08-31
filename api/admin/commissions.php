@@ -30,7 +30,9 @@ try {
         $input = json_decode(file_get_contents('php://input'), true);
         
         if (isset($input['action']) && $input['action'] === 'mark_paid' && !empty($input['raffle_id'])) {
-            $stmt = $db->prepare("UPDATE raffles SET commission_paid = 1 WHERE id = ?");
+            // Al pagar se reactiva TODO (§15.3): ventas de la rifa y creación
+            // de rifas nuevas (el gate consulta rifas vencidas impagas).
+            $stmt = $db->prepare("UPDATE raffles SET commission_paid = 1, commission_payment_date = NOW(), sales_blocked = 0 WHERE id = ?");
             $stmt->execute([$input['raffle_id']]);
             
             Logger::activity('commission_marked_paid', $adminUser['id'], ['raffle_id' => $input['raffle_id']]);

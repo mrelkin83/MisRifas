@@ -110,12 +110,18 @@ try {
     }
 
     // Validar raffle existe y está activa
-    $stmt = $db->prepare("SELECT id, name, ticket_price, total_tickets, status, draw_date, COALESCE(vendor_id, created_by) AS owner_id FROM raffles WHERE id = ? AND status = 'active'");
+    $stmt = $db->prepare("SELECT id, name, ticket_price, total_tickets, status, draw_date, sales_blocked, COALESCE(vendor_id, created_by) AS owner_id FROM raffles WHERE id = ? AND status = 'active'");
     $stmt->execute([$raffleId]);
     $raffle = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$raffle) {
         Response::error('La rifa no existe o no está activa', null, 404);
+    }
+
+    // §15.3: rifa en mora con la plataforma → ventas NUEVAS suspendidas
+    // (los boletos ya pagados y el sorteo no se afectan).
+    if (!empty($raffle['sales_blocked'])) {
+        Response::error('Las ventas de esta rifa están suspendidas temporalmente por el organizador. El sorteo se realizará normalmente para los boletos ya pagados.', 'SALES_BLOCKED', 423);
     }
 
     // Integridad del sorteo: cerrar ventas cuando la fecha de sorteo ya pasó,

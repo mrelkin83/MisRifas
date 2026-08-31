@@ -99,34 +99,80 @@ try {
 
     $db->beginTransaction();
 
-    // El subtipo declarado en el data-URI NO es de fiar como extension de
-    // archivo (asi entraba un .php disfrazado de "imagen") - whitelist
-    // estricta en el regex, y ademas se valida el contenido real con
-    // getimagesizefromstring() antes de escribir nada a disco, igual que
-    // Uploader::upload() ya hace para los demas flujos de imagen.
-    $proofUrl = null;
+    // §16 — Subida segura + antifraude. El subtipo del data-URI no es de
+    // fiar: whitelist en el regex, tope de 5 MB, validación del contenido
+    // real (getimagesizefromstring) y RE-CODIFICACIÓN con GD (descarta
+    // payloads embebidos). El archivo va a storage/comprobantes/ — FUERA del
+    // directorio público — y se sirve solo por controlador con un token no
+    // adivinable (api/vendor/proof.php?t=...).
+    $proofUrl = null;      // legado; los nuevos usan proof_file + proof_token
+    $proofFile = null;
+    $proofSha = null;
+    $proofToken = null;
+    $flags = [];
     if ($proof && strpos($proof, 'data:image') === 0
         && preg_match('/^data:image\/(jpe?g|png|webp);base64,(.+)$/i', $proof, $matches)) {
-        $imageType = strtolower($matches[1]) === 'jpg' ? 'jpg' : strtolower($matches[1]);
         $imageData = base64_decode($matches[2], true);
 
-        if ($imageData !== false) {
+        if ($imageData !== false && strlen($imageData) <= 5 * 1024 * 1024) {
             $imageInfo = @getimagesizefromstring($imageData);
             $allowedMimes = ['image/jpeg', 'image/png', 'image/webp'];
             if ($imageInfo !== false && in_array($imageInfo['mime'], $allowedMimes, true)) {
-                $filenamePrefix = $reservationId !== '' ? preg_replace('/[^a-zA-Z0-9_-]/', '', $reservationId) : (string)$ticketId;
-                $filename = 'payment_proof_' . $filenamePrefix . '_' . time() . '_' . bin2hex(random_bytes(4)) . '.' . $imageType;
-                $uploadDir = __DIR__ . '/../../uploads/payment_proofs/';
-
-                if (!is_dir($uploadDir)) {
-                    mkdir($uploadDir, 0755, true);
+                // §16.1: hash del archivo ORIGINAL — un mismo pantallazo usado
+                // en otro boleto es sospechoso (se avisa, nunca auto-rechazo:
+                // hay falsos positivos).
+                $proofSha = hash('sha256', $imageData);
+                $dupStmt = $db->prepare("
+                    SELECT COUNT(*) FROM payments
+                    WHERE payment_gateway_response LIKE ? AND ticket_id NOT IN (" . implode(',', array_map('intval', array_column($tickets, 'id')) ?: [0]) . ")
+                ");
+                $dupStmt->execute(['%' . $proofSha . '%']);
+                if ((int)$dupStmt->fetchColumn() > 0) {
+                    $flags[] = 'comprobante_repetido';
                 }
 
-                if (file_put_contents($uploadDir . $filename, $imageData) !== false) {
-                    $proofUrl = '/uploads/payment_proofs/' . $filename;
+                // §16.2: ventana temporal — si el JPEG declara en EXIF una
+                // fecha de captura fuera del rango de la reserva, se señala.
+                if ($imageInfo['mime'] === 'image/jpeg' && function_exists('exif_read_data')) {
+                    $exif = @exif_read_data('data://image/jpeg;base64,' . base64_encode($imageData));
+                    $exifDate = $exif['DateTimeOriginal'] ?? $exif['DateTime'] ?? null;
+                    if ($exifDate && ($ts = strtotime((string)$exifDate)) !== false) {
+                        $desde = strtotime((string)($tickets[0]['reserved_at'] ?? 'now')) - 2 * 3600;
+                        if ($ts < $desde || $ts > time() + 3600) {
+                            $flags[] = 'fecha_fuera_de_rango';
+                        }
+                    }
+                }
+
+                $im = @imagecreatefromstring($imageData);
+                if ($im !== false) {
+                    $dir = __DIR__ . '/../../storage/comprobantes';
+                    if (!is_dir($dir)) {
+                        mkdir($dir, 0755, true);
+                    }
+                    $proofFile = 'proof_' . time() . '_' . bin2hex(random_bytes(6)) . '.jpg';
+                    imagejpeg($im, $dir . '/' . $proofFile, 85);
+                    imagedestroy($im);
+                    $proofToken = bin2hex(random_bytes(24));
+                    // Compat con el panel/aviso: proof_url apunta al controlador.
+                    $proofUrl = null;
                 }
             }
         }
+    }
+
+    // §16.3: reputación del comprador — un celular con 2+ rechazos en 30 días
+    // queda señalado (jamás bloqueado en silencio; decide el vendedor).
+    $repStmt = $db->prepare("
+        SELECT COUNT(*) FROM payments p
+        JOIN users u ON u.id = p.user_id
+        WHERE u.phone_whatsapp = (SELECT phone_whatsapp FROM users WHERE id = ?)
+          AND p.transaction_status = 'failed'
+          AND p.created_at > DATE_SUB(NOW(), INTERVAL 30 DAY)
+    ");
+    $repStmt->execute([(int)$tickets[0]['user_id']]);
+    if ((int)$repStmt->fetchColumn() >= 2) {
+        $flags[] = 'comprador_con_rechazos';
     }
 
     // Un comprobante cubre todos los boletos de la reserva (selector
@@ -135,7 +181,14 @@ try {
     // vendedor (api/admin/payments.php) siga operando boleto por boleto
     // sin cambios.
     $ip = $_SERVER['REMOTE_ADDR'] ?? '';
-    $gatewayData = json_encode(['proof_url' => $proofUrl, 'method' => $paymentMethod, 'manual' => true, 'reservation_id' => $reservationId ?: null]);
+    $gatewayData = json_encode([
+        'proof_url' => $proofUrl,               // legado (rutas viejas)
+        'proof_file' => $proofFile,             // storage/comprobantes/<file>
+        'proof_sha256' => $proofSha,            // §16.1
+        'proof_token' => $proofToken,           // capability para el controlador
+        'flags' => $flags,                      // §16: señales, decide el vendedor
+        'method' => $paymentMethod, 'manual' => true, 'reservation_id' => $reservationId ?: null,
+    ]);
     $stmtPayment = $db->prepare("
         INSERT INTO payments (user_id, raffle_id, ticket_id, amount, payment_method, transaction_reference, transaction_status, payment_gateway_response, ip_address, created_at, updated_at)
         VALUES (?, ?, ?, ?, ?, ?, 'pending', ?, ?, NOW(), NOW())
@@ -157,7 +210,7 @@ try {
         TicketStateMachine::transition($db, (int)$t['id'], 'pending_review', [
             'actor' => 'buyer', 'source' => 'web', 'actor_id' => (int)$t['user_id'],
             'reason' => 'comprobante subido',
-            'detail' => ['method' => $paymentMethod, 'proof' => $proofUrl, 'reference' => $reference],
+            'detail' => ['method' => $paymentMethod, 'proof' => $proofFile ?: $proofUrl, 'reference' => $reference],
             'fields' => ['payment_method' => in_array($paymentMethod, ['nequi', 'daviplata', 'breb', 'cash'], true) ? $paymentMethod : null],
         ]);
         $totalAmount += (float)$t['ticket_price'];
@@ -189,13 +242,26 @@ try {
             }
             $nums = array_map(fn($t2) => $t2['ticket_number'], $tickets);
             $appUrl = rtrim(getenv('APP_URL') ?: 'http://localhost', '/');
+            $proofLink = $proofToken
+                ? $appUrl . BASE_PATH . '/api/vendor/proof.php?t=' . $proofToken
+                : ($proofUrl ? $appUrl . BASE_PATH . '/public' . $proofUrl : null);
+            $flagLabels = [
+                'comprobante_repetido' => '⚠️ El comprobante YA fue usado en otro boleto',
+                'fecha_fuera_de_rango' => '⚠️ La foto declara una fecha fuera del rango de la reserva',
+                'comprador_con_rechazos' => '⚠️ Este celular acumula 2+ rechazos en 30 días',
+            ];
+            $alertas = '';
+            foreach ($flags as $f) {
+                $alertas .= ($flagLabels[$f] ?? $f) . "\n";
+            }
             $lineas = "🧾 *Nuevo pago por confirmar*\n"
                 . 'Rifa: ' . $ctx['name'] . "\n"
                 . 'Comprador: ' . ($ctx['buyer_name'] ?: 'Sin nombre') . "\n"
                 . 'Número(s): ' . implode(', ', $nums) . "\n"
                 . 'Monto exacto: $' . number_format($ordenAmount, 0, ',', '.') . "\n"
                 . 'Hora: ' . date('d/m H:i') . "\n"
-                . ($proofUrl ? ('Comprobante: ' . $appUrl . BASE_PATH . '/public' . $proofUrl . "\n") : "Sin comprobante adjunto\n")
+                . ($proofLink ? ('Comprobante: ' . $proofLink . "\n") : "Sin comprobante adjunto\n")
+                . ($alertas !== '' ? "\n" . $alertas : '')
                 . "\nResponde por cada boleto:\n";
             foreach ($tickets as $t2) {
                 $lineas .= '✅ *SI ' . $t2['id'] . '*  |  ❌ *NO ' . $t2['id'] . '*  (boleto ' . $t2['ticket_number'] . ")\n";
@@ -213,7 +279,7 @@ try {
         'reservation_id' => $reservationId ?: null,
         'amount' => $totalAmount,
         'method' => $paymentMethod,
-        'has_proof' => !empty($proofUrl)
+        'has_proof' => !empty($proofFile) || !empty($proofUrl)
     ]);
 
     Response::success([
