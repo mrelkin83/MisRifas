@@ -74,7 +74,7 @@ class SystemStatus
             curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 4, CURLOPT_HTTPHEADER => ['apikey: ' . $evoKey]]);
             $resp = curl_exec($ch);
             $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-            curl_close($ch);
+            unset($ch); // curl_close() está deprecado en PHP 8.5 (sin efecto desde 8.0)
             $insts = ($resp && $code === 200) ? (json_decode($resp, true) ?: []) : null;
             if ($insts === null) {
                 $out[] = self::c('wa_engine', 'Motor WhatsApp (Evolution)', 'fail', "La API de Evolution no responde en $evoUrl (HTTP $code).",
