@@ -149,7 +149,8 @@ function processEmail($msg) {
     try {
         require_once __DIR__ . '/../api/services/MailService.php';
         $mail = new MailService();
-        $ok = $mail->sendDirect($toEmail, $subject, $html);
+        // body_text va como alternativa de texto plano (multipart/alternative).
+        $ok = $mail->sendDirect($toEmail, $subject, $html, $msg['body_text'] ?? null);
         if ($ok) {
             Logger::info('Email sent', ['to' => $toEmail, 'subject' => $subject, 'message_id' => $msg['id']]);
         } else {

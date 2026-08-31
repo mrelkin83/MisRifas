@@ -34,7 +34,8 @@ class MessageBuilderService
 
         $html = self::buildEmailHtml(
             'Felicitaciones - Ganaste la rifa!',
-            "<h2 style='color:#fbbf24;'>Felicitaciones {nombre}!</h2>"
+            self::raffleImageHtml($raffle)
+            . "<h2 style='color:#fbbf24;'>Felicitaciones {nombre}!</h2>"
             . "<p>Ganaste la rifa <strong>{raffle_name}</strong> con el boleto <strong>{ticket_number}</strong>.</p>"
             . "<p>El numero ganador de la {lottery_name} del {draw_date} fue <strong style='color:#22c55e;font-size:1.5em;'>{full_number}</strong></p>"
             . $confirmBlockHtml
@@ -191,7 +192,8 @@ class MessageBuilderService
         $text = self::replaceVars($text, $vars);
         $html = self::buildEmailHtml(
             'Resultado de la rifa ' . $raffle['name'],
-            "<h2>Gracias por participar, {nombre}!</h2>"
+            self::raffleImageHtml($raffle)
+            . "<h2>Gracias por participar, {nombre}!</h2>"
             . "<p>La rifa <strong>{raffle_name}</strong> ya tuvo sorteo con la {lottery_name} del {draw_date}.</p>"
             . "<p>Numero ganador: <strong style='color:#22c55e;font-size:1.5em;'>{winning_number}</strong></p>"
             . "<p>Felicitaciones a <strong>{winner_name}</strong>, quien gano con el boleto <strong>{winner_ticket}</strong>.</p>"
@@ -234,7 +236,8 @@ class MessageBuilderService
         $text = self::replaceVars($text, $vars);
         $html = self::buildEmailHtml(
             'Re-sorteo de la rifa ' . $raffle['name'],
-            "<h2>La rifa {raffle_name} se reprogramo</h2>"
+            self::raffleImageHtml($raffle)
+            . "<h2>La rifa {raffle_name} se reprogramo</h2>"
             . "<p>El numero de la {lottery_name} del {draw_date} fue <strong>{winning_number}</strong> y ningun boleto vendido resulto ganador.</p>"
             . "<p>Tu(s) boleto(s) <strong>{tickets}</strong> siguen participando.</p>"
             . "<p>Nueva fecha de sorteo: <strong style='color:#fbbf24;font-size:1.2em;'>{next_date}</strong>. Mucha suerte!</p>",
@@ -248,6 +251,25 @@ class MessageBuilderService
             'body_html' => $html,
             'variables' => $vars,
         ];
+    }
+
+    /**
+     * <img> con la imagen de la rifa para los emails (los clientes de correo
+     * cargan imágenes por URL absoluta; no se adjunta nada al mensaje).
+     * Devuelve '' si la rifa no tiene imagen.
+     */
+    private static function raffleImageHtml(array $raffle): string
+    {
+        $url = trim((string)($raffle['image_url'] ?? ''));
+        if ($url === '') {
+            return '';
+        }
+        if (!preg_match('#^https?://#i', $url)) {
+            $base = rtrim(getenv('APP_URL') ?: 'http://localhost', '/');
+            $url = $base . '/public/' . ltrim($url, '/');
+        }
+        $esc = htmlspecialchars($url, ENT_QUOTES, 'UTF-8');
+        return "<img src='{$esc}' alt='' width='536' style='width:100%;max-width:536px;border-radius:10px;display:block;margin:0 0 16px;'>";
     }
 
     /** Escapa los valores (nombres de compradores, etc.) para plantillas HTML. */

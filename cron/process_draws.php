@@ -23,7 +23,7 @@ try {
 
     $stmt = $db->query("
         SELECT r.id, r.name, r.lottery_id, r.vendor_id, r.winning_mode,
-               r.draw_date, r.ticket_price, r.whatsapp_contact,
+               r.draw_date, r.ticket_price, r.whatsapp_contact, r.image_url,
                lr.winning_number,
                l.name AS lottery_name
         FROM raffles r

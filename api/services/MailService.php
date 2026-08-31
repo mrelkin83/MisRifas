@@ -62,9 +62,11 @@ class MailService {
     }
 
     /**
-     * Envío Directo (Sincrónico) - Úsalo solo para transacciones críticas
+     * Envío Directo (Sincrónico) - Úsalo solo para transacciones críticas.
+     * $body es el cuerpo HTML; $textBody (opcional) agrega la alternativa en
+     * texto plano (multipart/alternative), que mejora la entregabilidad.
      */
-    public function sendDirect($to, $subject, $body) {
+    public function sendDirect($to, $subject, $body, $textBody = null) {
         $host = $this->settings['mailing_smtp_host'] ?? '';
         $port = (int)($this->settings['mailing_smtp_port'] ?? 587);
         $user = $this->settings['mailing_smtp_user'] ?? '';
@@ -78,27 +80,35 @@ class MailService {
         }
 
         // --- Custom Light SMTP Logic (Minimalistic PHPMailer Equivalent) ---
-        return $this->smtpSend($host, $port, $user, $pass, $from, $fromName, $to, $subject, $body);
+        return $this->smtpSend($host, $port, $user, $pass, $from, $fromName, $to, $subject, $body, $textBody);
     }
 
-    private function smtpSend($host, $port, $user, $pass, $from, $fromName, $to, $subject, $body) {
+    /** Hostname utilizable tanto bajo Apache como en los crons CLI. */
+    private function localHostname() {
+        return $_SERVER['SERVER_NAME'] ?? (gethostname() ?: 'localhost');
+    }
+
+    private function smtpSend($host, $port, $user, $pass, $from, $fromName, $to, $subject, $body, $textBody = null) {
         try {
             $timeout = 15;
-            $socket = fsockopen($host, $port, $errno, $errstr, $timeout);
+            $hostname = $this->localHostname();
+            // 465 = TLS implícito (la conexión nace cifrada); 587 = STARTTLS.
+            $target = ($port == 465) ? "ssl://$host" : $host;
+            $socket = fsockopen($target, $port, $errno, $errstr, $timeout);
             if (!$socket) throw new Exception("Could not connect to $host: $errstr");
 
             $this->expect($socket, '220');
-            fwrite($socket, "EHLO " . $_SERVER['SERVER_NAME'] . "\r\n");
+            fwrite($socket, "EHLO " . $hostname . "\r\n");
             $this->expect($socket, '250');
 
-            // STARTTLS if 587 or 465 logic
+            // STARTTLS solo en 587 (465 ya viene cifrado desde el socket)
             if ($port == 587) {
                 fwrite($socket, "STARTTLS\r\n");
                 $this->expect($socket, '220');
                 if (!stream_socket_enable_crypto($socket, true, STREAM_CRYPTO_METHOD_TLS_CLIENT)) {
                     throw new Exception("STARTTLS failed");
                 }
-                fwrite($socket, "EHLO " . $_SERVER['SERVER_NAME'] . "\r\n");
+                fwrite($socket, "EHLO " . $hostname . "\r\n");
                 $this->expect($socket, '250');
             }
 
@@ -123,15 +133,36 @@ class MailService {
             $this->expect($socket, '354');
 
             $headers = "MIME-Version: 1.0\r\n";
-            $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
             $headers .= "From: $fromName <$from>\r\n";
             $headers .= "To: $to\r\n";
             $headers .= "Subject: =?UTF-8?B?" . base64_encode($subject) . "?=\r\n";
             $headers .= "Date: " . date('r') . "\r\n";
-            $headers .= "Message-ID: <" . time() . "." . md5($to) . "@" . $_SERVER['SERVER_NAME'] . ">\r\n";
-            $headers .= "\r\n";
+            $headers .= "Message-ID: <" . time() . "." . md5($to . microtime()) . "@" . $hostname . ">\r\n";
 
-            fwrite($socket, $headers . $body . "\r\n.\r\n");
+            if ($textBody !== null && $textBody !== '') {
+                // multipart/alternative (texto plano + HTML): los filtros de
+                // spam penalizan el HTML sin alternativa de texto.
+                $boundary = 'mr-' . bin2hex(random_bytes(12));
+                $headers .= "Content-Type: multipart/alternative; boundary=\"$boundary\"\r\n\r\n";
+                $data = "--$boundary\r\n"
+                      . "Content-Type: text/plain; charset=UTF-8\r\n"
+                      . "Content-Transfer-Encoding: 8bit\r\n\r\n"
+                      . $textBody . "\r\n"
+                      . "--$boundary\r\n"
+                      . "Content-Type: text/html; charset=UTF-8\r\n"
+                      . "Content-Transfer-Encoding: 8bit\r\n\r\n"
+                      . $body . "\r\n"
+                      . "--$boundary--";
+            } else {
+                $headers .= "Content-Type: text/html; charset=UTF-8\r\n\r\n";
+                $data = $body;
+            }
+
+            // Dot-stuffing (RFC 5321 §4.5.2): una línea que empiece por "."
+            // terminaría el bloque DATA antes de tiempo si no se duplica.
+            $data = preg_replace('/^\./m', '..', $data);
+
+            fwrite($socket, $headers . $data . "\r\n.\r\n");
             $this->expect($socket, '250');
 
             fwrite($socket, "QUIT\r\n");
