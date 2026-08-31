@@ -439,3 +439,10 @@ no una tabla.
 - **La consola de Windows manda cp1252**: un `curl -d` con tildes rompe el
   `json_decode` del servidor (falsos 422). Para probar APIs con UTF-8 usa
   `--data-binary @archivo.json`.
+- **El sidebar fijo necesita scroll propio**: si el menú crece (grupos,
+  items nuevos) más que el alto de la pantalla y `.sidebar-nav` no tiene
+  `overflow-y:auto`, los items de abajo quedan INALCANZABLES en móvil y
+  escritorio — y el usuario reporta que las funciones nuevas "no existen"
+  (las descubrió con ctrl+scroll). Regla: el contenedor de navegación de
+  todo sidebar `position:fixed` lleva `overflow-y:auto; min-height:0` y
+  scrollbar fino; el pie (logout) queda fuera del área scrolleable.
