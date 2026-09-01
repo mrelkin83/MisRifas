@@ -1989,10 +1989,13 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                                 <label for="cfg-max-tickets-buyer">M&aacute;x. Boletos por Compra</label>
                                 <input type="number" id="cfg-max-tickets-buyer" value="10" min="1" max="100" class="w-full px-4 py-2 border rounded-lg">
                             </div>
-                            <div class="form-group" style="display:flex;align-items:end;">
-                                <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-weight:normal;">
-                                    <input type="checkbox" id="cfg-reviews-enabled" style="width:16px;height:16px;">
-                                    <span>Rese&ntilde;as de compradores <strong>habilitadas</strong> (perfiles de organizador)</span>
+                            <div class="form-group" style="grid-column:1/-1;background:#fef9ec;border:1px solid #fcd34d;border-radius:12px;padding:14px 16px;">
+                                <label style="display:flex;align-items:flex-start;gap:12px;cursor:pointer;font-weight:normal;">
+                                    <input type="checkbox" id="cfg-reviews-enabled" style="width:18px;height:18px;margin-top:2px;flex-shrink:0;">
+                                    <span style="font-size:13.5px;color:#475569;">
+                                        <strong style="color:#0f172a;font-size:15px;">⭐ Reputaci&oacute;n: rese&ntilde;as de compradores</strong><br>
+                                        Encendido: los compradores verificados pueden calificar a los organizadores, y las estrellas se muestran en las rifas y en el perfil p&uacute;blico. Apagado: la API de rese&ntilde;as se cierra y las estrellas desaparecen. <em>El historial del organizador (rifas ejecutadas, entregas, disputas) es transparencia basada en hechos y NO se apaga.</em>
+                                    </span>
                                 </label>
                             </div>
                         </div>
