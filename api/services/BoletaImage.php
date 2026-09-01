@@ -29,7 +29,9 @@ final class BoletaImage
     public static function ensure(array $b): string
     {
         $code = TicketCode::normalize($b['ticket_code']);
-        $path = self::storageDir() . '/' . $code . '.png';
+        // -v2: el diseño cambió (números en juego protagonistas) — el sufijo
+        // invalida los PNG viejos cacheados sin borrarlos uno a uno.
+        $path = self::storageDir() . '/' . $code . '-v2.png';
         if (!is_file($path)) {
             self::render($b, $path);
         }
@@ -39,7 +41,7 @@ final class BoletaImage
     /** Regenera (p. ej. tras reprogramación: cambia la fecha del sorteo). */
     public static function invalidateCache(string $code): void
     {
-        $path = self::storageDir() . '/' . TicketCode::normalize($code) . '.png';
+        $path = self::storageDir() . '/' . TicketCode::normalize($code) . '-v2.png';
         if (is_file($path)) {
             @unlink($path);
         }
@@ -101,13 +103,27 @@ final class BoletaImage
         $text(26, $white, 0, 195, $name, true);
         $text(15, $muted, 0, 235, 'BOLETA DIGITAL', true);
 
-        // Número gigante
-        $text(120, $accent, 0, 430, (string)$b['ticket_number'], true);
-        $text(15, $muted, 0, 470, 'TU NUMERO', true);
+        // NÚMEROS QUE JUEGAN EN EL SORTEO — los protagonistas. El consecutivo
+        // del boleto no participa en el sorteo: va en los detalles como
+        // identificador.
+        $numeros = array_map('strval', (array)($b['numeros'] ?? [(string)$b['ticket_number']]));
+        if (count($numeros) === 1) {
+            $text(120, $accent, 0, 430, $numeros[0], true);
+            $text(15, $muted, 0, 470, 'TU NUMERO EN JUEGO', true);
+        } else {
+            $text(15, $muted, 0, 300, 'TUS ' . count($numeros) . ' NUMEROS EN JUEGO', true);
+            $porFila = count($numeros) <= 4 ? 2 : 3;
+            $yNum = 380;
+            foreach (array_chunk($numeros, $porFila) as $fila) {
+                $text(52, $accent, 0, $yNum, implode('   ', $fila), true);
+                $yNum += 85;
+            }
+        }
 
         // Detalles
         $y = 545;
         $rows = [
+            ['Boleto N°', (string)$b['ticket_number']],
             ['Sorteo',    date('d/m/Y', strtotime((string)$b['draw_date'])) . ' - ' . (string)$b['lottery_name']],
             ['Modalidad', (string)$b['mode_label']],
             ['Comprador', (string)$b['buyer_masked']],

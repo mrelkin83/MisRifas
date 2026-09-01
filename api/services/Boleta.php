@@ -26,7 +26,7 @@ final class Boleta
         }
         $stmt = $db->prepare("
             SELECT t.id, t.ticket_number, t.ticket_code, t.issued_at, t.status,
-                   t.buyer_name, t.buyer_phone, t.payment_method,
+                   t.opportunities, t.buyer_name, t.buyer_phone, t.payment_method,
                    r.id AS raffle_id, r.name AS raffle_name, r.digits, r.winning_mode,
                    r.draw_date, r.status AS raffle_status, r.ticket_price,
                    l.name AS lottery_name,
@@ -121,8 +121,12 @@ final class Boleta
             require_once __DIR__ . '/BoletaImage.php';
             require_once __DIR__ . '/../whatsapp/notify.php';
             $path = BoletaImage::ensure(self::datosImagen($b));
-            $caption = '🎟️ Tu boleta de "' . $b['raffle_name'] . '" — número ' . $b['ticket_number']
-                . ".\nCompruébala cuando quieras: " . self::urlPublica($b['ticket_code']);
+            $nums = json_decode((string)($b['opportunities'] ?? ''), true);
+            $nums = (is_array($nums) && $nums) ? $nums : [(string)$b['ticket_number']];
+            $caption = '🎟️ Tu boleta de "' . $b['raffle_name'] . '"'
+                . "\n🍀 Juega con: " . implode(' · ', $nums)
+                . (count($nums) > 1 ? "\n(boleto Nº " . $b['ticket_number'] . ')' : '')
+                . "\nCompruébala cuando quieras: " . self::urlPublica($b['ticket_code']);
             return notificarImagenVendor($vendorId, (string)$b['buyer_phone'], base64_encode((string)file_get_contents($path)), $caption);
         } catch (\Throwable $e) {
             Logger::error('Envío de boleta WA falló: ' . $e->getMessage(), ['ticket_id' => $ticketId]);
@@ -133,9 +137,17 @@ final class Boleta
     /** Datos listos para BoletaImage::ensure(). */
     public static function datosImagen(array $b): array
     {
+        // Los números QUE JUEGAN en el sorteo (oportunidades) son lo relevante
+        // para el comprador y el sistema; el consecutivo del boleto es solo un
+        // identificador y NO participa en el sorteo.
+        $numeros = json_decode((string)($b['opportunities'] ?? ''), true);
+        if (!is_array($numeros) || !$numeros) {
+            $numeros = [(string)$b['ticket_number']];
+        }
         return [
             'ticket_code'   => $b['ticket_code'],
             'ticket_number' => $b['ticket_number'],
+            'numeros'       => array_map('strval', $numeros),
             'raffle_name'   => $b['raffle_name'],
             'lottery_name'  => $b['lottery_name'],
             'draw_date'     => $b['draw_date'],

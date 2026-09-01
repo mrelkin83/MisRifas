@@ -57,10 +57,19 @@ $e = fn($s) => htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8');
 <?php if ($b): ?>
     <div class="estado estado--ok">✔ BOLETA VÁLIDA</div>
     <div class="body">
+        <?php
+            // Los números QUE JUEGAN (oportunidades) son lo relevante; el
+            // consecutivo del boleto es solo el identificador.
+            $numsJuego = json_decode((string)($b['opportunities'] ?? ''), true);
+            if (!is_array($numsJuego) || !$numsJuego) { $numsJuego = [(string)$b['ticket_number']]; }
+        ?>
         <div class="numero">
-            <div class="n"><?= $e($b['ticket_number']) ?></div>
-            <div class="l">Número de la boleta</div>
+            <div class="n" style="<?= count($numsJuego) > 2 ? 'font-size:34px;letter-spacing:2px;line-height:1.4;' : '' ?>"><?= $e(implode(' · ', $numsJuego)) ?></div>
+            <div class="l"><?= count($numsJuego) > 1 ? 'Tus ' . count($numsJuego) . ' números en juego' : 'Tu número en juego' ?></div>
         </div>
+        <?php if (count($numsJuego) > 1): ?>
+        <div class="fila"><span class="k">Boleto Nº</span><span class="v"><?= $e($b['ticket_number']) ?></span></div>
+        <?php endif; ?>
         <div class="fila"><span class="k">Rifa</span><span class="v"><?= $e($b['raffle_name']) ?></span></div>
         <div class="fila"><span class="k">Sorteo</span><span class="v"><?= $e(date('d/m/Y', strtotime($b['draw_date']))) ?> · <?= $e($b['lottery_name']) ?></span></div>
         <div class="fila"><span class="k">Modalidad</span><span class="v"><?= $e(Boleta::MODE_LABELS[$b['winning_mode']] ?? $b['winning_mode']) ?> (<?= (int)$b['digits'] ?> cifras)</span></div>
