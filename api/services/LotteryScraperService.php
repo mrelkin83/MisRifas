@@ -16,10 +16,10 @@ class LotteryScraperService
      * sorteo queda pendiente y se reintenta en la siguiente corrida del cron;
      * jamás se declara un ganador con un número que no salió de verdad.
      */
-    public static function fetchResult($lotteryName, $drawDate)
+    public static function fetchResult($lotteryName, $drawDate, $slugOverride = '')
     {
         try {
-            $result = ColombiaComScraper::fetchResult($lotteryName, $drawDate);
+            $result = ColombiaComScraper::fetchResult($lotteryName, $drawDate, $slugOverride);
 
             // Aceptar solo un número plausible: dígitos, 2 a 6 cifras.
             if (is_string($result) && preg_match('/^\d{2,6}$/', $result)) {

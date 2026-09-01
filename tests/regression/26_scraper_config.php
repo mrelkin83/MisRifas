@@ -1,0 +1,62 @@
+<?php
+/**
+ * Scraper de resultados administrable (Gestión de Rifas → Scraper).
+ * - GET devuelve estado VIVO: interruptor, pendientes, loterías con slug
+ *   efectivo y override, últimos resultados.
+ * - Solo super_admin (vendedor → 403).
+ * - El interruptor y los slugs por lotería persisten; slug inválido → 422.
+ * - Con el scraper APAGADO, "ejecutar" se niega (409) — y el cron también
+ *   respeta el interruptor (ScraperRunner::habilitado).
+ */
+
+section('Scraper — configuración administrable y estado en vivo');
+$db = testdb();
+$tokenAdmin = fxToken(1);
+$tokenVendor = fxToken(5);
+
+require_once __DIR__ . '/../../api/services/ScraperRunner.php';
+
+// Estado previo para restaurar.
+$prevEnabled = (string)$db->query("SELECT setting_value FROM system_settings WHERE setting_key='scraper_enabled'")->fetchColumn();
+$lot = $db->query("SELECT id, api_source FROM lotteries ORDER BY id LIMIT 1")->fetch(PDO::FETCH_ASSOC);
+onTeardown(function () use ($db, $prevEnabled, $lot) {
+    $db->prepare("UPDATE system_settings SET setting_value=? WHERE setting_key='scraper_enabled'")->execute([$prevEnabled]);
+    if ($lot) {
+        $db->prepare("UPDATE lotteries SET api_source=? WHERE id=?")->execute([$lot['api_source'], $lot['id']]);
+    }
+});
+
+// 1) Gate de rol.
+$res = httpGet('/api/admin/scraper.php', $tokenVendor);
+check($res['code'] === 403, 'Vendedor normal → 403', 'HTTP ' . $res['code']);
+
+// 2) GET con estructura viva.
+$res = httpGet('/api/admin/scraper.php', $tokenAdmin);
+assertHttp(200, $res, 'super_admin obtiene el estado del scraper');
+$d = $res['json']['data'] ?? [];
+check(array_key_exists('enabled', $d) && isset($d['loterias']) && array_key_exists('pendientes', $d),
+    'Trae interruptor, loterías y pendientes', json_encode(array_keys($d)));
+check(!empty($d['loterias'][0]['slug_auto']), 'Cada lotería expone su slug efectivo', json_encode($d['loterias'][0] ?? null));
+
+// 3) Guardar: apagar + slug propio.
+$res = httpPost('/api/admin/scraper.php', [
+    'action' => 'guardar', 'enabled' => false,
+    'sources' => [$lot['id'] => 'loteria-de-prueba'],
+], $tokenAdmin);
+assertHttp(200, $res, 'Guardar configuración (apagado + slug propio)');
+$v = (string)$db->query("SELECT setting_value FROM system_settings WHERE setting_key='scraper_enabled'")->fetchColumn();
+check($v === '0', 'El interruptor quedó en 0 en la BD', "db=$v");
+$src = (string)$db->query("SELECT api_source FROM lotteries WHERE id=" . (int)$lot['id'])->fetchColumn();
+check($src === 'loteria-de-prueba', 'El slug propio quedó en lotteries.api_source', "db=$src");
+check(ScraperRunner::habilitado($db) === false, 'ScraperRunner (el cron) también lo ve apagado', '');
+
+// 4) Apagado → ejecutar se niega.
+$res = httpPost('/api/admin/scraper.php', ['action' => 'ejecutar'], $tokenAdmin);
+check($res['code'] === 409, 'Ejecutar con el scraper apagado → 409', 'HTTP ' . $res['code']);
+
+// 5) Slug inválido → 422 (no se cuela nada raro en la URL del scrape).
+$res = httpPost('/api/admin/scraper.php', [
+    'action' => 'guardar', 'enabled' => true,
+    'sources' => [$lot['id'] => '../etc/passwd'],
+], $tokenAdmin);
+check($res['code'] === 422, 'Slug inválido → 422', 'HTTP ' . $res['code']);

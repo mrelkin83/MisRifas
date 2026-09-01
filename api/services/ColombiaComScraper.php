@@ -24,9 +24,13 @@ class ColombiaComScraper
         'extra' => 'sorteo-extraordinario--loteria-extra',
     ];
 
-    public static function fetchResult($lotteryName, $drawDate)
+    /**
+     * $slugOverride: slug configurado por el admin en lotteries.api_source
+     * (Gestión de Rifas → Scraper). Si viene vacío, se auto-resuelve del nombre.
+     */
+    public static function fetchResult($lotteryName, $drawDate, $slugOverride = '')
     {
-        $slug = self::resolveSlug($lotteryName);
+        $slug = trim((string)$slugOverride) !== '' ? trim((string)$slugOverride) : self::resolveSlug($lotteryName);
         if (!$slug) {
             return null;
         }
@@ -72,6 +76,13 @@ class ColombiaComScraper
         }
         // Acotar a un tramo razonable para no inflar el prompt del LLM.
         return ['url' => $url, 'text' => mb_substr($text, 0, 6000)];
+    }
+
+    /** Slug efectivo que se usaría para un nombre de lotería (para mostrarlo
+     *  en el panel de configuración del scraper). */
+    public static function slugPara($lotteryName)
+    {
+        return self::resolveSlug($lotteryName);
     }
 
     private static function resolveSlug($lotteryName)

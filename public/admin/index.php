@@ -1256,6 +1256,37 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                         <p id="lr-suggest-note" class="text-xs text-gray-500 mt-2 hidden"></p>
                     </div>
 
+                    <!-- Scraper de resultados — 100% administrable (solo super_admin) -->
+                    <div class="section-card" id="scraper-card">
+                        <div class="section-header">
+                            <div>
+                                <h2 class="text-xl font-bold">🕷️ Scraper de resultados (autom&aacute;tico)</h2>
+                                <p class="text-sm text-gray-500 mt-1">Lee los n&uacute;meros ganadores de colombia.com en cada corrida del cron. Si falla, NUNCA inventa un n&uacute;mero: el sorteo queda pendiente (arriba) y se reintenta o lo cargas manual.</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-4 mb-4" style="flex-wrap:wrap;">
+                            <label class="flex items-center gap-2 text-sm font-medium" style="cursor:pointer;">
+                                <input type="checkbox" id="scraper-enabled"> Scraper encendido
+                            </label>
+                            <span id="scraper-last-run" class="text-xs text-gray-500"></span>
+                            <button type="button" id="scraper-run" class="btn h-11 px-4">▶ Ejecutar ahora</button>
+                            <button type="button" id="scraper-save" class="btn btn--primary h-11 px-4">Guardar configuraci&oacute;n</button>
+                        </div>
+                        <div style="overflow-x:auto;">
+                            <table class="w-full text-sm">
+                                <thead><tr class="text-gray-500" style="text-align:left;">
+                                    <th style="padding:8px 12px 8px 0;">Loter&iacute;a</th>
+                                    <th style="padding:8px 12px 8px 0;">Fuente autom&aacute;tica</th>
+                                    <th style="padding:8px 12px 8px 0;">Fuente propia (opcional)</th>
+                                    <th style="padding:8px 0;">Prueba en vivo</th>
+                                </tr></thead>
+                                <tbody id="scraper-lot-rows"></tbody>
+                            </table>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-2">La fuente es el tramo final de la URL en colombia.com/loterias/<b>&lt;fuente&gt;</b>. D&eacute;jala vac&iacute;a para usar la autom&aacute;tica; escr&iacute;bela solo si el nombre de la loter&iacute;a no coincide con la p&aacute;gina.</p>
+                        <div id="scraper-recientes" class="text-xs text-gray-500 mt-4"></div>
+                    </div>
+
                     <div class="section-card">
                         <div class="section-header flex justify-between items-center mb-6">
                             <div>
@@ -2543,6 +2574,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                 box.innerHTML = '<span class="text-gray-400">No hay sorteos pendientes de resultado.</span>';
             }
         } catch (e) {}
+        loadScraperUI();
     }
 
     window.fillPendingResult = (lotteryId, date) => {
@@ -2601,6 +2633,79 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
         } finally {
             btn.disabled = false; btn.textContent = orig;
         }
+    });
+
+    // ================================================================
+    // SCRAPER DE RESULTADOS — configuración y estado en vivo (super_admin)
+    // ================================================================
+    async function loadScraperUI() {
+        const card = document.getElementById('scraper-card');
+        if (!card) return;
+        try {
+            const r = await API.get('/admin/scraper.php');
+            if (!r.success) return;
+            const d = r.data || {};
+            document.getElementById('scraper-enabled').checked = !!d.enabled;
+            const lr = d.last_run;
+            document.getElementById('scraper-last-run').textContent = (lr && lr.at)
+                ? ('Última corrida: ' + lr.at + ' — ' + lr.saved + ' guardado(s), ' + lr.pending + ' pendiente(s), ' + lr.errors + ' error(es).')
+                : 'Aún no hay corridas registradas.';
+            document.getElementById('scraper-lot-rows').innerHTML = (d.loterias || []).map(l =>
+                '<tr style="border-top:1px solid #e5e7eb;">'
+                + '<td style="padding:8px 12px 8px 0;font-weight:600;">' + userEsc(l.name) + (l.active ? '' : ' <span class="text-xs text-gray-400">(inactiva)</span>') + '</td>'
+                + '<td style="padding:8px 12px 8px 0;"><code class="text-xs">' + userEsc(l.slug_auto || '—') + '</code></td>'
+                + '<td style="padding:8px 12px 8px 0;"><input type="text" class="px-4 py-2 border rounded-lg scraper-src" data-id="' + l.id + '" value="' + userEsc(l.api_source || '') + '" placeholder="(automática)" style="width:100%;max-width:230px;"></td>'
+                + '<td style="padding:8px 0;white-space:nowrap;"><button type="button" class="btn text-sm scraper-test" data-id="' + l.id + '">Probar</button> <span class="text-xs" id="scraper-out-' + l.id + '"></span></td>'
+                + '</tr>').join('');
+            document.getElementById('scraper-recientes').innerHTML = (d.recientes || []).length
+                ? '<b>Últimos resultados guardados:</b> ' + d.recientes.map(x =>
+                    userEsc(x.lottery_name) + ' ' + x.draw_date + ' → <b>' + userEsc(x.winning_number) + '</b>').join(' · ')
+                : 'Aún no hay resultados guardados por el scraper.';
+        } catch (e) { console.error('scraper', e); }
+    }
+
+    document.getElementById('scraper-save')?.addEventListener('click', async () => {
+        const sources = {};
+        document.querySelectorAll('.scraper-src').forEach(i => { sources[i.dataset.id] = i.value.trim(); });
+        try {
+            await API.post('/admin/scraper.php', {
+                action: 'guardar',
+                enabled: document.getElementById('scraper-enabled').checked,
+                sources
+            });
+            Utils.showNotification('Configuración del scraper guardada ✅', 'success');
+            loadScraperUI();
+        } catch (err) { Utils.showNotification(err.message || 'Error al guardar', 'error'); }
+    });
+
+    document.getElementById('scraper-run')?.addEventListener('click', async (e) => {
+        const btn = e.target;
+        btn.disabled = true; btn.textContent = 'Ejecutando…';
+        try {
+            const r = await API.post('/admin/scraper.php', { action: 'ejecutar' });
+            Utils.showNotification((r.data && r.data.message) || 'Corrida terminada', 'success');
+            loadScraperUI();
+            loadLotteryResultUI();
+        } catch (err) { Utils.showNotification(err.message || 'Error al ejecutar', 'error'); }
+        finally { btn.disabled = false; btn.textContent = '▶ Ejecutar ahora'; }
+    });
+
+    document.getElementById('scraper-card')?.addEventListener('click', async (e) => {
+        const btn = e.target.closest('.scraper-test');
+        if (!btn) return;
+        const id = btn.dataset.id;
+        const out = document.getElementById('scraper-out-' + id);
+        const slug = (document.querySelector('.scraper-src[data-id="' + id + '"]') || {}).value || '';
+        btn.disabled = true; out.textContent = 'consultando en vivo…'; out.style.color = '';
+        try {
+            const r = await API.post('/admin/scraper.php', { action: 'probar', lottery_id: parseInt(id), slug: slug.trim() });
+            const d = r.data || {};
+            out.textContent = d.number ? ('✅ ' + d.number + ' (' + d.slug + ')') : ('❌ sin número — revisa ' + d.slug);
+            out.style.color = d.number ? '#059669' : '#dc2626';
+        } catch (err) {
+            out.textContent = '❌ ' + (err.message || 'error');
+            out.style.color = '#dc2626';
+        } finally { btn.disabled = false; }
     });
 
     // ================================================================
