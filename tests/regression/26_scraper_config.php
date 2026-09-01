@@ -95,6 +95,22 @@ $res = httpPost('/api/admin/lotteries.php', ['action' => 'guardar', 'loterias' =
 ]], $tokenAdmin);
 check($res['code'] === 422, 'Hora inválida → 422', 'HTTP ' . $res['code']);
 
+// 8b) Renombrar la lotería (el name viaja junto a día/hora) → persiste;
+//     y un nombre duplicado con OTRA lotería → 409.
+$nombreOriginal = (string)$db->query("SELECT name FROM lotteries WHERE id=" . (int)$cal['id'])->fetchColumn();
+$otro = (string)$db->query("SELECT name FROM lotteries WHERE id <> " . (int)$cal['id'] . " LIMIT 1")->fetchColumn();
+$res = httpPost('/api/admin/lotteries.php', ['action' => 'guardar', 'loterias' => [
+    ['id' => $cal['id'], 'name' => 'Lotería Renombrada [TEST]', 'day_of_week' => 'sunday', 'draw_time' => '20:15', 'active' => true],
+]], $tokenAdmin);
+assertHttp(200, $res, 'Renombrar una lotería');
+$n = (string)$db->query("SELECT name FROM lotteries WHERE id=" . (int)$cal['id'])->fetchColumn();
+check($n === 'Lotería Renombrada [TEST]', 'El nombre nuevo persistió', "db=$n");
+$res = httpPost('/api/admin/lotteries.php', ['action' => 'guardar', 'loterias' => [
+    ['id' => $cal['id'], 'name' => $otro, 'day_of_week' => 'sunday', 'draw_time' => '20:15', 'active' => true],
+]], $tokenAdmin);
+check($res['code'] === 409, 'Renombrar a un nombre ya usado → 409', 'HTTP ' . $res['code']);
+$db->prepare("UPDATE lotteries SET name=? WHERE id=?")->execute([$nombreOriginal, $cal['id']]);
+
 // 9) Crear lotería nueva + duplicado rechazado.
 $res = httpPost('/api/admin/lotteries.php', [
     'action' => 'crear', 'name' => 'Lotería de Prueba Regresión',

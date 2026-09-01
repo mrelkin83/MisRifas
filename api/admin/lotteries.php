@@ -50,7 +50,8 @@ try {
         if (!$loterias) {
             Response::error('Nada que guardar', null, 422);
         }
-        $upd = $db->prepare("UPDATE lotteries SET day_of_week = ?, draw_time = ?, active = ? WHERE id = ?");
+        $upd = $db->prepare("UPDATE lotteries SET name = ?, day_of_week = ?, draw_time = ?, active = ? WHERE id = ?");
+        $dup = $db->prepare("SELECT id FROM lotteries WHERE name = ? AND id <> ?");
         foreach ($loterias as $l) {
             $id = (int)($l['id'] ?? 0);
             $dia = (string)($l['day_of_week'] ?? '');
@@ -58,10 +59,32 @@ try {
             if (!$id) {
                 Response::error('Lotería sin id', null, 422);
             }
+            // name es OPCIONAL: ausente = conservar el actual (compatibilidad
+            // con llamadores que solo tocan día/hora/activa).
+            if (array_key_exists('name', $l)) {
+                $nombre = trim((string)$l['name']);
+                if (mb_strlen($nombre) < 3 || mb_strlen($nombre) > 100) {
+                    Response::error("El nombre de la lotería $id debe tener entre 3 y 100 caracteres", null, 422);
+                }
+                $dup->execute([$nombre, $id]);
+                if ($dup->fetchColumn()) {
+                    Response::error("Ya existe otra lotería llamada «{$nombre}»", null, 409);
+                }
+            } else {
+                $cur = $db->prepare('SELECT name FROM lotteries WHERE id = ?');
+                $cur->execute([$id]);
+                $nombre = (string)$cur->fetchColumn();
+                if ($nombre === '') {
+                    Response::error("Lotería $id no encontrada", null, 404);
+                }
+            }
             if ($err = validarDiaHora($dia, $hora)) {
                 Response::error($err, null, 422);
             }
-            $upd->execute([$dia, strlen($hora) === 5 ? $hora . ':00' : $hora, !empty($l['active']) ? 1 : 0, $id]);
+            // Renombrar es seguro para el historial (las rifas referencian por
+            // id), pero cambia el slug automático del scraper: si la fuente
+            // deja de resolver, se fija con la "fuente propia" (api_source).
+            $upd->execute([$nombre, $dia, strlen($hora) === 5 ? $hora . ':00' : $hora, !empty($l['active']) ? 1 : 0, $id]);
         }
         Logger::activity('lotteries_schedule_updated', (int)$admin['id'], ['count' => count($loterias)]);
         Response::success(['message' => 'Calendario de loterías guardado']);

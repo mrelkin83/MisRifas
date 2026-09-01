@@ -2651,7 +2651,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                 : 'Aún no hay corridas registradas.';
             document.getElementById('scraper-lot-rows').innerHTML = (d.loterias || []).map(l =>
                 '<tr style="border-top:1px solid #e5e7eb;">'
-                + '<td style="padding:8px 12px 8px 0;font-weight:600;">' + userEsc(l.name) + '</td>'
+                + '<td style="padding:8px 12px 8px 0;"><input type="text" class="px-4 py-2 border rounded-lg scraper-name" data-id="' + l.id + '" value="' + userEsc(l.name) + '" maxlength="100" style="width:100%;min-width:170px;font-weight:600;"></td>'
                 + '<td style="padding:8px 12px 8px 0;">' + diaSelectHtml('scraper-day', l.id, l.day_of_week) + '</td>'
                 + '<td style="padding:8px 12px 8px 0;"><input type="time" class="px-4 py-2 border rounded-lg scraper-time" data-id="' + l.id + '" value="' + userEsc(l.draw_time || '22:30') + '"></td>'
                 + '<td style="padding:8px 12px 8px 0;text-align:center;"><input type="checkbox" class="scraper-active" data-id="' + l.id + '"' + (l.active ? ' checked' : '') + '></td>'
@@ -2680,6 +2680,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
             const id = sel.dataset.id;
             loterias.push({
                 id: parseInt(id),
+                name: ((document.querySelector('.scraper-name[data-id="' + id + '"]') || {}).value || '').trim(),
                 day_of_week: sel.value,
                 draw_time: (document.querySelector('.scraper-time[data-id="' + id + '"]') || {}).value || '22:30',
                 active: !!(document.querySelector('.scraper-active[data-id="' + id + '"]') || {}).checked
