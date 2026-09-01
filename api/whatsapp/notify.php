@@ -50,11 +50,12 @@ if (!function_exists('notificarImagenVendor')) {
 
 if (!function_exists('notificarWhatsAppVendor')) {
     /**
-     * Manda `$mensaje` a `$telefono` usando la instancia Evolution
-     * configurada por `$vendorId` en wa_config. Devuelve false si el vendor
-     * no tiene canal configurado o si el envio falla - nunca lanza.
+     * Versión con DETALLE: además del ok dice POR QUÉ falló y si tiene
+     * sentido reintentar. Un vendedor sin WhatsApp vinculado no es un fallo
+     * transitorio: reintentarlo cada 10 minutos jamás lo va a arreglar.
+     * @return array{ok:bool, error:string, reintentable:bool}
      */
-    function notificarWhatsAppVendor(int $vendorId, string $telefono, string $mensaje): bool
+    function notificarWhatsAppVendorDetalle(int $vendorId, string $telefono, string $mensaje): array
     {
         \ElkinLinan\WhatsappAiEngine\Engine::reiniciar();
         \ElkinLinan\WhatsappAiEngine\Engine::arrancar([
@@ -73,15 +74,26 @@ if (!function_exists('notificarWhatsAppVendor')) {
 
         $canal = \ElkinLinan\WhatsappAiEngine\Channel\EvolutionClient::desdeConfig(\ElkinLinan\WhatsappAiEngine\Engine::db());
         if (!$canal) {
-            return false;
+            return ['ok' => false, 'reintentable' => false,
+                    'error' => 'Organizador sin WhatsApp vinculado (el aviso salió por correo)'];
         }
 
         try {
             $resultado = $canal->enviarTexto($telefono, $mensaje);
-            return !empty($resultado['ok']);
+            if (!empty($resultado['ok'])) {
+                return ['ok' => true, 'error' => '', 'reintentable' => false];
+            }
+            return ['ok' => false, 'reintentable' => true,
+                    'error' => 'Evolution rechazó el envío: ' . (string)($resultado['error'] ?? 'sin detalle')];
         } catch (\Throwable $e) {
             error_log('[WhatsApp][notify] vendor=' . $vendorId . ' ' . $e->getMessage());
-            return false;
+            return ['ok' => false, 'reintentable' => true, 'error' => $e->getMessage()];
         }
+    }
+
+    /** Compatibilidad: los llamadores existentes solo necesitan el bool. */
+    function notificarWhatsAppVendor(int $vendorId, string $telefono, string $mensaje): bool
+    {
+        return notificarWhatsAppVendorDetalle($vendorId, $telefono, $mensaje)['ok'];
     }
 }

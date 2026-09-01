@@ -39,13 +39,20 @@ try {
     foreach ($messages as $msg) {
         try {
             $success = false;
+            $motivo = 'Delivery failed';
+            $reintentable = true;
 
             if ($msg['channel'] === 'whatsapp') {
-                $success = processWhatsApp($msg);
+                $r = processWhatsApp($msg);
+                $success = $r['ok'];
+                $motivo = $r['error'] ?: $motivo;
+                $reintentable = $r['reintentable'];
             } elseif ($msg['channel'] === 'email') {
                 $success = processEmail($msg);
+                $motivo = 'SMTP rechazó el envío (ver logs/error.log)';
             } elseif ($msg['channel'] === 'sms') {
                 $success = processSMS($msg);
+                $motivo = 'SMS no disponible';
             }
 
             if ($success) {
@@ -53,8 +60,15 @@ try {
                 $upd->execute([$msg['id']]);
                 $sent++;
             } else {
-                $upd = $db->prepare("UPDATE message_queue SET status = 'failed', last_error = 'Delivery failed', attempts = attempts + 1 WHERE id = ?");
-                $upd->execute([$msg['id']]);
+                // Antes CUALQUIER fallo era definitivo (status='failed' y la
+                // query solo toma 'pending': attempts<3 era letra muerta).
+                // Ahora: fallo transitorio → sigue 'pending' y se reintenta en
+                // la próxima corrida; definitivo (sin WhatsApp vinculado) o
+                // tercer intento → 'failed', siempre con el motivo REAL.
+                $agotado = ((int)$msg['attempts'] + 1) >= 3;
+                $estado = (!$reintentable || $agotado) ? 'failed' : 'pending';
+                $upd = $db->prepare("UPDATE message_queue SET status = ?, last_error = ?, attempts = attempts + 1 WHERE id = ?");
+                $upd->execute([$estado, mb_substr($motivo, 0, 250), $msg['id']]);
                 $failed++;
             }
         } catch (Exception $e) {
@@ -98,18 +112,18 @@ function processWhatsApp($msg) {
 
     $vendorId = (int)$msg['vendor_id'];
     $texto = whatsAppTextoDeMensaje($msg);
-    $enviado = notificarWhatsAppVendor($vendorId, $msg['recipient_phone'], $texto);
+    $r = notificarWhatsAppVendorDetalle($vendorId, $msg['recipient_phone'], $texto);
 
-    if ($enviado) {
+    if ($r['ok']) {
         Logger::info('WhatsApp sent', [
             'number' => $msg['recipient_phone'],
             'type' => $msg['message_type'] ?? 'generic',
             'message_id' => $msg['id']
         ]);
     } else {
-        Logger::error('WhatsApp send failed', ['number' => $msg['recipient_phone'], 'message_id' => $msg['id']]);
+        Logger::error('WhatsApp send failed', ['number' => $msg['recipient_phone'], 'message_id' => $msg['id'], 'error' => $r['error']]);
     }
-    return $enviado;
+    return $r;
 }
 
 /**
