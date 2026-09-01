@@ -560,9 +560,9 @@ header("Expires: 0");
                                 <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                                     <span class="text-slate-500"><svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path stroke-linecap="round" d="m20 20-3.5-3.5"/></svg></span>
                                 </div>
-                                <input type="text" id="ticket-search" inputmode="numeric" aria-label="Buscar número de boleto"
+                                <input type="text" id="ticket-search" inputmode="numeric" aria-label="Buscar tu número de la suerte"
                                     class="w-full pl-12 pr-4 py-4 rounded-xl text-lg"
-                                    placeholder="Buscar número específico (ej. 14, 07)…">
+                                    placeholder="Busca tu número de la suerte (ej. 722)…">
                             </div>
 
                             <div id="tickets-grid" class="grid grid-cols-5 sm:grid-cols-6 lg:grid-cols-8 gap-3 max-h-[500px] overflow-y-auto p-4 bg-slate-900/60 rounded-2xl mb-8 border border-slate-800 custom-scrollbar">
@@ -1193,10 +1193,16 @@ document.getElementById('pay-selected-btn').addEventListener('click', async () =
     }
 
     document.getElementById('ticket-search').addEventListener('input', (e) => {
-        const search = e.target.value.toLowerCase();
+        // Busca por el NÚMERO QUE JUEGA el boleto (sus oportunidades), no solo
+        // por el consecutivo: si te gusta el 722, escribes 722 y aparece el
+        // boleto que lo trae. El consecutivo también cuenta como atajo.
+        const search = e.target.value.trim().toLowerCase();
         document.querySelectorAll('.ticket-btn').forEach(ticket => {
-            const number = ticket.dataset.number.toLowerCase();
-            ticket.style.display = number.includes(search) ? 'flex' : 'none';
+            const number = (ticket.dataset.number || '').toLowerCase();
+            let opps = [];
+            try { opps = JSON.parse(ticket.dataset.opportunities || '[]'); } catch (err) {}
+            const juega = opps.some(o => String(o).toLowerCase().includes(search));
+            ticket.style.display = (search === '' || juega || number.includes(search)) ? 'flex' : 'none';
         });
     });
 
