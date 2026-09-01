@@ -6,6 +6,32 @@ header("Expires: 0");
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../config/brand.php';
 
+// Hero ADMINISTRABLE: los slides salen de Gestión de Portada (home_banners) y
+// la duración de cada uno de home_banners_interval. Sin banners configurados
+// se usan los 4 slides de fábrica.
+$heroBanners = [];
+$heroInterval = 6;
+try {
+    $hbDb = Database::getInstance()->getConnection();
+    $hb = $hbDb->query("SELECT setting_value FROM system_settings WHERE setting_key = 'home_banners'")->fetchColumn();
+    foreach ((array)json_decode((string)$hb, true) as $hx) {
+        if (is_array($hx) && (!empty($hx['image']) || !empty($hx['title']))) {
+            $heroBanners[] = $hx;
+        }
+    }
+    $iv = (int)$hbDb->query("SELECT setting_value FROM system_settings WHERE setting_key = 'home_banners_interval'")->fetchColumn();
+    if ($iv >= 2 && $iv <= 60) {
+        $heroInterval = $iv;
+    }
+} catch (Throwable $e) {
+    // sin BD: hero de fábrica
+}
+$heroImg = function ($u) {
+    $u = (string)$u;
+    if ($u === '' || preg_match('#^https?://#i', $u)) return $u;
+    return BASE_PATH . '/public/' . ltrim($u, '/');
+};
+
 $cache_bust = time();
 $page_title = plataforma('nombre') . " - Rifas Digitales en Colombia";
 $page_description = "La plataforma más confiable para crear y participar en rifas digitales en Colombia. 100% gratuita y segura.";
@@ -477,6 +503,27 @@ $page_description = "La plataforma más confiable para crear y participar en rif
     <!-- ===== HERO SLIDER ===== -->
     <section class="hero-slider" id="heroSlider" aria-label="Banners promocionales">
         <div class="hero-slider__track" id="sliderTrack">
+<?php if ($heroBanners): ?>
+            <?php foreach ($heroBanners as $hi => $hx): ?>
+            <div class="hero-slide<?= $hi === 0 ? ' is-active' : '' ?>">
+                <div class="hero-slide__bg" style="background-image:url('<?= htmlspecialchars($heroImg($hx['image'] ?? ''), ENT_QUOTES) ?>');"></div>
+                <div class="hero-slide__overlay"></div>
+                <div class="hero-slide__content">
+                    <?php if (!empty($hx['title'])): ?>
+                    <<?= $hi === 0 ? 'h1' : 'h2' ?> class="hero-slide__title"><?= htmlspecialchars($hx['title'], ENT_QUOTES) ?></<?= $hi === 0 ? 'h1' : 'h2' ?>>
+                    <?php endif; ?>
+                    <?php if (!empty($hx['subtitle'])): ?>
+                    <p class="hero-slide__desc"><?= htmlspecialchars($hx['subtitle'], ENT_QUOTES) ?></p>
+                    <?php endif; ?>
+                    <?php if (!empty($hx['button_text'])): ?>
+                    <div class="hero-slide__actions">
+                        <a href="<?= htmlspecialchars($hx['button_link'] ?: '#rifas', ENT_QUOTES) ?>" class="hero-slide__btn hero-slide__btn--primary"><?= htmlspecialchars($hx['button_text'], ENT_QUOTES) ?></a>
+                    </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+            <?php endforeach; ?>
+<?php else: ?>
 
             <!-- Slide 1 -->
             <!-- TODO: reemplazar por foto real de un premio entregado -->
@@ -542,6 +589,7 @@ $page_description = "La plataforma más confiable para crear y participar en rif
                 </div>
             </div>
 
+<?php endif; ?>
         </div><!-- /track -->
 
         <!-- Flechas -->
@@ -558,7 +606,8 @@ $page_description = "La plataforma más confiable para crear y participar en rif
 
     <script>
     (function() {
-        var AUTOPLAY_MS  = 5500;
+        // Duración administrable: Gestión de Portada → "Duración de cada banner".
+        var AUTOPLAY_MS  = <?= $heroInterval * 1000 ?>;
         var TRANSITION_MS = 750;
         var track      = document.getElementById('sliderTrack');
         var slides     = Array.from(track.querySelectorAll('.hero-slide'));

@@ -1569,7 +1569,12 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                 <div id="section-banners" class="admin-section hidden">
                     <div class="section-card">
                         <h2 class="text-xl font-bold mb-2">Gestión de Portada (Slides)</h2>
-                        <p class="text-sm text-gray-500 mb-6">Configura los 4 banners del slider principal y hasta 6 banners adicionales.</p>
+                        <p class="text-sm text-gray-500 mb-6">Configura los banners del slider principal (solo se muestran los que tengan imagen o título). Sin ninguno configurado, el home usa los 4 de fábrica.</p>
+                        <div class="form-group mb-4" style="max-width:320px;">
+                            <label>⏱ Duración de cada banner (segundos)</label>
+                            <input type="number" id="banners-interval" min="2" max="60" step="1" class="w-full px-4 py-2 border rounded-lg">
+                            <small style="color:#64748b;font-size:12px;">Cada cuántos segundos rota el slider del home (2-60).</small>
+                        </div>
                         <form id="banners-form">
                             <div id="banners-container" class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4"></div>
                             <div class="flex justify-end pt-8 border-t mt-8">
@@ -4250,6 +4255,14 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
             
             const res = await API.get('/settings/get.php?key=home_banners');
             container.innerHTML = '';
+
+            // Duración del slider (administrable)
+            try {
+                const cfg = await API.get('/admin/settings.php');
+                const iv = parseInt((cfg.data || {}).home_banners_interval || 6, 10);
+                const ivEl = document.getElementById('banners-interval');
+                if (ivEl) ivEl.value = iv >= 2 && iv <= 60 ? iv : 6;
+            } catch (e) {}
             
             let banners = [];
             if (res.success && Array.isArray(res.data) && res.data.length > 0) {
@@ -4324,6 +4337,11 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
             }).then(r => r.json());
 
             if (res.success) {
+                // Duración del slider — misma acción de guardar.
+                try {
+                    const iv = Math.min(60, Math.max(2, parseInt(document.getElementById('banners-interval')?.value || 6, 10)));
+                    await API.post('/admin/settings/update.php', { key: 'home_banners_interval', value: String(iv) });
+                } catch (e) {}
                 Utils.showNotification('¡Portadas actualizadas! ✅', 'success');
                 loadBannersConfig();
             } else { 

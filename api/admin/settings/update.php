@@ -33,6 +33,7 @@ $editable_keys = [
     // Wompi de la PLATAFORMA (cobro de comisiones/talonario)
     'wompi_platform_public_key', 'wompi_platform_integrity_secret',
     'wompi_platform_events_secret', 'wompi_platform_private_key',
+    'home_banners_interval',
 ];
 
 if (!in_array($key, $editable_keys)) {
