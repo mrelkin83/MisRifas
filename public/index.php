@@ -1047,7 +1047,7 @@ $page_description = "La plataforma más confiable para crear y participar en rif
     let colombiaData = [];
     async function loadGeography() {
         try {
-            const res = await fetch(`${BASE_PATH}/public/assets/data/colombia.json`);
+            const res = await fetch(`${BASE_PATH}/public/assets/data/colombia.json?v=dc1`, { cache: 'no-cache' });
             colombiaData = await res.json();
 
             const deptSelect = document.getElementById('filter-dept');

@@ -521,7 +521,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
     let registerColombiaData = [];
     async function loadGeographyForRegister() {
         try {
-            const res = await fetch(BASE_PATH + '/public/assets/data/colombia.json');
+            const res = await fetch(BASE_PATH + '/public/assets/data/colombia.json?v=dc1', { cache: 'no-cache' });
             registerColombiaData = await res.json();
 
             const deptSelect = document.getElementById('reg-department');
@@ -4077,7 +4077,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
 
     async function loadGeographyData() {
         try {
-            const res = await fetch(BASE_PATH + '/public/assets/data/colombia.json');
+            const res = await fetch(BASE_PATH + '/public/assets/data/colombia.json?v=dc1', { cache: 'no-cache' });
             colombiaData = await res.json();
             
             const deptSelect = document.getElementById('raffle-department');

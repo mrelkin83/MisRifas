@@ -160,7 +160,7 @@ $page_title = "Mi Perfil - " . plataforma('nombre');
         let colombiaData = [];
         async function loadGeo() {
             try {
-                const res = await fetch(BASE_PATH + '/public/assets/data/colombia.json');
+                const res = await fetch(BASE_PATH + '/public/assets/data/colombia.json?v=dc1', { cache: 'no-cache' });
                 colombiaData = await res.json();
                 const deptSelect = document.getElementById('p-dept');
                 deptSelect.innerHTML = '<option value="">Selecciona Depto</option>' + 
