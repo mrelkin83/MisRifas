@@ -21,6 +21,11 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
     <meta name="theme-color" content="#f3f4f6">
     <link rel="stylesheet" href="<?= BASE_PATH ?>/public/css/tailwind.min.css">
     <style>
+        /* Avisos clave del formulario de crear rifa: resaltados para que no
+           pasen desapercibidos (calendario de la lotería, boletos a generar,
+           modo de ganar). Vacíos no ocupan espacio. */
+        .hint-resaltado{display:block;background:#fef3c7;color:#92400e;border:1px solid #fcd34d;border-radius:8px;padding:6px 10px;font-size:12.5px;font-weight:600;margin-top:6px;line-height:1.45;}
+        .hint-resaltado:empty{display:none;}
         @font-face {
             font-family: 'Outfit';
             font-style: normal;
@@ -945,7 +950,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                                         <option value="4">4 oportunidades</option>
                                         <option value="5">5 oportunidades</option>
                                     </select>
-                                    <small id="opportunities-hint" style="color:#64748b;font-size:12px;margin-top:4px;display:block;"></small>
+                                    <small id="opportunities-hint" class="hint-resaltado"></small>
                                 </div>
                             </div>
                             <div class="form-row">
@@ -953,14 +958,14 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                                     <label for="winning-mode">Modo de Ganar *</label>
                                     <select id="winning-mode" name="winning_mode" required>
                                     </select>
-                                    <small id="winning-mode-hint" style="color:#64748b;font-size:12px;margin-top:4px;display:block;"></small>
+                                    <small id="winning-mode-hint" class="hint-resaltado"></small>
                                 </div>
                                 <div class="form-group">
                                     <label for="lottery-id">Lotería *</label>
                                     <select id="lottery-id" name="lottery_id" required>
                                         <option value="">Seleccionar lotería…</option>
                                     </select>
-                                    <small id="lottery-day-hint" style="color:#64748b;font-size:12px;margin-top:4px;display:block;"></small>
+                                    <small id="lottery-day-hint" class="hint-resaltado"></small>
                                 </div>
                                 <div class="form-group">
                                     <label for="draw-date">Fecha del Sorteo *</label>
@@ -970,8 +975,8 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                                 <div class="form-group">
                                     <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;font-weight:normal;">
                                         <input type="checkbox" id="auto-notify" checked style="margin-top:3px;width:16px;height:16px;flex-shrink:0;">
-                                        <span style="font-size:13px;color:#475569;">
-                                            <strong style="color:#0f172a;">Verificar el resultado y notificar automáticamente</strong><br>
+                                        <span style="font-size:13px;color:#92400e;background:#fef3c7;border:1px solid #fcd34d;border-radius:8px;padding:6px 10px;display:block;line-height:1.45;">
+                                            <strong style="color:#78350f;">Verificar el resultado y notificar automáticamente</strong><br>
                                             El día del sorteo, el sistema consulta el número ganador de la lotería y le avisa a cada participante de ESTA rifa por correo (y WhatsApp si lo vinculas): felicita al ganador y agradece a los demás. Si lo desactivas, tú te encargas de avisarles.
                                         </span>
                                     </label>
