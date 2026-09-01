@@ -88,7 +88,7 @@ $db->beginTransaction();
 $vendedores = [
     ['slug' => 'rifas-la-costena-prueba', 'business' => 'Rifas La Costeña [PRUEBA]', 'nombre' => 'Laura Martínez', 'doc' => '1043558721', 'email' => "laura$MARK", 'phone' => '3001110001', 'city' => 'Barranquilla', 'dep' => 'Atlántico'],
     ['slug' => 'sorteos-el-paisa-prueba', 'business' => 'Sorteos El Paisa [PRUEBA]', 'nombre' => 'Julián Restrepo', 'doc' => '71778812', 'email' => "julian$MARK", 'phone' => '3001110002', 'city' => 'Medellín', 'dep' => 'Antioquia'],
-    ['slug' => 'fundacion-suenos-prueba', 'business' => 'Fundación Sueños [PRUEBA]', 'nombre' => 'Carmen Ortiz', 'doc' => '52447890', 'email' => "carmen$MARK", 'phone' => '3001110003', 'city' => 'Bogotá', 'dep' => 'Cundinamarca'],
+    ['slug' => 'fundacion-suenos-prueba', 'business' => 'Fundación Sueños [PRUEBA]', 'nombre' => 'Carmen Ortiz', 'doc' => '52447890', 'email' => "carmen$MARK", 'phone' => '3001110003', 'city' => 'Bogotá', 'dep' => 'Bogotá D.C.'],
 ];
 $V = [];
 $insV = $db->prepare("
@@ -112,7 +112,7 @@ $compradores = [
 $U = [];
 $insU = $db->prepare("
     INSERT INTO users (unique_id, name, phone_whatsapp, email, password_hash, role, active, email_verified_at, city, department, created_at)
-    VALUES (?,?,?,?,?, 'buyer', 1, NOW(), 'Bogotá', 'Cundinamarca', NOW())
+    VALUES (?,?,?,?,?, 'buyer', 1, NOW(), 'Bogotá', 'Bogotá D.C.', NOW())
 ");
 $uniqueIds = [];
 foreach ($compradores as $i => [$nombre, $cel]) {
@@ -254,7 +254,7 @@ $db->prepare("
 // E) Rifa REPROGRAMADA una vez (v3) — historial público de intentos
 $rE = crearRifa($db, $insR, $insT, [
     'name' => 'Bicicleta MTB [PRUEBA]', 'desc' => "Reprogramada: el número ganador no estaba vendido.\nPremio: Bicicleta todo terreno rin 29",
-    'city' => 'Bogotá', 'dep' => 'Cundinamarca', 'wa' => '3001110003', 'resp' => 'Carmen Ortiz',
+    'city' => 'Bogotá', 'dep' => 'Bogotá D.C.', 'wa' => '3001110003', 'resp' => 'Carmen Ortiz',
     'price' => 3000, 'n' => 100, 'draw' => proxFecha($db, 1, '+11 days'), 'lottery' => 1, 'vendor' => $V[2], 'status' => 'active',
 ]);
 venderNumeros($db, $pagar, $insPago, $rE, $nn(0, 19), $U, $compradores, 3000, $codigosUsados);
@@ -265,7 +265,7 @@ $db->exec("UPDATE raffles SET draw_rescheduled_count = 1 WHERE id = $rE");
 // F) Rifa NUEVA sin ventas (v3) — probar compra desde cero
 $rF = crearRifa($db, $insR, $insT, [
     'name' => 'Canasta Navideña [PRUEBA]', 'desc' => "Recién publicada, todos los números libres.\nPremio: Canasta navideña + ancheta premium",
-    'city' => 'Bogotá', 'dep' => 'Cundinamarca', 'wa' => '3001110003', 'resp' => 'Carmen Ortiz',
+    'city' => 'Bogotá', 'dep' => 'Bogotá D.C.', 'wa' => '3001110003', 'resp' => 'Carmen Ortiz',
     'price' => 2000, 'n' => 100, 'draw' => proxFecha($db, 13, '+20 days'), 'lottery' => 13, 'vendor' => $V[2], 'status' => 'active',
 ]);
 
