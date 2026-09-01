@@ -30,7 +30,10 @@ try {
                l.name AS lottery_name
         FROM raffles r
         INNER JOIN lotteries l ON r.lottery_id = l.id
-        INNER JOIN lottery_results lr ON l.id = lr.lottery_id AND lr.draw_date = CURDATE()
+        -- El resultado se empareja con la FECHA DE LA RIFA, no con CURDATE():
+        -- con CURDATE(), un resultado scrapeado después de medianoche (fechado
+        -- el día del sorteo) no coincidía nunca y la rifa quedaba atascada.
+        INNER JOIN lottery_results lr ON l.id = lr.lottery_id AND lr.draw_date = DATE(r.draw_date)
         WHERE r.status = 'active'
           AND r.draw_date <= NOW()
           AND lr.winning_number IS NOT NULL

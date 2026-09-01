@@ -89,15 +89,17 @@ try {
             }
             $efectivo = $slug !== '' ? $slug : ColombiaComScraper::slugPara($l['name']);
             // Prueba EN VIVO contra colombia.com (nada simulado): el último
-            // resultado publicado para esa lotería. NO guarda nada.
-            $numero = ColombiaComScraper::fetchResult($l['name'], date('Y-m-d'), $slug);
+            // resultado publicado para esa lotería CON SU FECHA. NO guarda nada
+            // (la corrida real solo acepta números cuya fecha coincida).
+            $ultimo = ColombiaComScraper::ultimoPublicado($l['name'], $slug);
             Response::success([
                 'lottery' => $l['name'],
                 'slug' => $efectivo,
                 'url' => 'https://www.colombia.com/loterias/' . $efectivo,
-                'number' => $numero,
-                'message' => $numero
-                    ? "Último número publicado: {$numero} (leído en vivo; verifica la fecha en la fuente)"
+                'number' => $ultimo['numero'] ?? null,
+                'fecha' => $ultimo['fecha'] ?? null,
+                'message' => $ultimo
+                    ? "Último publicado: {$ultimo['numero']}" . (!empty($ultimo['fecha']) ? " (sorteo del {$ultimo['fecha']})" : '')
                     : 'La página no devolvió un número: revisa el slug o si la lotería ya publicó resultado.',
             ]);
         }

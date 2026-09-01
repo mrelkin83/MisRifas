@@ -42,12 +42,72 @@ class ColombiaComScraper
             return null;
         }
 
+        // El bloque "último resultado" NO trae fecha en su interior, pero la
+        // página publica "Fecha de Sorteo <día> de <mes> de <año>" justo antes.
+        // Sin esta validación, scrapear ANTES de que la lotería publicara
+        // devolvía el número del sorteo ANTERIOR y se guardaba como el de hoy
+        // (verified=1) — y process_draws declararía un ganador con un número
+        // que no salió en esa fecha. Solo se acepta si la fecha coincide.
         $number = self::extractWinningNumber($html);
-        if ($number) {
+        if ($number && self::fechaUltimoCoincide($html, $drawDate)) {
             return $number;
         }
 
         return self::extractFromHistorical($html, $drawDate);
+    }
+
+    /** ¿La "Fecha de Sorteo" publicada junto al último resultado es la pedida?
+     *  Conservador: si la fecha no se encuentra, NO se acepta (queda el
+     *  histórico, que sí compara fecha por fecha). */
+    private static function fechaUltimoCoincide($html, $drawDate)
+    {
+        $fecha = self::fechaUltimo($html);
+        return $fecha !== null && $fecha === date('Y-m-d', strtotime($drawDate));
+    }
+
+    /** Fecha (Y-m-d) del "Fecha de Sorteo" que la página publica justo antes
+     *  del bloque de último resultado; null si no se puede determinar. */
+    private static function fechaUltimo($html)
+    {
+        $pos = stripos($html, 'ultimo-resultado');
+        if ($pos === false) {
+            return null;
+        }
+        $antes = substr($html, max(0, $pos - 2500), 2500);
+        $texto = html_entity_decode(strip_tags($antes), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        if (!preg_match_all('/(\d{1,2})\s+de\s+([a-záéíóú]+)\s+de\s+(\d{4})/iu', $texto, $m, PREG_SET_ORDER)) {
+            return null;
+        }
+        $months = [
+            'enero' => '01', 'febrero' => '02', 'marzo' => '03', 'abril' => '04',
+            'mayo' => '05', 'junio' => '06', 'julio' => '07', 'agosto' => '08',
+            'septiembre' => '09', 'octubre' => '10', 'noviembre' => '11', 'diciembre' => '12',
+        ];
+        $ultima = end($m); // la fecha más cercana al bloque del resultado
+        $mes = $months[mb_strtolower($ultima[2])] ?? null;
+        if (!$mes) {
+            return null;
+        }
+        return $ultima[3] . '-' . $mes . '-' . str_pad($ultima[1], 2, '0', STR_PAD_LEFT);
+    }
+
+    /** Último resultado PUBLICADO (número + fecha), sin filtrar por fecha:
+     *  es lo que muestra el botón "Probar" del panel para validar la fuente. */
+    public static function ultimoPublicado($lotteryName, $slugOverride = '')
+    {
+        $slug = trim((string)$slugOverride) !== '' ? trim((string)$slugOverride) : self::resolveSlug($lotteryName);
+        if (!$slug) {
+            return null;
+        }
+        $html = self::httpGet("https://www.colombia.com/loterias/{$slug}");
+        if (!$html) {
+            return null;
+        }
+        $numero = self::extractWinningNumber($html);
+        if (!$numero) {
+            return null;
+        }
+        return ['numero' => $numero, 'fecha' => self::fechaUltimo($html)];
     }
 
     /**

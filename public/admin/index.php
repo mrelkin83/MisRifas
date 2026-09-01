@@ -2755,7 +2755,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
         try {
             const r = await API.post('/admin/scraper.php', { action: 'probar', lottery_id: parseInt(id), slug: slug.trim() });
             const d = r.data || {};
-            out.textContent = d.number ? ('✅ ' + d.number + ' (' + d.slug + ')') : ('❌ sin número — revisa ' + d.slug);
+            out.textContent = d.number ? ('✅ ' + d.number + (d.fecha ? ' · sorteo ' + d.fecha : '') + ' (' + d.slug + ')') : ('❌ sin número — revisa ' + d.slug);
             out.style.color = d.number ? '#059669' : '#dc2626';
         } catch (err) {
             out.textContent = '❌ ' + (err.message || 'error');

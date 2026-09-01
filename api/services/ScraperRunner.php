@@ -27,7 +27,7 @@ class ScraperRunner
     {
         $stmt = $db->query("
             SELECT DISTINCT r.lottery_id, DATE(r.draw_date) AS target_date,
-                   l.name AS lottery_name, l.api_source
+                   l.name AS lottery_name, l.api_source, l.draw_time
             FROM raffles r
             JOIN lotteries l ON r.lottery_id = l.id
             WHERE r.status = 'active'
@@ -43,6 +43,19 @@ class ScraperRunner
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    /**
+     * ¿Esta combinación ya JUGÓ? El cron corre todo el día, pero cada lotería
+     * se consulta solo desde su hora de sorteo (calendario administrable) más
+     * un margen de publicación. Antes de eso, scrapearla solo puede traer el
+     * número del sorteo ANTERIOR.
+     */
+    public static function yaJugo(array $item, int $margenMin = 15): bool
+    {
+        $hora = (string)($item['draw_time'] ?? '') ?: '22:30:00';
+        $momento = strtotime($item['target_date'] . ' ' . $hora);
+        return $momento !== false && time() >= ($momento + $margenMin * 60);
+    }
+
     /** @return array{pending:int,saved:int,errors:int,detalle:array} */
     public static function correr(PDO $db): array
     {
@@ -52,6 +65,14 @@ class ScraperRunner
         $detalle = [];
 
         foreach ($pending as $item) {
+            if (!self::yaJugo($item)) {
+                // Aún no es la hora del sorteo de ESA lotería: consultar ahora
+                // solo puede devolver el resultado del sorteo anterior.
+                $detalle[] = ['loteria' => $item['lottery_name'], 'fecha' => $item['target_date'],
+                    'numero' => null, 'ok' => false,
+                    'nota' => 'aún no juega (sorteo a las ' . substr((string)$item['draw_time'], 0, 5) . ')'];
+                continue;
+            }
             try {
                 $winningNumber = LotteryScraperService::fetchResult(
                     $item['lottery_name'],
