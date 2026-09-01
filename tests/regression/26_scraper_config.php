@@ -60,3 +60,49 @@ $res = httpPost('/api/admin/scraper.php', [
     'sources' => [$lot['id'] => '../etc/passwd'],
 ], $tokenAdmin);
 check($res['code'] === 422, 'Slug inválido → 422', 'HTTP ' . $res['code']);
+
+// ── Calendario de loterías (día/hora/activa administrables) ──
+section('Loterías — calendario (día y hora) administrable');
+$cal = $db->query("SELECT id, day_of_week, draw_time, active FROM lotteries ORDER BY id LIMIT 1")->fetch(PDO::FETCH_ASSOC);
+onTeardown(function () use ($db, $cal) {
+    $db->prepare("UPDATE lotteries SET day_of_week=?, draw_time=?, active=? WHERE id=?")
+       ->execute([$cal['day_of_week'], $cal['draw_time'], $cal['active'], $cal['id']]);
+    $db->exec("DELETE FROM lotteries WHERE name = 'Lotería de Prueba Regresión'");
+});
+
+// 6) Vendedor no puede tocar el calendario.
+$res = httpPost('/api/admin/lotteries.php', ['action' => 'guardar', 'loterias' => [
+    ['id' => $cal['id'], 'day_of_week' => 'sunday', 'draw_time' => '20:00', 'active' => true],
+]], $tokenVendor);
+check($res['code'] === 403, 'Calendario: vendedor → 403', 'HTTP ' . $res['code']);
+
+// 7) super_admin cambia día y hora → persiste.
+$res = httpPost('/api/admin/lotteries.php', ['action' => 'guardar', 'loterias' => [
+    ['id' => $cal['id'], 'day_of_week' => 'sunday', 'draw_time' => '20:15', 'active' => true],
+]], $tokenAdmin);
+assertHttp(200, $res, 'Cambiar día y hora de una lotería');
+$fila = $db->query("SELECT day_of_week, draw_time FROM lotteries WHERE id=" . (int)$cal['id'])->fetch(PDO::FETCH_ASSOC);
+check($fila['day_of_week'] === 'sunday' && $fila['draw_time'] === '20:15:00',
+    'Día y hora persistidos en la BD', json_encode($fila));
+
+// 8) Día u hora inválidos → 422.
+$res = httpPost('/api/admin/lotteries.php', ['action' => 'guardar', 'loterias' => [
+    ['id' => $cal['id'], 'day_of_week' => 'lunes', 'draw_time' => '20:00', 'active' => true],
+]], $tokenAdmin);
+check($res['code'] === 422, 'Día inválido → 422', 'HTTP ' . $res['code']);
+$res = httpPost('/api/admin/lotteries.php', ['action' => 'guardar', 'loterias' => [
+    ['id' => $cal['id'], 'day_of_week' => 'monday', 'draw_time' => '25:99', 'active' => true],
+]], $tokenAdmin);
+check($res['code'] === 422, 'Hora inválida → 422', 'HTTP ' . $res['code']);
+
+// 9) Crear lotería nueva + duplicado rechazado.
+$res = httpPost('/api/admin/lotteries.php', [
+    'action' => 'crear', 'name' => 'Lotería de Prueba Regresión',
+    'day_of_week' => 'sunday', 'draw_time' => '19:00',
+], $tokenAdmin);
+assertHttp(200, $res, 'Crear una lotería nueva');
+$res = httpPost('/api/admin/lotteries.php', [
+    'action' => 'crear', 'name' => 'Lotería de Prueba Regresión',
+    'day_of_week' => 'sunday', 'draw_time' => '19:00',
+], $tokenAdmin);
+check($res['code'] === 409, 'Nombre duplicado → 409', 'HTTP ' . $res['code']);

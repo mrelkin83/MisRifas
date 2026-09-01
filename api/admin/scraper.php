@@ -27,13 +27,15 @@ try {
     if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         $lastRaw = (string)$db->query("SELECT setting_value FROM system_settings WHERE setting_key = 'scraper_last_run'")->fetchColumn();
         $loterias = [];
-        foreach ($db->query("SELECT id, name, active, api_source FROM lotteries ORDER BY name") as $l) {
+        foreach ($db->query("SELECT id, name, active, api_source, day_of_week, draw_time FROM lotteries ORDER BY name") as $l) {
             $loterias[] = [
                 'id' => (int)$l['id'],
                 'name' => $l['name'],
                 'active' => (bool)$l['active'],
                 'slug_auto' => ColombiaComScraper::slugPara($l['name']),
                 'api_source' => (string)($l['api_source'] ?? ''),
+                'day_of_week' => (string)$l['day_of_week'],
+                'draw_time' => substr((string)$l['draw_time'], 0, 5),
             ];
         }
         $recientes = $db->query("

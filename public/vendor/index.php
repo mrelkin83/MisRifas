@@ -1182,8 +1182,8 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                     <div class="section-card" id="scraper-card">
                         <div class="section-header">
                             <div>
-                                <h2 class="text-xl font-bold">🕷️ Scraper de resultados (autom&aacute;tico)</h2>
-                                <p class="text-sm text-gray-500 mt-1">Lee los n&uacute;meros ganadores de colombia.com en cada corrida del cron. Si falla, NUNCA inventa un n&uacute;mero: el sorteo queda pendiente (arriba) y se reintenta o lo cargas manual.</p>
+                                <h2 class="text-xl font-bold">🎰 Loter&iacute;as y scraper de resultados</h2>
+                                <p class="text-sm text-gray-500 mt-1">El calendario (d&iacute;a y hora de cada sorteo) manda sobre las rifas nuevas y las reprogramaciones; las rifas ya creadas conservan su fecha. El scraper lee los n&uacute;meros ganadores de colombia.com y, si falla, NUNCA inventa un n&uacute;mero: el sorteo queda pendiente (arriba) y se reintenta o lo cargas manual.</p>
                             </div>
                         </div>
                         <div class="flex items-center gap-4 mb-4" style="flex-wrap:wrap;">
@@ -1198,6 +1198,9 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                             <table class="w-full text-sm">
                                 <thead><tr class="text-gray-500" style="text-align:left;">
                                     <th style="padding:8px 12px 8px 0;">Loter&iacute;a</th>
+                                    <th style="padding:8px 12px 8px 0;">D&iacute;a del sorteo</th>
+                                    <th style="padding:8px 12px 8px 0;">Hora</th>
+                                    <th style="padding:8px 12px 8px 0;">Activa</th>
                                     <th style="padding:8px 12px 8px 0;">Fuente autom&aacute;tica</th>
                                     <th style="padding:8px 12px 8px 0;">Fuente propia (opcional)</th>
                                     <th style="padding:8px 0;">Prueba en vivo</th>
@@ -1205,7 +1208,14 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                                 <tbody id="scraper-lot-rows"></tbody>
                             </table>
                         </div>
-                        <p class="text-xs text-gray-500 mt-2">La fuente es el tramo final de la URL en colombia.com/loterias/<b>&lt;fuente&gt;</b>. D&eacute;jala vac&iacute;a para usar la autom&aacute;tica; escr&iacute;bela solo si el nombre de la loter&iacute;a no coincide con la p&aacute;gina.</p>
+                        <p class="text-xs text-gray-500 mt-2">La fuente es el tramo final de la URL en colombia.com/loterias/<b>&lt;fuente&gt;</b>. D&eacute;jala vac&iacute;a para usar la autom&aacute;tica. Desactivar una loter&iacute;a la oculta al crear rifas nuevas (las existentes no se tocan).</p>
+                        <div class="flex items-center gap-2 mt-4" style="flex-wrap:wrap;border-top:1px solid #e5e7eb;padding-top:12px;">
+                            <span class="text-sm font-medium">Nueva loter&iacute;a:</span>
+                            <input type="text" id="scraper-new-name" class="px-4 py-2 border rounded-lg" placeholder="Nombre (ej: Loter&iacute;a del Caribe)" style="max-width:240px;">
+                            <select id="scraper-new-day" class="px-4 py-2 border rounded-lg"></select>
+                            <input type="time" id="scraper-new-time" class="px-4 py-2 border rounded-lg" value="22:30">
+                            <button type="button" id="scraper-new-btn" class="btn h-11 px-4">＋ Crear</button>
+                        </div>
                         <div id="scraper-recientes" class="text-xs text-gray-500 mt-4"></div>
                     </div>
 
@@ -2573,7 +2583,10 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                 : 'Aún no hay corridas registradas.';
             document.getElementById('scraper-lot-rows').innerHTML = (d.loterias || []).map(l =>
                 '<tr style="border-top:1px solid #e5e7eb;">'
-                + '<td style="padding:8px 12px 8px 0;font-weight:600;">' + userEsc(l.name) + (l.active ? '' : ' <span class="text-xs text-gray-400">(inactiva)</span>') + '</td>'
+                + '<td style="padding:8px 12px 8px 0;font-weight:600;">' + userEsc(l.name) + '</td>'
+                + '<td style="padding:8px 12px 8px 0;">' + diaSelectHtml('scraper-day', l.id, l.day_of_week) + '</td>'
+                + '<td style="padding:8px 12px 8px 0;"><input type="time" class="px-4 py-2 border rounded-lg scraper-time" data-id="' + l.id + '" value="' + userEsc(l.draw_time || '22:30') + '"></td>'
+                + '<td style="padding:8px 12px 8px 0;text-align:center;"><input type="checkbox" class="scraper-active" data-id="' + l.id + '"' + (l.active ? ' checked' : '') + '></td>'
                 + '<td style="padding:8px 12px 8px 0;"><code class="text-xs">' + userEsc(l.slug_auto || '—') + '</code></td>'
                 + '<td style="padding:8px 12px 8px 0;"><input type="text" class="px-4 py-2 border rounded-lg scraper-src" data-id="' + l.id + '" value="' + userEsc(l.api_source || '') + '" placeholder="(automática)" style="width:100%;max-width:230px;"></td>'
                 + '<td style="padding:8px 0;white-space:nowrap;"><button type="button" class="btn text-sm scraper-test" data-id="' + l.id + '">Probar</button> <span class="text-xs" id="scraper-out-' + l.id + '"></span></td>'
@@ -2585,18 +2598,60 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
         } catch (e) { console.error('scraper', e); }
     }
 
+    const DIA_OPCIONES = [['monday','Lunes'],['tuesday','Martes'],['wednesday','Miércoles'],['thursday','Jueves'],['friday','Viernes'],['saturday','Sábado'],['sunday','Domingo']];
+    function diaSelectHtml(clase, id, val) {
+        return '<select class="px-4 py-2 border rounded-lg ' + clase + '" data-id="' + id + '">'
+            + DIA_OPCIONES.map(([v, l]) => '<option value="' + v + '"' + (v === val ? ' selected' : '') + '>' + l + '</option>').join('')
+            + '</select>';
+    }
+
     document.getElementById('scraper-save')?.addEventListener('click', async () => {
+        // Calendario (día/hora/activa) + configuración del scraper, juntos.
+        const loterias = [];
+        document.querySelectorAll('.scraper-day').forEach(sel => {
+            const id = sel.dataset.id;
+            loterias.push({
+                id: parseInt(id),
+                day_of_week: sel.value,
+                draw_time: (document.querySelector('.scraper-time[data-id="' + id + '"]') || {}).value || '22:30',
+                active: !!(document.querySelector('.scraper-active[data-id="' + id + '"]') || {}).checked
+            });
+        });
         const sources = {};
         document.querySelectorAll('.scraper-src').forEach(i => { sources[i.dataset.id] = i.value.trim(); });
         try {
+            if (loterias.length) await API.post('/admin/lotteries.php', { action: 'guardar', loterias });
             await API.post('/admin/scraper.php', {
                 action: 'guardar',
                 enabled: document.getElementById('scraper-enabled').checked,
                 sources
             });
-            Utils.showNotification('Configuración del scraper guardada ✅', 'success');
+            Utils.showNotification('Calendario y scraper guardados ✅', 'success');
             loadScraperUI();
+            if (typeof loadLotteries === 'function') loadLotteries();   // refresca el selector al crear rifas
+            if (typeof loadLotteryResultUI === 'function') loadLotteryResultUI();
         } catch (err) { Utils.showNotification(err.message || 'Error al guardar', 'error'); }
+    });
+
+    (function () {
+        const sel = document.getElementById('scraper-new-day');
+        if (sel) sel.innerHTML = DIA_OPCIONES.map(([v, l]) => '<option value="' + v + '">' + l + '</option>').join('');
+    })();
+
+    document.getElementById('scraper-new-btn')?.addEventListener('click', async () => {
+        const name = document.getElementById('scraper-new-name').value.trim();
+        if (!name) { Utils.showNotification('Escribe el nombre de la lotería', 'error'); return; }
+        try {
+            const r = await API.post('/admin/lotteries.php', {
+                action: 'crear', name,
+                day_of_week: document.getElementById('scraper-new-day').value,
+                draw_time: document.getElementById('scraper-new-time').value || '22:30'
+            });
+            Utils.showNotification((r.data && r.data.message) || 'Lotería creada ✅', 'success');
+            document.getElementById('scraper-new-name').value = '';
+            loadScraperUI();
+            if (typeof loadLotteries === 'function') loadLotteries();
+        } catch (err) { Utils.showNotification(err.message || 'Error al crear', 'error'); }
     });
 
     document.getElementById('scraper-run')?.addEventListener('click', async (e) => {
