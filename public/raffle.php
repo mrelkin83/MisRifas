@@ -350,7 +350,18 @@ header("Expires: 0");
         #tickets-grid.grid-multi { grid-template-columns: repeat(auto-fill, minmax(122px, 1fr)) !important; }
         .ticket-btn--multi { aspect-ratio: auto; flex-direction: column; gap: 3px; padding: 9px 6px; contain-intrinsic-size: 122px 66px; }
         .ticket-btn--multi .ticket-id { font-size: 10px; opacity: .85; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; }
-        .ticket-btn--multi .ticket-opps { font-size: 13.5px; font-weight: 800; line-height: 1.35; word-spacing: 1px; }
+        /* Números en ROJO sobre viñeta clara (estilo boleta de lotería):
+           rojo directo sobre la celda verde/amarilla era ilegible. */
+        .ticket-btn--multi .ticket-opps {
+            font-size: 13.5px; font-weight: 800; line-height: 1.4; word-spacing: 2px;
+            background: rgba(255,255,255,.94); color: #dc2626;
+            border-radius: 8px; padding: 3px 5px; width: 100%;
+        }
+        .ticket-btn--paid .ticket-opps, .ticket-btn--reserved .ticket-opps { opacity: .75; }
+        .ticket-btn:not(.ticket-btn--multi) .ticket-num {
+            background: rgba(255,255,255,.94); color: #dc2626;
+            border-radius: 8px; padding: 3px 8px; min-width: 70%;
+        }
         @media (max-width: 640px) {
             #tickets-grid.grid-multi { grid-template-columns: repeat(auto-fill, minmax(105px, 1fr)) !important; }
         }
