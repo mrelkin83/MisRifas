@@ -37,6 +37,16 @@ try {
 
     $raffleRepo->incrementViews($id);
 
+    // Galería (para la página pública y el modal de edición).
+    try {
+        $db = Database::getInstance()->getConnection();
+        $gal = $db->prepare('SELECT image_url FROM raffle_images WHERE raffle_id = ? ORDER BY sort_order ASC');
+        $gal->execute([$id]);
+        $raffle['images'] = $gal->fetchAll(PDO::FETCH_COLUMN);
+    } catch (Exception $e) {
+        $raffle['images'] = [];
+    }
+
     // Reseñas de compradores (v4.12): promedio del organizador, solo si el
     // sistema está habilitado.
     try {

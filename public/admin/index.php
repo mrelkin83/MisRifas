@@ -1374,8 +1374,31 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                                     <input type="number" id="edit-price" class="w-full px-4 py-2 border rounded-lg" required min="1000">
                                 </div>
                                 <div class="form-group">
-                                    <label>Total de Boletos</label>
-                                    <input type="number" id="edit-total-tickets" class="w-full px-4 py-2 border rounded-lg" required min="1">
+                                    <label>Cifras</label>
+                                    <select id="edit-digits" class="w-full px-4 py-2 border rounded-lg" onchange="editStructureChanged()">
+                                        <option value="2">2 cifras (00-99)</option>
+                                        <option value="3">3 cifras (000-999)</option>
+                                        <option value="4">4 cifras (0000-9999)</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Oportunidades por boleto</label>
+                                    <select id="edit-opportunities" class="w-full px-4 py-2 border rounded-lg" onchange="editStructureChanged()">
+                                        <option value="1">1</option><option value="2">2</option>
+                                        <option value="4">4</option><option value="5">5</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Modo de Ganar</label>
+                                    <select id="edit-winning-mode" class="w-full px-4 py-2 border rounded-lg"></select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Departamento</label>
+                                    <select id="edit-department" class="w-full px-4 py-2 border rounded-lg" onchange="editLoadCities()"></select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Ciudad</label>
+                                    <select id="edit-city" class="w-full px-4 py-2 border rounded-lg"></select>
                                 </div>
                                 <div class="form-group">
                                     <label>Fecha del Sorteo</label>
@@ -1397,6 +1420,14 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                             <div class="form-group">
                                 <label>Descripción</label>
                                 <textarea id="edit-description" rows="4" class="w-full px-4 py-2 border rounded-lg"></textarea>
+                            </div>
+                            <p id="edit-structure-hint" class="hint-resaltado"></p>
+                            <div class="form-group">
+                                <label>Fotos de la rifa</label>
+                                <div id="edit-images-grid" class="grid grid-cols-4 gap-2 mb-2"></div>
+                                <input type="file" id="edit-image-file" accept="image/*" multiple style="display:none;">
+                                <button type="button" class="btn px-4" onclick="document.getElementById('edit-image-file').click()">📷 Agregar fotos</button>
+                                <span id="edit-image-status" class="text-xs text-gray-500 ml-2"></span>
                             </div>
                             <div class="flex justify-end gap-3 pt-4 border-t">
                                 <button type="button" onclick="closeEditModal()" class="btn btn--outline px-6">Cancelar</button>
@@ -3065,26 +3096,119 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
         }
         if (!raffle) { Utils.showNotification('No se pudo cargar la rifa para editar', 'error'); return; }
 
-        // Las opciones del selector se llenan ANTES de asignar el valor
+        // Los datos "vivos" (galería, vendidos) salen del API aunque la rifa
+        // venga de una lista: el modal edita TODO el contenido.
+        try {
+            const res = await API.get('/raffles/details.php', { id: raffle.id });
+            if (res.success) raffle = res.data;
+        } catch (e) {}
+
+        // El catálogo geográfico puede no estar cargado si no se ha abierto
+        // "Crear rifa" en esta sesión.
+        if (!colombiaData || !colombiaData.length) { try { await loadGeographyData(); } catch (e) {} }
+
+        // Las opciones de los selectores se llenan ANTES de asignar valores
         // (al revés, innerHTML borraba la selección).
         const lotterySelect = document.getElementById('edit-lottery-id');
         lotterySelect.innerHTML = '<option value="">Seleccionar...</option>' +
             Object.entries(LOTTERY_DAYS).map(([id, l]) => `<option value="${id}">${l.name || ''}</option>`).join('');
+        const deptSel = document.getElementById('edit-department');
+        deptSel.innerHTML = '<option value="">Seleccionar</option>' +
+            (colombiaData || []).map(d => `<option value="${d.departamento}">${d.departamento}</option>`).join('');
 
         document.getElementById('edit-raffle-id').value = raffle.id;
         document.getElementById('edit-name').value = raffle.name || '';
         document.getElementById('edit-status').value = raffle.status || 'draft';
         document.getElementById('edit-price').value = raffle.ticket_price || 0;
-        document.getElementById('edit-total-tickets').value = raffle.total_tickets || 0;
         // datetime-local exige "YYYY-MM-DDTHH:MM"; la BD trae espacio.
         document.getElementById('edit-draw-date').value = raffle.draw_date ? raffle.draw_date.replace(' ', 'T').substring(0, 16) : '';
         document.getElementById('edit-lottery-id').value = raffle.lottery_id || '';
         document.getElementById('edit-whatsapp').value = raffle.whatsapp_contact || '';
         document.getElementById('edit-responsible').value = raffle.responsible_person || '';
         document.getElementById('edit-description').value = raffle.description || '';
+        deptSel.value = raffle.department || '';
+        editLoadCities();
+        document.getElementById('edit-city').value = raffle.city || '';
+        document.getElementById('edit-digits').value = String(raffle.digits || 2);
+        document.getElementById('edit-opportunities').value = String(raffle.opportunities || 1);
+        editStructureChanged();
+        document.getElementById('edit-winning-mode').value = raffle.winning_mode || '';
+
+        // Estructura bloqueada con ventas: cambiar reglas con boletos
+        // comprometidos le movería el piso a quienes ya compraron.
+        window.__editHasSales = (parseInt(raffle.sold_tickets || 0) + parseInt(raffle.reserved_tickets || 0)) > 0;
+        window.__editOriginal = { digits: String(raffle.digits || 2), opportunities: String(raffle.opportunities || 1) };
+        ['edit-digits', 'edit-opportunities', 'edit-winning-mode', 'edit-price'].forEach(id => {
+            document.getElementById(id).disabled = window.__editHasSales;
+        });
+        document.getElementById('edit-structure-hint').textContent = window.__editHasSales
+            ? '🔒 Ya hay boletos reservados o vendidos: cifras, oportunidades, modo de ganar y precio quedan fijos.'
+            : '';
+
+        // Fotos actuales (principal + galería, sin duplicar).
+        const fotos = [];
+        if (raffle.image_url && raffle.image_url.indexOf('placeholder') === -1) fotos.push(raffle.image_url);
+        (raffle.images || []).forEach(u => { if (fotos.indexOf(u) === -1) fotos.push(u); });
+        window.__editImages = fotos;
+        renderEditImages();
 
         document.getElementById('edit-raffle-modal').classList.remove('hidden');
     };
+
+    window.editLoadCities = function () {
+        const dep = (colombiaData || []).find(d => d.departamento === document.getElementById('edit-department').value);
+        document.getElementById('edit-city').innerHTML = '<option value="">Seleccionar</option>' +
+            ((dep && dep.ciudades) || []).map(c => `<option value="${c}">${c}</option>`).join('');
+    };
+
+    // Modos válidos según cifras + aviso del talonario resultante.
+    window.editStructureChanged = function () {
+        const d = parseInt(document.getElementById('edit-digits').value);
+        const modos = d === 2 ? [['last_2','Últimas 2 cifras'],['first_2','Primeras 2 cifras']]
+                    : d === 3 ? [['last_3','Últimas 3 cifras'],['first_3','Primeras 3 cifras']]
+                    : [['last_4','Últimas 4 cifras']];
+        const sel = document.getElementById('edit-winning-mode');
+        const previo = sel.value;
+        sel.innerHTML = modos.map(([v, l]) => `<option value="${v}">${l}</option>`).join('');
+        if (modos.some(([v]) => v === previo)) sel.value = previo;
+        const opp = parseInt(document.getElementById('edit-opportunities').value) || 1;
+        const total = Math.floor(Math.pow(10, d) / opp);
+        const cambia = window.__editOriginal &&
+            (String(d) !== window.__editOriginal.digits || String(opp) !== window.__editOriginal.opportunities);
+        if (!window.__editHasSales) {
+            document.getElementById('edit-structure-hint').textContent =
+                'Se generarán ' + total.toLocaleString('es-CO') + ' boletos con ' + opp + ' número(s) cada uno.'
+                + (cambia ? ' ⚠️ Cambiar cifras u oportunidades REGENERA el talonario completo.' : '');
+        }
+    };
+
+    window.renderEditImages = function () {
+        const grid = document.getElementById('edit-images-grid');
+        grid.innerHTML = (window.__editImages || []).map((u, i) => `
+            <div class="relative rounded-lg overflow-hidden border border-slate-200" style="aspect-ratio:1;">
+                <img src="${fixUrl(u)}" class="w-full h-full object-cover">
+                <button type="button" onclick="removeEditImage(${i})" class="absolute top-1 right-1 bg-red-500 text-white w-5 h-5 rounded-full flex items-center justify-center text-[10px]">×</button>
+            </div>`).join('');
+    };
+    window.removeEditImage = function (i) { window.__editImages.splice(i, 1); renderEditImages(); };
+
+    document.getElementById('edit-image-file')?.addEventListener('change', async function () {
+        if (!this.files.length) return;
+        const st = document.getElementById('edit-image-status');
+        st.textContent = '⏳ Subiendo…';
+        const fd = new FormData();
+        Array.from(this.files).forEach(f => { if (f.size <= 5 * 1048576) fd.append('image[]', f); });
+        try {
+            const r = await API.post('/upload/image.php', fd);
+            (r.data.urls || []).forEach(u => window.__editImages.push(u));
+            renderEditImages();
+            st.textContent = '✅ ' + window.__editImages.length + ' foto(s)';
+            if ((r.data.fallidas || []).length) Utils.showNotification('No se subieron: ' + r.data.fallidas.join('; '), 'warning');
+        } catch (err) {
+            st.textContent = '';
+            Utils.showNotification(err.message || 'Error al subir fotos', 'error');
+        } finally { this.value = ''; }
+    });
 
     window.closeEditModal = () => {
         document.getElementById('edit-raffle-modal').classList.add('hidden');
@@ -3104,18 +3228,32 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
         btn.disabled = true; btn.textContent = 'Guardando…';
         
         try {
-            await API.post('/admin/raffles/update.php', {
+            const body = {
                 id: parseInt(document.getElementById('edit-raffle-id').value),
                 name: document.getElementById('edit-name').value,
                 status: document.getElementById('edit-status').value,
-                ticket_price: parseFloat(document.getElementById('edit-price').value),
-                total_tickets: parseInt(document.getElementById('edit-total-tickets').value),
                 draw_date: document.getElementById('edit-draw-date').value,
                 lottery_id: parseInt(document.getElementById('edit-lottery-id').value),
                 whatsapp_contact: document.getElementById('edit-whatsapp').value,
                 responsible_person: document.getElementById('edit-responsible').value,
-                description: document.getElementById('edit-description').value
-            });
+                description: document.getElementById('edit-description').value,
+                department: document.getElementById('edit-department').value,
+                city: document.getElementById('edit-city').value,
+                image_url: (window.__editImages || [])[0] || '',
+                image_urls: window.__editImages || []
+            };
+            if (!window.__editHasSales) {
+                body.ticket_price = parseFloat(document.getElementById('edit-price').value);
+                body.digits = parseInt(document.getElementById('edit-digits').value);
+                body.opportunities = parseInt(document.getElementById('edit-opportunities').value);
+                body.winning_mode = document.getElementById('edit-winning-mode').value;
+                const cambia = String(body.digits) !== window.__editOriginal.digits
+                    || String(body.opportunities) !== window.__editOriginal.opportunities;
+                if (cambia && !confirm('Cambiaste cifras u oportunidades: el talonario completo se REGENERA con números nuevos. ¿Continuar?')) {
+                    btn.disabled = false; btn.textContent = 'Guardar Cambios'; return;
+                }
+            }
+            await API.post('/admin/raffles/update.php', body);
             Utils.showNotification('Rifa actualizada exitosamente ✅', 'success');
             closeEditModal();
             loadGestionRaffles();
