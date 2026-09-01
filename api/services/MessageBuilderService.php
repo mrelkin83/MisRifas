@@ -15,7 +15,7 @@ class MessageBuilderService
             'nombre' => '🏆 Al ganador del sorteo',
             'descripcion' => 'WhatsApp y correo al ganador. El enlace de aceptación {confirm_url} es obligatorio: si lo quitas, el sistema lo agrega al final.',
             'vars' => ['nombre', 'raffle_name', 'ticket_number', 'lottery_name', 'winning_number', 'draw_date', 'confirm_url', 'platform'],
-            'default' => "Felicitaciones {nombre}! Ganaste la rifa *{raffle_name}* con el numero *{ticket_number}*. El numero ganador de la {lottery_name} del {draw_date} fue *{full_number}*. Confirma que aceptas tu premio aqui: {confirm_url} . Pronto te contactaremos para la entrega del premio.",
+            'default' => "Felicitaciones {nombre}! Tu boleto *{ticket_number}* GANO la rifa *{raffle_name}*: tu numero *{winning_number}* coincidio con el resultado de la {lottery_name} del {draw_date} (numero completo: *{full_number}*). Confirma que aceptas tu premio aqui: {confirm_url} . Pronto te contactaremos para la entrega del premio.",
         ],
         'participant_result' => [
             'nombre' => '🎟️ A los participantes (hubo ganador)',
@@ -120,8 +120,12 @@ class MessageBuilderService
             'raffle_name' => $raffle['name'],
             'ticket_number' => self::padBoleto($ticket['ticket_number']),
             'lottery_name' => $lottery['name'] ?? '',
+            // winning_number = las cifras que COINCIDIERON (el número del
+            // boleto que ganó); full_number = el número COMPLETO que sacó la
+            // lotería (antes ambos eran el recorte, y "el número ganador de la
+            // lotería fue 583" era impreciso con loterías de 4 cifras).
             'winning_number' => $winningDigits,
-            'full_number' => $winningDigits,
+            'full_number' => (string)($raffle['winning_number'] ?? $winningDigits),
             'draw_date' => date('d/m/Y', strtotime($raffle['draw_date'])),
         ];
 
@@ -142,8 +146,8 @@ class MessageBuilderService
                 'Felicitaciones - Ganaste la rifa!',
                 self::raffleImageHtml($raffle)
                 . "<h2 style='color:#fbbf24;'>Felicitaciones {nombre}!</h2>"
-                . "<p>Ganaste la rifa <strong>{raffle_name}</strong> con el boleto <strong>{ticket_number}</strong>.</p>"
-                . "<p>El numero ganador de la {lottery_name} del {draw_date} fue <strong style='color:#22c55e;font-size:1.5em;'>{full_number}</strong></p>"
+                . "<p>Tu boleto <strong>{ticket_number}</strong> GANO la rifa <strong>{raffle_name}</strong>.</p>"
+                . "<p>Tu numero <strong style='color:#22c55e;font-size:1.5em;'>{winning_number}</strong> coincidio con el resultado de la {lottery_name} del {draw_date} (numero completo: <strong>{full_number}</strong>).</p>"
                 . $confirmBlockHtml
                 . "<p>Pronto te contactaremos para la entrega del premio.</p>",
                 $vars
