@@ -15,6 +15,27 @@ require_once __DIR__ . '/MisRifasSecret.php';
 require_once __DIR__ . '/MisRifasStorage.php';
 require_once __DIR__ . '/RaffleDomainAdapter.php';
 
+if (!function_exists('waNumeroDestino')) {
+    /**
+     * Normaliza el destino al formato que Evolution exige (con indicativo).
+     * Los celulares colombianos se guardan como 10 dígitos (3XXXXXXXXX) y
+     * enviarlos así producía HTTP 400 SILENCIOSO: la boleta y los avisos
+     * jamás salían. El motor es neutral de país: el indicativo es del
+     * consumidor (MisRifas opera en Colombia).
+     */
+    function waNumeroDestino(string $telefono): string
+    {
+        if (strpos($telefono, '@') !== false) {
+            return $telefono; // JID completo (LID o grupo): tal cual
+        }
+        $n = preg_replace('/\D+/', '', $telefono) ?? '';
+        if (strlen($n) === 10 && $n[0] === '3') {
+            return '57' . $n; // celular CO sin indicativo
+        }
+        return $n;
+    }
+}
+
 if (!function_exists('notificarImagenVendor')) {
     /**
      * Manda una IMAGEN (base64) con caption a `$telefono` por la instancia
@@ -39,7 +60,7 @@ if (!function_exists('notificarImagenVendor')) {
             return false;
         }
         try {
-            $r = $canal->enviarImagen($telefono, $imagenBase64, $caption);
+            $r = $canal->enviarImagen(waNumeroDestino($telefono), $imagenBase64, $caption);
             return !empty($r['ok']);
         } catch (\Throwable $e) {
             error_log('[WhatsApp][notifyImg] vendor=' . $vendorId . ' ' . $e->getMessage());
@@ -79,7 +100,7 @@ if (!function_exists('notificarWhatsAppVendor')) {
         }
 
         try {
-            $resultado = $canal->enviarTexto($telefono, $mensaje);
+            $resultado = $canal->enviarTexto(waNumeroDestino($telefono), $mensaje);
             if (!empty($resultado['ok'])) {
                 return ['ok' => true, 'error' => '', 'reintentable' => false];
             }
