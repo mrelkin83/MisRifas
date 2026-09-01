@@ -36,8 +36,10 @@ class Uploader {
             throw new Exception("El archivo no es una imagen valida.");
         }
 
-        // 2. Validar tamaño
-        $maxSize = ($type === 'banner') ? self::$maxSizeBanner : self::$maxSizeProfile;
+        // 2. Validar tamaño. Las fotos de RIFA usan el nivel de 5MB: caían en
+        // el default de perfil (2MB) y las fotos normales de celular (3-6MB)
+        // rompían la carga masiva una por una.
+        $maxSize = in_array($type, ['banner', 'raffle'], true) ? self::$maxSizeBanner : self::$maxSizeProfile;
         if ($file['size'] > $maxSize) {
             throw new Exception("El archivo excede el tamaño máximo permitido (" . ($maxSize / 1024 / 1024) . "MB).");
         }
