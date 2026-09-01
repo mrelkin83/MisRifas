@@ -2972,25 +2972,37 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
 
     // --- EDIT MODAL ---
     window.openEditModal = async (raffleId) => {
-        const raffle = allGestionRaffles.find(r => r.id === raffleId);
-        if (!raffle) return;
-        
+        // La rifa puede venir de CUALQUIER lista (Mis Rifas, dashboard,
+        // Gestión); si ninguna está cargada, se pide al API. Antes solo
+        // miraba allGestionRaffles y desde "Mis Rifas" no hacía NADA.
+        let raffle = (allGestionRaffles || []).concat(window.__dashRaffles || [], window.__myRaffles || [], window.__allRaffles || [])
+            .find(r => String(r.id) === String(raffleId));
+        if (!raffle) {
+            try {
+                const res = await API.get('/raffles/details.php', { id: raffleId });
+                if (res.success) raffle = res.data;
+            } catch (e) {}
+        }
+        if (!raffle) { Utils.showNotification('No se pudo cargar la rifa para editar', 'error'); return; }
+
+        // Las opciones del selector se llenan ANTES de asignar el valor
+        // (al revés, innerHTML borraba la selección).
+        const lotterySelect = document.getElementById('edit-lottery-id');
+        lotterySelect.innerHTML = '<option value="">Seleccionar...</option>' +
+            Object.entries(LOTTERY_DAYS).map(([id, l]) => `<option value="${id}">${l.name || ''}</option>`).join('');
+
         document.getElementById('edit-raffle-id').value = raffle.id;
         document.getElementById('edit-name').value = raffle.name || '';
         document.getElementById('edit-status').value = raffle.status || 'draft';
         document.getElementById('edit-price').value = raffle.ticket_price || 0;
         document.getElementById('edit-total-tickets').value = raffle.total_tickets || 0;
-        document.getElementById('edit-draw-date').value = raffle.draw_date ? raffle.draw_date.substring(0, 16) : '';
+        // datetime-local exige "YYYY-MM-DDTHH:MM"; la BD trae espacio.
+        document.getElementById('edit-draw-date').value = raffle.draw_date ? raffle.draw_date.replace(' ', 'T').substring(0, 16) : '';
         document.getElementById('edit-lottery-id').value = raffle.lottery_id || '';
         document.getElementById('edit-whatsapp').value = raffle.whatsapp_contact || '';
         document.getElementById('edit-responsible').value = raffle.responsible_person || '';
         document.getElementById('edit-description').value = raffle.description || '';
-        
-        // Populate lottery dropdown
-        const lotterySelect = document.getElementById('edit-lottery-id');
-        lotterySelect.innerHTML = '<option value="">Seleccionar...</option>' +
-            Object.entries(LOTTERY_DAYS).map(([id, l]) => `<option value="${id}">${l.name || ''}</option>`).join('');
-        
+
         document.getElementById('edit-raffle-modal').classList.remove('hidden');
     };
 
