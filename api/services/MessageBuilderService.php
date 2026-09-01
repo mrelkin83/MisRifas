@@ -50,8 +50,8 @@ class MessageBuilderService
         'payment_confirmed' => [
             'nombre' => '✅ Pago confirmado',
             'descripcion' => 'Al comprador cuando el organizador confirma su pago.',
-            'vars' => ['nombre', 'raffle_name', 'ticket_number', 'draw_date', 'platform'],
-            'default' => "Hola {nombre}, tu pago para la rifa *{raffle_name}* fue confirmado. Boleto: *{ticket_number}*. Sorteo: {draw_date}. Mucha suerte!",
+            'vars' => ['nombre', 'raffle_name', 'ticket_number', 'draw_date', 'boleta_url', 'platform'],
+            'default' => "Hola {nombre}, tu pago para la rifa *{raffle_name}* fue confirmado. Boleto: *{ticket_number}*. Sorteo: {draw_date}. Tu boleta digital: {boleta_url} . Mucha suerte!",
         ],
     ];
 
@@ -85,6 +85,9 @@ class MessageBuilderService
         }
         if ($key === 'resorteo' && strpos($txt, '{next_date}') === false) {
             $txt .= " Nueva fecha del sorteo: {next_date}.";
+        }
+        if ($key === 'payment_confirmed' && strpos($txt, '{boleta_url}') === false) {
+            $txt .= " Tu boleta digital: {boleta_url}";
         }
         return $txt;
     }
@@ -267,23 +270,38 @@ class MessageBuilderService
         ];
     }
 
-    public static function buildPaymentConfirmedMessage(array $raffle, array $ticket, array $buyer): array
+    public static function buildPaymentConfirmedMessage(array $raffle, array $ticket, array $buyer, string $boletaUrl = ''): array
     {
         $vars = [
             'nombre' => $buyer['name'] ?? 'Participante',
             'raffle_name' => $raffle['name'],
             'ticket_number' => str_pad($ticket['ticket_number'], 4, '0', STR_PAD_LEFT),
             'draw_date' => date('d/m/Y', strtotime($raffle['draw_date'])),
+            'boleta_url' => $boletaUrl,
         ];
 
         $text = self::replaceVars(self::plantilla('payment_confirmed'), $vars);
 
+        $html = self::buildEmailHtml(
+            '¡Pago confirmado! - ' . $raffle['name'],
+            self::raffleImageHtml($raffle)
+            . "<h2 style='color:#22c55e;'>¡Pago confirmado, {nombre}!</h2>"
+            . "<p>Tu boleto <strong style='color:#fbbf24;font-size:1.3em;'>{ticket_number}</strong> de la rifa <strong>{raffle_name}</strong> quedó PAGADO.</p>"
+            . "<p>Sorteo: <strong>{draw_date}</strong>.</p>"
+            . ($boletaUrl !== ''
+                ? "<p style='margin:24px 0;'><a href='{boleta_url}' style='background:#f59e0b;color:#1c1305;padding:12px 24px;border-radius:10px;text-decoration:none;font-weight:bold;display:inline-block;'>Ver mi boleta digital</a></p>"
+                  . "<p style='font-size:12px;color:#94a3b8;'>Guarda este enlace: es tu comprobante verificable en cualquier momento.</p>"
+                : '')
+            . "<p>¡Mucha suerte! 🍀</p>",
+            self::escapeVars($vars)
+        );
+
         return [
             'channel' => 'whatsapp',
             'message_type' => 'payment_confirmed',
-            'subject' => 'Pago confirmado - ' . $raffle['name'],
+            'subject' => '¡Pago confirmado! - ' . $raffle['name'],
             'body_text' => $text,
-            'body_html' => null,
+            'body_html' => $html,
             'variables' => $vars,
         ];
     }

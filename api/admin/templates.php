@@ -82,6 +82,9 @@ try {
         if ($v === 'platform') {
             continue; // opcional: el nombre de la plataforma se inyecta solo si se usa
         }
+        if ($v === 'boleta_url') {
+            continue; // crítica con GUARDA: el sistema la repone al enviar si falta
+        }
         if (strpos($body, '{' . $v . '}') === false) {
             $faltantes[] = '{' . $v . '}';
         }

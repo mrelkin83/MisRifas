@@ -92,6 +92,44 @@ final class PaymentReview
             throw $e;
         }
 
+        // Confirmación al COMPRADOR por CORREO ("el correo va siempre") con el
+        // enlace de su boleta digital. La boleta por WhatsApp la envía el
+        // llamador (Boleta::enviarPorWhatsApp) — aquí solo el canal que
+        // faltaba: antes el comprador sin WhatsApp no recibía NADA al
+        // aprobarse su pago. Best-effort: nunca revierte la aprobación.
+        try {
+            $stmt = $db->prepare("
+                SELECT t.ticket_number, t.ticket_code, t.buyer_name, t.user_id,
+                       r.name, r.draw_date, r.image_url, u.email AS buyer_email, u.name AS user_name, u.phone_whatsapp
+                FROM tickets t
+                JOIN raffles r ON r.id = t.raffle_id
+                LEFT JOIN users u ON u.id = t.user_id
+                WHERE t.id = ?
+            ");
+            $stmt->execute([$ticketId]);
+            if (($d = $stmt->fetch(PDO::FETCH_ASSOC)) && !empty($d['buyer_email'])) {
+                require_once __DIR__ . '/MessageBuilderService.php';
+                require_once __DIR__ . '/Boleta.php';
+                $boletaUrl = !empty($d['ticket_code']) ? Boleta::urlPublica((string)$d['ticket_code']) : '';
+                $msg = MessageBuilderService::buildPaymentConfirmedMessage(
+                    ['name' => $d['name'], 'draw_date' => $d['draw_date'], 'image_url' => $d['image_url']],
+                    ['ticket_number' => $d['ticket_number']],
+                    ['name' => $d['buyer_name'] ?: $d['user_name']],
+                    $boletaUrl
+                );
+                $db->prepare("
+                    INSERT INTO message_queue (raffle_id, vendor_id, recipient_user_id, recipient_phone, recipient_email,
+                                               channel, message_type, subject, body_text, body_html, status, scheduled_at, created_at)
+                    SELECT t.raffle_id, ?, t.user_id, ?, ?, 'email', 'payment_confirmed', ?, ?, ?, 'pending', NOW(), NOW()
+                    FROM tickets t WHERE t.id = ?
+                ")->execute([$vendorId, $d['phone_whatsapp'], $d['buyer_email'],
+                    $msg['subject'], $msg['body_text'], $msg['body_html'], $ticketId]);
+            }
+        } catch (Throwable $e) {
+            // No todos los llamadores cargan utils/Logger (p. ej. el webhook).
+            error_log('[PaymentReview] correo de confirmación no encolado ticket=' . $ticketId . ' ' . $e->getMessage());
+        }
+
         return ['ok' => true, 'estado' => 'paid',
                 'mensaje' => 'Pago del boleto #' . $info['ticket_number'] . ' confirmado. Boleta emitida.'];
     }
