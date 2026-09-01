@@ -806,8 +806,13 @@ header("Expires: 0");
     function renderRaffleDetails() {
         const r = currentRaffle;
         
-        // Gallery de imágenes
-        const images = r.images && r.images.length > 0 ? r.images.map(img => img.image_url) : [];
+        // Gallery de imágenes. El API entrega la galería como strings
+        // (details.php → images[]); antes NI SIQUIERA la enviaba y por eso
+        // una rifa con 10 fotos mostraba solo la principal. Se aceptan ambos
+        // formatos (string u objeto {image_url}) por si algún caché viejo.
+        const images = (r.images || [])
+            .map(img => typeof img === 'string' ? img : (img && img.image_url))
+            .filter(Boolean);
         if (r.image_url) images.unshift(r.image_url);
         
         // Eliminar duplicados
