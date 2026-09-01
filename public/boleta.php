@@ -67,7 +67,7 @@ $e = fn($s) => htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8');
             <div class="n" style="<?= count($numsJuego) > 2 ? 'font-size:34px;letter-spacing:2px;line-height:1.4;' : '' ?>"><?= $e(implode(' · ', $numsJuego)) ?></div>
             <div class="l"><?= count($numsJuego) > 1 ? 'Tus ' . count($numsJuego) . ' números en juego' : 'Tu número en juego' ?></div>
         </div>
-        <?php if (count($numsJuego) > 1): ?>
+        <?php if (count($numsJuego) > 1 || (string)$numsJuego[0] !== (string)$b['ticket_number']): ?>
         <div class="fila"><span class="k">Boleto Nº</span><span class="v"><?= $e($b['ticket_number']) ?></span></div>
         <?php endif; ?>
         <div class="fila"><span class="k">Rifa</span><span class="v"><?= $e($b['raffle_name']) ?></span></div>

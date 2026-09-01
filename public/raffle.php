@@ -900,7 +900,9 @@ header("Expires: 0");
 
         const esMulti = tickets.some(t => {
             const o = typeof t.opportunities === 'string' ? JSON.parse(t.opportunities) : (t.opportunities || []);
-            return o.length > 1;
+            // El id alfanumérico (ABDC1) nunca es el número que juega: si
+            // difieren, la celda debe mostrar los números en juego.
+            return o.length > 1 || (o.length === 1 && String(o[0]) !== String(t.ticket_number));
         });
         grid.classList.toggle('grid-multi', esMulti);
 
@@ -919,7 +921,7 @@ header("Expires: 0");
             // redundante (el estado seleccionado ya se ve con el anillo ámbar)
             // y robaba el ancho que hacía que se cortara la última cifra.
             const n = String(ticket.ticket_number);
-            if (opps.length > 1) {
+            if (opps.length > 1 || (opps.length === 1 && String(opps[0]) !== n)) {
                 // El comprador elige por los NÚMEROS del boleto: se muestran
                 // todos (fijos, propios, sin repetirse en otro boleto).
                 div.classList.add('ticket-btn--multi');
@@ -1019,7 +1021,8 @@ function updateSelectionSummary() {
     // Chips REMOVIBLES: tap en un número lo quita de la selección.
     numbersDisplay.innerHTML = selectedTickets.map(t => {
         const o = typeof t.opportunities === 'string' ? JSON.parse(t.opportunities) : (t.opportunities || []);
-        const nums = o.length > 1 ? ' <span class="text-xs opacity-80">(' + o.join('·') + ')</span>' : '';
+        const nums = (o.length > 1 || (o.length === 1 && String(o[0]) !== String(t.ticket_number)))
+            ? ' <span class="text-xs opacity-80">(' + o.join('·') + ')</span>' : '';
         return `<button type="button" data-remove="${t.ticket_number}" title="Quitar ${t.ticket_number}" class="px-3 py-1 bg-amber-600/30 text-amber-300 rounded-lg font-mono text-sm border border-amber-500/30 active:scale-95">${t.ticket_number}${nums} ✕</button>`;
     }).join('');
 

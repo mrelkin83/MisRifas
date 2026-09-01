@@ -254,11 +254,31 @@ class TicketRepository extends BaseRepository
     }
 
     /**
+     * Código alfanumérico de boleto (5 caracteres, ej: ABDC1): empieza por
+     * letra (nunca parece un número jugado) y excluye O/I para no confundir
+     * con 0/1 al dictarlo por teléfono. Único dentro de la rifa.
+     */
+    private function codigoBoleto(array &$usados): string
+    {
+        $letras = 'ABCDEFGHJKLMNPQRSTUVWXYZ';        // sin O ni I
+        $alfabeto = $letras . '0123456789';
+        do {
+            $c = $letras[random_int(0, strlen($letras) - 1)];
+            for ($k = 0; $k < 4; $k++) {
+                $c .= $alfabeto[random_int(0, strlen($alfabeto) - 1)];
+            }
+        } while (isset($usados[$c]));
+        $usados[$c] = true;
+        return $c;
+    }
+
+    /**
      * Generar boletos para una rifa
      */
     public function generateTickets(int $raffleId, int $totalTickets, int $digits, int $opportunities): bool
     {
         try {
+            $codigosUsados = [];
             $maxNumbers = pow(10, $digits);
             
             // Calcular cuántos boletos generar según oportunidades
@@ -286,30 +306,18 @@ class TicketRepository extends BaseRepository
                 $placeholders = [];
 
                 for ($i = $start; $i < $end; $i++) {
-                    if ($opportunities > 1) {
-                        // Identificador ALFABÉTICO (AA, AB, …): el consecutivo
-                        // del boleto NO participa en el sorteo y un id numérico
-                        // se confundía con los números que sí juegan.
-                        $len = $ticketsToGenerate > 676 ? 3 : 2;
-                        $ticketNumber = '';
-                        for ($k = $len - 1; $k >= 0; $k--) {
-                            $ticketNumber .= chr(65 + intdiv($i, 26 ** $k) % 26);
-                        }
-                        $startIndex = $i * $opportunities;
-                        $opportunityNumbers = [];
-                        for ($j = 0; $j < $opportunities; $j++) {
-                            $opportunityNumbers[] = str_pad((string)$selectedNumbers[$startIndex + $j], $digits, '0', STR_PAD_LEFT);
-                        }
-                        sort($opportunityNumbers);
-                        $opportunitiesJSON = json_encode($opportunityNumbers);
-                    } elseif ($opportunities === 1) {
-                        // 1 oportunidad: el número del boleto ES el que juega
-                        // (0-based cubre exacto 00…max-1). Antes el boleto "07"
-                        // jugaba un número random OCULTO distinto — el comprador
-                        // creía elegir su número y no era verdad.
-                        $ticketNumber = str_pad((string)$i, $digits, '0', STR_PAD_LEFT);
-                        $opportunitiesJSON = json_encode([$ticketNumber]);
+                    // Identificador ALFANUMÉRICO (ej: ABDC1) para TODOS los
+                    // boletos, sin excepción: el id no participa en el sorteo
+                    // y jamás debe confundirse con los números que sí juegan
+                    // (esos viven en `opportunities` y se muestran siempre).
+                    $ticketNumber = $this->codigoBoleto($codigosUsados);
+                    $startIndex = $i * $opportunities;
+                    $opportunityNumbers = [];
+                    for ($j = 0; $j < $opportunities; $j++) {
+                        $opportunityNumbers[] = str_pad((string)$selectedNumbers[$startIndex + $j], $digits, '0', STR_PAD_LEFT);
                     }
+                    sort($opportunityNumbers);
+                    $opportunitiesJSON = json_encode($opportunityNumbers);
 
                     $placeholders[] = "(?, ?, ?, ?)";
                     $values[] = $raffleId;
