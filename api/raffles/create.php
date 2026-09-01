@@ -157,6 +157,12 @@ try {
     // conexion SMB/UNC real hacia ese host (SSRF interno confirmado por
     // auditoria via timing de conexion).
     $imageUrl = trim($input['image_url'] ?? '/assets/images/placeholder.svg');
+    // El Uploader devuelve rutas SIN barra inicial (assets/uploads/…) y el
+    // validador la exige: sin esta normalización, TODA imagen recién subida
+    // se rechazaba con "image_url invalida".
+    if ($imageUrl !== '' && $imageUrl[0] !== '/') {
+        $imageUrl = '/' . $imageUrl;
+    }
     if ($imageUrl !== '' && !Validator::esRutaLocalSegura($imageUrl)) {
         Response::error('image_url invalida: solo se permiten rutas locales', null, 400);
     }
@@ -202,8 +208,13 @@ try {
 
     // Guardar imágenes adicionales si existen (misma validacion anti-SSRF)
     if (!empty($input['image_urls']) && is_array($input['image_urls'])) {
-        $safeUrls = array_values(array_filter($input['image_urls'], function ($u) {
+        $safeUrls = array_values(array_filter(array_map(function ($u) {
             $u = trim((string)$u);
+            if ($u !== '' && $u[0] !== '/') {
+                $u = '/' . $u; // misma normalización que la imagen principal
+            }
+            return $u;
+        }, $input['image_urls']), function ($u) {
             return $u !== '' && Validator::esRutaLocalSegura($u);
         }));
         if ($safeUrls) {

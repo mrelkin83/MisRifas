@@ -36,6 +36,9 @@ try {
     // imagen_url solo puede ser vacia o una ruta local del sitio (nunca
     // http(s):// externo ni javascript:/data:).
     $imagen_url = trim($input['imagen_url'] ?? '');
+    if ($imagen_url !== '' && $imagen_url[0] !== '/') {
+        $imagen_url = '/' . $imagen_url; // el Uploader devuelve rutas sin barra inicial
+    }
     if ($imagen_url !== '' && !Validator::esRutaLocalSegura($imagen_url)) {
         Response::error('La imagen debe subirse desde el formulario (ruta local).', null, 400);
     }

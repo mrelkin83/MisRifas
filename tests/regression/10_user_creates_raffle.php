@@ -50,6 +50,33 @@ if ($created) {
     check((int)$owner === $vid, 'La rifa queda a nombre de su organizador provisionado', "created_by=$owner vendor=$vid");
 }
 
+// 2b) La imagen tal como la devuelve el Uploader (SIN barra inicial) se
+//     acepta y se guarda normalizada — antes el validador anti-SSRF la
+//     rechazaba con "image_url invalida" y no se podía crear la rifa.
+$res = httpPost('/api/raffles/create.php', [
+    'name' => '__TEST__ Rifa ImgSinBarra', 'description' => 'x', 'department' => 'Cundinamarca',
+    'city' => 'Bogota', 'scope' => 'municipal', 'whatsapp_contact' => '3007778899',
+    'responsible_person' => 'Test', 'ticket_price' => 1000, 'total_tickets' => 100,
+    'draw_date' => fxNextLotteryDate(1), 'lottery_id' => 1, 'digits' => 2,
+    'opportunities' => 1, 'winning_mode' => 'last_2',
+    'image_url' => 'assets/uploads/raffles/img_prueba.jpg',
+    'image_urls' => ['assets/uploads/raffles/img_prueba2.jpg'],
+], $token);
+assertHttp(201, $res, 'Imagen sin barra inicial (formato del Uploader) se acepta');
+$img = $db->query("SELECT image_url FROM raffles WHERE name = '__TEST__ Rifa ImgSinBarra' ORDER BY id DESC LIMIT 1")->fetchColumn();
+check($img === '/assets/uploads/raffles/img_prueba.jpg', 'Se guarda normalizada con barra inicial', "db=$img");
+
+// Una URL externa SIGUE rechazada (la guarda anti-SSRF no se relajó).
+$res = httpPost('/api/raffles/create.php', [
+    'name' => '__TEST__ Rifa ImgExterna', 'description' => 'x', 'department' => 'Cundinamarca',
+    'city' => 'Bogota', 'scope' => 'municipal', 'whatsapp_contact' => '3007778899',
+    'responsible_person' => 'Test', 'ticket_price' => 1000, 'total_tickets' => 100,
+    'draw_date' => fxNextLotteryDate(1), 'lottery_id' => 1, 'digits' => 2,
+    'opportunities' => 1, 'winning_mode' => 'last_2',
+    'image_url' => 'https://evil.example/x.jpg',
+], $token);
+check($res['code'] === 400, 'URL externa sigue rechazada (anti-SSRF)', 'HTTP ' . $res['code']);
+
 // 3) El backend rechaza una fecha que NO cae el día que juega la lotería
 //    (antes solo lo validaba el navegador → rifas huérfanas vía API).
 $badDate = date('Y-m-d', strtotime(fxNextLotteryDate(1) . ' +1 day'));
