@@ -210,13 +210,16 @@ header("Expires: 0");
         /* Hoja emergente de números seleccionados: antes iba en línea debajo de
            la grilla; ahora flota sobre el contenido (bottom-sheet en móvil,
            tarjeta inferior derecha en pantallas grandes). */
-        #selection-backdrop { position: fixed; inset: 0; background: rgba(15,23,42,0.6); backdrop-filter: blur(4px); z-index: 60; }
+        #selection-backdrop { position: fixed; inset: 0; background: rgba(15,23,42,0.82); backdrop-filter: blur(6px); z-index: 60; }
         #multi-selection-summary.sheet {
             position: fixed; z-index: 70; left: 0; right: 0; bottom: 0;
             max-height: 85vh; overflow-y: auto; margin: 0;
             border-radius: 20px 20px 0 0;
             box-shadow: 0 -12px 40px rgba(0,0,0,0.5);
             animation: sheetUp 0.25s ease-out;
+            /* Fondo SÓLIDO: el degradado ámbar /30 dejaba ver la grilla de
+               boletos detrás y confundía la lectura de la selección. */
+            background: linear-gradient(135deg, #2a2416 0%, #1e293b 55%, #0f172a 100%) !important;
         }
         @keyframes sheetUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
         @media (min-width: 640px) {
