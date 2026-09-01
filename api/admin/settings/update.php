@@ -30,6 +30,9 @@ $editable_keys = [
     // Correo del sistema (el formulario SMTP del panel guarda clave por clave)
     'mailing_smtp_host', 'mailing_smtp_port', 'mailing_smtp_user',
     'mailing_smtp_pass', 'mailing_smtp_from', 'mailing_from_name',
+    // Wompi de la PLATAFORMA (cobro de comisiones/talonario)
+    'wompi_platform_public_key', 'wompi_platform_integrity_secret',
+    'wompi_platform_events_secret', 'wompi_platform_private_key',
 ];
 
 if (!in_array($key, $editable_keys)) {

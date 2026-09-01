@@ -1554,6 +1554,23 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                                     Guardar Configuración de Comisiones
                                 </button>
                             </div>
+                            <div id="wompi-plat-box" class="mt-6" style="border-top:1px solid #e5e7eb;padding-top:16px;">
+                                <h3 class="text-sm font-bold mb-1">💳 Pago autom&aacute;tico con Wompi (llaves de la PLATAFORMA)</h3>
+                                <p class="text-xs text-gray-500 mb-3">Con las llaves configuradas, el organizador paga su cobro con un link Wompi y la reactivaci&oacute;n es AUTOM&Aacute;TICA al aprobarse (el webhook verifica firma y monto). "Marcar como pagada" sigue disponible como contingencia manual. Los secretos guardados no se muestran: vac&iacute;o = no cambiar.</p>
+                                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;">
+                                    <div class="form-group"><label class="text-xs">Llave p&uacute;blica</label>
+                                        <input type="text" id="wompi-plat-public" class="w-full px-4 py-2 border rounded-lg" placeholder="pub_prod_… o pub_test_…"></div>
+                                    <div class="form-group"><label class="text-xs">Secreto de integridad</label>
+                                        <input type="password" id="wompi-plat-integrity" class="w-full px-4 py-2 border rounded-lg" placeholder="Vac&iacute;o = no cambiar"></div>
+                                    <div class="form-group"><label class="text-xs">Secreto de eventos (webhook)</label>
+                                        <input type="password" id="wompi-plat-events" class="w-full px-4 py-2 border rounded-lg" placeholder="Vac&iacute;o = no cambiar"></div>
+                                    <div class="form-group"><label class="text-xs">Llave privada (opcional, conciliaci&oacute;n)</label>
+                                        <input type="password" id="wompi-plat-private" class="w-full px-4 py-2 border rounded-lg" placeholder="Vac&iacute;o = no cambiar"></div>
+                                </div>
+                                <div class="form-group mt-2"><label class="text-xs">URL del webhook — reg&iacute;strala en Wompi &rarr; Eventos</label>
+                                    <input type="text" id="wompi-plat-webhook" readonly class="w-full px-4 py-2 border rounded-lg" style="background:#f8fafc;font-size:12px;" onclick="this.select()"></div>
+                                <button type="button" id="wompi-plat-save" class="btn btn--primary px-6 h-11 mt-2">Guardar llaves Wompi</button>
+                            </div>
                         </div>
                     </div>
                     <div class="section-card">
@@ -2126,7 +2143,53 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
         if (section === 'email-campaigns') { loadCampaigns(); loadEmailSettings(); }
     }
 
+    // ── Cobro Wompi de la plataforma (reactivación automática) ──
+    window.pagarCobroWompi = async function (raffleId) {
+        try {
+            const r = await API.post('/vendor/pagar-cobro.php', { raffle_id: parseInt(raffleId) });
+            if (r.data && r.data.url) {
+                window.open(r.data.url, '_blank', 'noopener');
+                Utils.showNotification('Link de pago abierto. Al aprobarse el pago, la reactivación es automática.', 'success');
+            }
+        } catch (err) { Utils.showNotification(err.message || 'No se pudo generar el link de pago', 'error'); }
+    };
+
+    async function loadWompiPlatform() {
+        const box = document.getElementById('wompi-plat-box');
+        if (!box) return;
+        try {
+            const res = await API.get('/admin/settings.php');
+            if (!res.success) return;
+            const d = res.data || {};
+            const pk = document.getElementById('wompi-plat-public');
+            if (pk && d.wompi_platform_public_key) pk.value = d.wompi_platform_public_key;
+            const wh = document.getElementById('wompi-plat-webhook');
+            if (wh) wh.value = window.location.origin + BASE_PATH + '/api/payments/wompi-billing-webhook.php';
+        } catch (e) { console.error('wompi plat', e); }
+    }
+
+    document.getElementById('wompi-plat-save')?.addEventListener('click', async () => {
+        const campos = [
+            ['wompi_platform_public_key', 'wompi-plat-public', false],
+            ['wompi_platform_integrity_secret', 'wompi-plat-integrity', true],
+            ['wompi_platform_events_secret', 'wompi-plat-events', true],
+            ['wompi_platform_private_key', 'wompi-plat-private', true],
+        ];
+        try {
+            for (const [key, id, esSecreto] of campos) {
+                const val = (document.getElementById(id) || {}).value || '';
+                if (esSecreto && val.trim() === '') continue; // vacío = no cambiar
+                await API.post('/admin/settings/update.php', { key, value: val.trim() });
+            }
+            Utils.showNotification('Llaves Wompi guardadas ✅', 'success');
+            ['wompi-plat-integrity', 'wompi-plat-events', 'wompi-plat-private'].forEach(id => {
+                const el = document.getElementById(id); if (el) el.value = '';
+            });
+        } catch (err) { Utils.showNotification(err.message || 'Error al guardar llaves', 'error'); }
+    });
+
     async function loadCommissions() {
+        loadWompiPlatform();
         try {
             const response = await API.get('/admin/commissions.php');
             if (response.success) {
@@ -2673,7 +2736,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                 + '<td style="padding:8px 12px 8px 0;text-align:center;"><input type="checkbox" class="scraper-active" data-id="' + l.id + '"' + (l.active ? ' checked' : '') + '></td>'
                 + '<td style="padding:8px 12px 8px 0;"><code class="text-xs">' + userEsc(l.slug_auto || '—') + '</code></td>'
                 + '<td style="padding:8px 12px 8px 0;"><input type="text" class="px-4 py-2 border rounded-lg scraper-src" data-id="' + l.id + '" value="' + userEsc(l.api_source || '') + '" placeholder="(automática)" style="width:100%;max-width:230px;"></td>'
-                + '<td style="padding:8px 0;white-space:nowrap;"><button type="button" class="btn text-sm scraper-test" data-id="' + l.id + '">Probar</button> <span class="text-xs" id="scraper-out-' + l.id + '"></span></td>'
+                + '<td style="padding:8px 0;white-space:nowrap;"><button type="button" class="btn text-sm scraper-test" data-id="' + l.id + '">Probar</button> <button type="button" class="btn text-sm scraper-del" data-id="' + l.id + '" data-name="' + userEsc(l.name) + '" title="Eliminar lotería" style="color:#dc2626;">🗑</button> <span class="text-xs" id="scraper-out-' + l.id + '"></span></td>'
                 + '</tr>').join('');
             document.getElementById('scraper-recientes').innerHTML = (d.recientes || []).length
                 ? '<b>Últimos resultados guardados:</b> ' + d.recientes.map(x =>
@@ -2751,6 +2814,17 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
     });
 
     document.getElementById('scraper-card')?.addEventListener('click', async (e) => {
+        const del = e.target.closest('.scraper-del');
+        if (del) {
+            if (!confirm('¿Eliminar la lotería "' + (del.dataset.name || '') + '"?\n\nSolo se permite si NINGUNA rifa la usa (el historial de sorteos la referencia). Si tiene rifas, desactívala en su lugar.')) return;
+            try {
+                const r = await API.post('/admin/lotteries.php', { action: 'eliminar', id: parseInt(del.dataset.id) });
+                Utils.showNotification((r.data && r.data.message) || 'Lotería eliminada', 'success');
+                loadScraperUI();
+                if (typeof loadLotteries === 'function') loadLotteries();
+            } catch (err) { Utils.showNotification(err.message || 'No se pudo eliminar', 'error'); }
+            return;
+        }
         const btn = e.target.closest('.scraper-test');
         if (!btn) return;
         const id = btn.dataset.id;
@@ -4807,8 +4881,9 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                 var c = (window.__commissions || []).find(function(x){ return String(x.raffle_id) === String(raffleId); });
                 if (!c) return;
                 var items = [
+                    { label: '💳  Pagar con Wompi (reactivación automática)', onClick: function(){ pagarCobroWompi(c.raffle_id); } },
                     { label: '👁️  Ver rifa', onClick: function(){ viewRaffle(c.raffle_id); } },
-                    { label: '✅  Marcar como pagada', onClick: function(){ markCommissionPaid(c.raffle_id); } }
+                    { label: '✅  Marcar como pagada (manual — contingencia)', onClick: function(){ markCommissionPaid(c.raffle_id); } }
                 ];
                 openActionSheet(c.raffle_name || 'Comisión',
                     'Comisión: ' + Utils.formatPrice(c.commission_amount || 0) + ' · ' + (c.creator_name || ''), items);

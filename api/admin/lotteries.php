@@ -88,6 +88,30 @@ try {
         Response::success(['id' => (int)$db->lastInsertId(), 'message' => "Lotería «{$name}» creada"]);
     }
 
+    if ($action === 'eliminar') {
+        $id = (int)($input['id'] ?? 0);
+        if (!$id) {
+            Response::error('Falta el id de la lotería', null, 422);
+        }
+        // Una lotería con rifas (del estado que sea) NO se elimina: romperia
+        // el historial de sorteos y la trazabilidad pública. Se desactiva.
+        $n = $db->prepare('SELECT COUNT(*) FROM raffles WHERE lottery_id = ?');
+        $n->execute([$id]);
+        $enUso = (int)$n->fetchColumn();
+        if ($enUso > 0) {
+            Response::error("No se puede eliminar: {$enUso} rifa(s) usan esta lotería (su historial la referencia). Desactívala en su lugar.", null, 409);
+        }
+        $nom = $db->prepare('SELECT name FROM lotteries WHERE id = ?');
+        $nom->execute([$id]);
+        $nombre = (string)$nom->fetchColumn();
+        if ($nombre === '') {
+            Response::error('Lotería no encontrada', null, 404);
+        }
+        $db->prepare('DELETE FROM lotteries WHERE id = ?')->execute([$id]);
+        Logger::activity('lottery_deleted', (int)$admin['id'], ['id' => $id, 'name' => $nombre]);
+        Response::success(['message' => "Lotería «{$nombre}» eliminada"]);
+    }
+
     Response::error('Acción no válida', null, 422);
 } catch (Exception $e) {
     Logger::exception($e);
