@@ -866,7 +866,7 @@ header("Expires: 0");
         if (modeBox && modos[r.winning_mode]) {
             const opp = parseInt(r.opportunities || 1);
             modeBox.innerHTML = '🎯 Gana el boleto que tenga <b>' + modos[r.winning_mode] + '</b> del número ganador del sorteo.'
-                + (opp > 1 ? '<br>🍀 Cada boleto juega con <b>' + opp + ' números propios y fijos</b> (no se repiten en otro boleto): elige el que traiga tus números de la suerte.' : '');
+                + (opp > 1 ? '<br>🍀 <b>' + opp + ' Oportunidades de ganar en cada boleto</b>' : '');
             modeBox.classList.remove('hidden');
         }
     }
