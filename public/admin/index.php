@@ -1117,6 +1117,11 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                                     <input type="text" id="p-city" class="w-full px-4 py-2 border rounded-lg">
                                 </div>
                                 <div class="form-group">
+                                    <label>Correo adicional de avisos (opcional)</label>
+                                    <input type="email" id="p-notif-email" class="w-full px-4 py-2 border rounded-lg" placeholder="ej: tunombre@gmail.com">
+                                    <small style="color:#64748b;font-size:12px;display:block;margin-top:4px;">Los avisos (nuevos pagos, recordatorios) llegan a tu correo de cuenta Y a este.</small>
+                                </div>
+                                <div class="form-group">
                                     <label>Username</label>
                                     <input type="text" id="p-username" class="w-full px-4 py-2 border rounded-lg bg-gray-100" readonly>
                                 </div>
@@ -4202,6 +4207,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                 document.getElementById('p-name').value = u.full_name || u.name || '';
                 document.getElementById('p-phone').value = u.phone || '';
                 document.getElementById('p-city').value = u.city || '';
+                if (document.getElementById('p-notif-email')) document.getElementById('p-notif-email').value = u.notification_email || '';
                 document.getElementById('p-username').value = u.username || '';
                 document.getElementById('p-display-name').textContent = u.full_name || u.name || 'Usuario';
                 document.getElementById('p-display-role').textContent = (u.role || 'admin').toUpperCase();
@@ -4244,6 +4250,7 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
         formData.append('name', document.getElementById('p-name').value);
         formData.append('phone', document.getElementById('p-phone').value);
         formData.append('city', document.getElementById('p-city').value);
+        if (document.getElementById('p-notif-email')) formData.append('notification_email', document.getElementById('p-notif-email').value.trim());
         
         const file = document.getElementById('p-image-input').files[0];
         if (file) formData.append('profile_image', file);

@@ -65,7 +65,7 @@ try {
         'lottery_name'   => $w['lottery_name'],
         'draw_date'      => $w['draw_date'],
         'winning_number' => $w['winning_number'],
-        'ticket_number'  => $w['ticket_number'] !== null ? str_pad((string)$w['ticket_number'], 4, '0', STR_PAD_LEFT) : null,
+        'ticket_number'  => $w['ticket_number'] !== null ? (ctype_digit((string)$w['ticket_number']) ? str_pad((string)$w['ticket_number'], 4, '0', STR_PAD_LEFT) : (string)$w['ticket_number']) : null,
         'winner_name'    => $w['winner_name'],
         'status'         => $w['acceptance_status'],
         'accepted_at'    => $w['accepted_at'],

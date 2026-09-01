@@ -51,6 +51,16 @@ try {
     if ($esVendor) {
         $sql = "UPDATE vendors SET business_name = ?, phone = ?, city = ?, department = ?, updated_at = NOW()";
         $params = [$name, $phone, $city, $dept];
+        // Correo ADICIONAL de avisos (opcional): los avisos del organizador
+        // llegan a su correo de cuenta Y a este.
+        if (array_key_exists('notification_email', $_POST)) {
+            $notif = trim((string)$_POST['notification_email']);
+            if ($notif !== '' && !filter_var($notif, FILTER_VALIDATE_EMAIL)) {
+                Response::error('El correo adicional de avisos no es válido');
+            }
+            $sql .= ", notification_email = ?";
+            $params[] = $notif !== '' ? $notif : null;
+        }
         if ($profileImagePath) { $sql .= ", logo_url = ?"; $params[] = $profileImagePath; }
         if (!empty($password)) { $sql .= ", password_hash = ?"; $params[] = password_hash($password, PASSWORD_DEFAULT); }
         $sql .= " WHERE id = ?";

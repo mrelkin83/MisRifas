@@ -28,6 +28,7 @@ try {
         'department'    => $user['department'] ?? '',
         'city'          => $user['city'] ?? '',
         'role'          => $user['role'],
+        'notification_email' => $esVendor ? ($user['notification_email'] ?? '') : '',
         'profile_image' => $esVendor ? ($user['logo_url'] ?? null) : ($user['profile_image'] ?? null),
         'source'        => $user['auth_type'] ?? null
     ]);

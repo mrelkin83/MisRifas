@@ -287,6 +287,15 @@ try {
         // un fallo aquí jamás tumba la reserva ya confirmada.
         try {
             require_once __DIR__ . '/../../api/services/MessageBuilderService.php';
+            // El WhatsApp que ve el comprador es el REGISTRADO por el
+            // organizador en su cuenta (su configuración individual); el
+            // whatsapp_contact de la rifa queda solo como respaldo.
+            $vp = $db->prepare('SELECT phone FROM vendors WHERE id = ?');
+            $vp->execute([(int)$raffle['owner_id']]);
+            $telVendedor = trim((string)$vp->fetchColumn());
+            if ($telVendedor !== '') {
+                $raffle['whatsapp_contact'] = $telVendedor;
+            }
             $msg = MessageBuilderService::buildReservationOrderMessage(
                 $raffle, $numeros,
                 ['name' => $userName],

@@ -286,17 +286,15 @@ class TicketRepository extends BaseRepository
                 $placeholders = [];
 
                 for ($i = $start; $i < $end; $i++) {
-                    if ($opportunities === 1) {
-                        // 1 oportunidad: el número del boleto ES el que juega
-                        // (0-based cubre exacto 00…max-1). Antes el boleto "07"
-                        // jugaba un número random OCULTO distinto — el comprador
-                        // creía elegir su número y no era verdad.
-                        $ticketNumber = str_pad((string)$i, $digits, '0', STR_PAD_LEFT);
-                        $opportunitiesJSON = json_encode([$ticketNumber]);
-                    } else {
-                        // Varias oportunidades: id secuencial + N números random
-                        // ÚNICOS del pool barajado (no se repiten entre boletos).
-                        $ticketNumber = str_pad((string)($i + 1), $digits, '0', STR_PAD_LEFT);
+                    if ($opportunities > 1) {
+                        // Identificador ALFABÉTICO (AA, AB, …): el consecutivo
+                        // del boleto NO participa en el sorteo y un id numérico
+                        // se confundía con los números que sí juegan.
+                        $len = $ticketsToGenerate > 676 ? 3 : 2;
+                        $ticketNumber = '';
+                        for ($k = $len - 1; $k >= 0; $k--) {
+                            $ticketNumber .= chr(65 + intdiv($i, 26 ** $k) % 26);
+                        }
                         $startIndex = $i * $opportunities;
                         $opportunityNumbers = [];
                         for ($j = 0; $j < $opportunities; $j++) {
@@ -304,6 +302,13 @@ class TicketRepository extends BaseRepository
                         }
                         sort($opportunityNumbers);
                         $opportunitiesJSON = json_encode($opportunityNumbers);
+                    } elseif ($opportunities === 1) {
+                        // 1 oportunidad: el número del boleto ES el que juega
+                        // (0-based cubre exacto 00…max-1). Antes el boleto "07"
+                        // jugaba un número random OCULTO distinto — el comprador
+                        // creía elegir su número y no era verdad.
+                        $ticketNumber = str_pad((string)$i, $digits, '0', STR_PAD_LEFT);
+                        $opportunitiesJSON = json_encode([$ticketNumber]);
                     }
 
                     $placeholders[] = "(?, ?, ?, ?)";

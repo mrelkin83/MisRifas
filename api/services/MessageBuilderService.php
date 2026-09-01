@@ -118,7 +118,7 @@ class MessageBuilderService
         $vars = [
             'nombre' => $winner['name'] ?? 'Participante',
             'raffle_name' => $raffle['name'],
-            'ticket_number' => str_pad($ticket['ticket_number'], 4, '0', STR_PAD_LEFT),
+            'ticket_number' => self::padBoleto($ticket['ticket_number']),
             'lottery_name' => $lottery['name'] ?? '',
             'winning_number' => $winningDigits,
             'full_number' => $winningDigits,
@@ -164,7 +164,7 @@ class MessageBuilderService
         $vars = [
             'nombre' => $buyer['name'] ?? 'Participante',
             'raffle_name' => $raffle['name'],
-            'ticket_number' => str_pad($ticket['ticket_number'], 4, '0', STR_PAD_LEFT),
+            'ticket_number' => self::padBoleto($ticket['ticket_number']),
             'lottery_name' => $lottery['name'] ?? '',
             'winning_number' => $winningDigits,
             'draw_date' => date('d/m/Y', strtotime($raffle['draw_date'])),
@@ -197,7 +197,7 @@ class MessageBuilderService
             'raffle_name' => $raffle['name'],
             'winner_name' => $winner['name'] ?? 'Participante',
             'winner_phone' => $winner['phone_whatsapp'] ?? '',
-            'ticket_number' => str_pad($winner['ticket_number'] ?? '0000', 4, '0', STR_PAD_LEFT),
+            'ticket_number' => self::padBoleto($winner['ticket_number'] ?? '0000'),
             'winning_number' => $winningDigits,
         ];
 
@@ -218,7 +218,7 @@ class MessageBuilderService
         $vars = [
             'nombre' => $buyer['name'] ?? 'Participante',
             'raffle_name' => $raffle['name'],
-            'ticket_number' => str_pad($ticket['ticket_number'], 4, '0', STR_PAD_LEFT),
+            'ticket_number' => self::padBoleto($ticket['ticket_number']),
             'price' => '$' . number_format($raffle['ticket_price'], 0, ',', '.'),
             'whatsapp' => $raffle['whatsapp_contact'],
         ];
@@ -275,7 +275,7 @@ class MessageBuilderService
         $vars = [
             'nombre' => $buyer['name'] ?? 'Participante',
             'raffle_name' => $raffle['name'],
-            'ticket_number' => str_pad($ticket['ticket_number'], 4, '0', STR_PAD_LEFT),
+            'ticket_number' => self::padBoleto($ticket['ticket_number']),
             'draw_date' => date('d/m/Y', strtotime($raffle['draw_date'])),
             'boleta_url' => $boletaUrl,
         ];
@@ -314,7 +314,7 @@ class MessageBuilderService
     public static function buildParticipantResultMessage(array $raffle, array $ticketNumbers, array $buyer, array $lottery, string $winningDigits, string $winnerName, string $winnerTicket): array
     {
         $tickets = implode(', ', array_map(
-            fn($n) => str_pad($n, 4, '0', STR_PAD_LEFT),
+            fn($n) => self::padBoleto($n),
             $ticketNumbers
         ));
         $vars = [
@@ -325,7 +325,7 @@ class MessageBuilderService
             'winning_number' => $winningDigits,
             'draw_date' => date('d/m/Y', strtotime($raffle['draw_date'])),
             'winner_name' => $winnerName,
-            'winner_ticket' => str_pad($winnerTicket, 4, '0', STR_PAD_LEFT),
+            'winner_ticket' => self::padBoleto($winnerTicket),
         ];
         $tpl = self::plantilla('participant_result');
         $text = self::replaceVars($tpl, $vars);
@@ -359,7 +359,7 @@ class MessageBuilderService
     public static function buildResorteoMessage(array $raffle, array $ticketNumbers, array $buyer, array $lottery, string $winningDigits, string $nextDrawDate): array
     {
         $tickets = implode(', ', array_map(
-            fn($n) => str_pad($n, 4, '0', STR_PAD_LEFT),
+            fn($n) => self::padBoleto($n),
             $ticketNumbers
         ));
         $vars = [
@@ -421,6 +421,14 @@ class MessageBuilderService
             fn($v) => htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'),
             $vars
         );
+    }
+
+    /** Formato del consecutivo del boleto: los numéricos se rellenan a 4
+     *  cifras; los ALFABÉTICOS (AA, AB…) van tal cual. */
+    private static function padBoleto($n): string
+    {
+        $n = (string)$n;
+        return ctype_digit($n) ? str_pad($n, 4, '0', STR_PAD_LEFT) : $n;
     }
 
     private static function replaceVars(string $template, array $vars): string

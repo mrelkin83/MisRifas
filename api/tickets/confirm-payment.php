@@ -225,7 +225,7 @@ try {
     try {
         $stmt = $db->prepare("
             SELECT COALESCE(r.vendor_id, r.created_by) AS vendor_id, r.id AS raffle_id, r.name, r.ticket_price,
-                   v.phone AS vendor_phone, v.email AS vendor_email, u.name AS buyer_name
+                   v.phone AS vendor_phone, v.email AS vendor_email, v.notification_email AS vendor_email2, u.name AS buyer_name
             FROM tickets t
             JOIN raffles r ON r.id = t.raffle_id
             JOIN vendors v ON v.id = COALESCE(r.vendor_id, r.created_by)
@@ -270,15 +270,19 @@ try {
             require_once __DIR__ . '/../whatsapp/notify.php';
             notificarWhatsAppVendor((int)$ctx['vendor_id'], (string)$ctx['vendor_phone'], $lineas);
 
-            // También por CORREO ("el correo va siempre"): mismo aviso, para
-            // el organizador sin WhatsApp vinculado o que no lo vio a tiempo.
-            if (!empty($ctx['vendor_email'])) {
+            // También por CORREO ("el correo va siempre"): al correo de cuenta
+            // Y al correo adicional de avisos si lo configuró en Mi Perfil.
+            $destinos = array_unique(array_filter([
+                trim((string)($ctx['vendor_email'] ?? '')),
+                trim((string)($ctx['vendor_email2'] ?? '')),
+            ]));
+            foreach ($destinos as $correo) {
                 $db->prepare("
                     INSERT INTO message_queue (raffle_id, vendor_id, recipient_phone, recipient_email,
                                                channel, message_type, subject, body_text, status, scheduled_at, created_at)
                     VALUES (?,?,?,?, 'email', 'payment_reminder', ?, ?, 'pending', NOW(), NOW())
                 ")->execute([(int)$ctx['raffle_id'], (int)$ctx['vendor_id'],
-                    (string)$ctx['vendor_phone'], (string)$ctx['vendor_email'],
+                    (string)$ctx['vendor_phone'], $correo,
                     '🧾 Nuevo pago por confirmar — ' . $ctx['name'],
                     str_replace('*', '', $lineas)]);
             }
