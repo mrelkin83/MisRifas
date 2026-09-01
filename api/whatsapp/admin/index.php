@@ -233,8 +233,17 @@ try {
             }
             usort($lista, fn($a, $b) => strcmp($a['name'], $b['name']));
             $cfg = WaConfig::cargar($db);
+            $rot = $pdo->query("SELECT setting_value FROM system_settings WHERE setting_key = 'wa_rotacion'")->fetchColumn();
             jsonResponse(['success' => true, 'instancias' => $lista,
-                'activa' => (string)($cfg['evolution_instancia'] ?? ''), 'max' => 5]);
+                'activa' => (string)($cfg['evolution_instancia'] ?? ''), 'max' => 5,
+                'rotacion' => (string)$rot === '1']);
+        }
+
+        case 'instancias-rotacion': {
+            $on = !empty($input['enabled']) ? '1' : '0';
+            $pdo->prepare("UPDATE system_settings SET setting_value = ? WHERE setting_key = 'wa_rotacion'")->execute([$on]);
+            $log->log('config', 'Rotación de instancias WhatsApp: ' . ($on === '1' ? 'ACTIVADA' : 'desactivada'));
+            jsonResponse(['success' => true, 'rotacion' => $on === '1']);
         }
 
         case 'instancia-crear': {

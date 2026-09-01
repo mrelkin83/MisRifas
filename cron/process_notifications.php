@@ -33,6 +33,16 @@ try {
     );
     $messages = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+    // Anti-baneo: si la rotación está activa y hay WhatsApps por enviar,
+    // esta tanda sale por el SIGUIENTE número conectado (round-robin).
+    if (array_filter($messages, fn($m) => $m['channel'] === 'whatsapp')) {
+        require_once __DIR__ . '/../api/whatsapp/RotacionInstancias.php';
+        $rotada = RotacionInstancias::rotar($db);
+        if ($rotada !== null) {
+            Logger::info('Rotación WhatsApp: esta tanda envía desde ' . $rotada);
+        }
+    }
+
     $sent = 0;
     $failed = 0;
 

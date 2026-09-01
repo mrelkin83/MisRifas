@@ -55,11 +55,16 @@ waHeader('Conexión', 'conexion', 'Vincular el número de WhatsApp del negocio')
   <div class="neon-card p-4 space-y-3">
     <h3 class="neon-text">3 · Instancias y vinculación (hasta 5 números)</h3>
     <p class="text-xs text-[var(--text-muted)]">
-      Hasta 5 números vinculados a la vez. <b>Una</b> es la ACTIVA (envía todo:
-      resultados, OTP y bot); las demás quedan de respaldo — si WhatsApp tumba
-      la sesión activa, activas otra con un clic. Los mensajes entrantes se
-      leen desde todas (el webhook se hereda automáticamente).
+      Hasta 5 números vinculados a la vez. Con la <b>rotación</b> encendida, el
+      emisor va TURNÁNDOSE entre los números conectados en cada tanda de envíos
+      — no siempre sale del mismo número (mitiga el riesgo de baneo de
+      WhatsApp). Apagada, envía siempre la instancia marcada como activa. Los
+      mensajes entrantes se leen desde todas (el webhook se hereda solo).
     </p>
+    <label class="flex items-center gap-2 text-sm" style="cursor:pointer;">
+      <input type="checkbox" id="inst_rotacion" onchange="instRotacion(this.checked)">
+      🔄 Rotar el n&uacute;mero emisor entre las instancias conectadas (anti-baneo)
+    </label>
     <div id="inst_lista" class="text-sm">Cargando instancias…</div>
     <button type="button" id="inst_nueva" onclick="instCrear()" class="neon-btn text-xs">＋ Nueva instancia</button>
     <div id="estado_conexion" class="text-sm">Consultando…</div>
@@ -246,6 +251,8 @@ async function cargarInstancias(){
   const box = document.getElementById('inst_lista');
   if (!d.success) { box.innerHTML = '<span class="text-xs text-rose-400">' + WA.esc(d.error || 'No se pudo listar') + '</span>'; return; }
   window.__instMax = d.max;
+  const rotChk = document.getElementById('inst_rotacion');
+  if (rotChk) rotChk.checked = !!d.rotacion;
   box.innerHTML = (d.instancias || []).map(i => {
     const chip = i.estado === 'open' ? '✅ conectada' : (i.estado === 'connecting' ? '⏳ esperando QR' : '⚪ desconectada');
     const esActiva = i.name === d.activa;
@@ -270,6 +277,13 @@ function instPintarQr(qr){
   qr_zona.innerHTML = '<img src="' + src + '" alt="Código QR" class="mx-auto max-w-[260px]">'
     + '<p class="text-xs text-[var(--text-muted)] mt-2">Escanéalo desde WhatsApp → Dispositivos vinculados.</p>';
   setTimeout(cargarInstancias, 12000);
+}
+
+async function instRotacion(on){
+  const d = await WA.post('instancias-rotacion', { enabled: on ? 1 : 0 });
+  WA.aviso(d.success ? (d.rotacion ? 'Rotación ACTIVADA: cada tanda sale por un número distinto' : 'Rotación desactivada')
+                     : (d.error || 'No se pudo guardar'), !!d.success);
+  if (!d.success) document.getElementById('inst_rotacion').checked = !on;
 }
 
 async function instCrear(){
