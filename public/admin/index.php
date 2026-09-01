@@ -2062,6 +2062,19 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
         } catch (e) {}
     }
 
+    // El SUPER ADMIN gestiona sus números en WhatsApp IA → Conexión (hasta 5
+    // instancias): la tarjeta de vinculación personal se reemplaza por el
+    // enlace, para no tener DOS lugares haciendo lo mismo.
+    try {
+        var __wu = JSON.parse(localStorage.getItem('misrifas_user') || '{}');
+        if (__wu && __wu.role === 'super_admin') {
+            var __wc = document.getElementById('wa-link-card');
+            if (__wc) __wc.innerHTML = '<h2 class="text-lg font-bold mb-2">📱 WhatsApp de la plataforma</h2>'
+                + '<p class="text-sm text-gray-500 mb-4">Como super administrador, tus números se gestionan en el módulo WhatsApp IA: instancias (hasta 5), códigos QR, webhook y motor.</p>'
+                + '<a class="btn btn--primary" href="' + BASE_PATH + '/public/admin/whatsapp/conexion.php">Abrir WhatsApp IA → Conexión</a>';
+        }
+    } catch (e) {}
+
     function logout() {
         localStorage.removeItem('misrifas_token');
         localStorage.removeItem('misrifas_user');

@@ -84,6 +84,41 @@ $input = json_decode(file_get_contents('php://input'), true) ?: [];
 
 // En SaaS se restringe apuntar a la red interna; MisRifas self-hosted controla
 // su propio servidor, así que solo se bloquea lo obviamente peligroso.
+/** Credenciales del Evolution DE LA PLATAFORMA (.env). */
+function waPlataformaCreds(): array {
+    $url = rtrim((string)(getenv('WA_EVOLUTION_URL') ?: ''), '/');
+    $key = (string)(getenv('WA_EVOLUTION_APIKEY') ?: '');
+    if ($url === '' || $key === '') {
+        jsonResponse(['success' => false, 'error' => 'Falta WA_EVOLUTION_URL/APIKEY en el .env del servidor'], 400);
+    }
+    return [$url, $key];
+}
+
+function waInstanciaValida(array $input): string {
+    $n = (string)($input['name'] ?? '');
+    if (!preg_match('/^misrifas-v[1-5]$/', $n)) {
+        jsonResponse(['success' => false, 'error' => 'Instancia inválida (misrifas-v1..v5)'], 422);
+    }
+    return $n;
+}
+
+/** Copia el webhook registrado en cualquier instancia hermana a $destino. */
+function waCopiarWebhook(string $url, string $key, string $destino): bool {
+    for ($n = 1; $n <= 5; $n++) {
+        $nom = 'misrifas-v' . $n;
+        if ($nom === $destino) continue;
+        $w = \ElkinLinan\WhatsappAiEngine\Core\Http::json('GET', $url . '/webhook/find/' . $nom, ['apikey: ' . $key], null, 6);
+        $wu = $w['json']['url'] ?? null;
+        if ($wu) {
+            \ElkinLinan\WhatsappAiEngine\Core\Http::json('POST', $url . '/webhook/set/' . rawurlencode($destino), ['apikey: ' . $key],
+                ['webhook' => ['url' => $wu, 'enabled' => true, 'byEvents' => false, 'base64' => true,
+                               'events' => ['MESSAGES_UPSERT', 'CONNECTION_UPDATE']]], 10);
+            return true;
+        }
+    }
+    return false;
+}
+
 function waUrlOk(string $url): bool {
     if ($url === '') return true;
     $host = parse_url($url, PHP_URL_HOST) ?: '';
@@ -174,6 +209,84 @@ try {
             $url = trim((string)($input['url'] ?? ''));
             $r = $cli->registrarWebhook($url);
             jsonResponse(['success' => $r['ok'] ?? false, 'error' => $r['error'] ?? '']);
+        }
+
+        // ── Instancias de la PLATAFORMA (hasta 5: misrifas-v1..v5) ──
+        // Varias vinculadas a la vez; UNA activa para enviar (evolution_
+        // instancia). El webhook se registra en cada una: los códigos OTP y
+        // mensajes entran desde cualquiera. Si WhatsApp tumba una sesión,
+        // se cambia la activa sin tocar nada más.
+        case 'instancias': {
+            [$url, $key] = waPlataformaCreds();
+            $r = Http::json('GET', $url . '/instance/fetchInstances', ['apikey: ' . $key], null, 10);
+            $lista = [];
+            foreach ((array)($r['json'] ?? []) as $i) {
+                $n = (string)($i['name'] ?? '');
+                if (!preg_match('/^misrifas-v[1-5]$/', $n)) continue;
+                $w = Http::json('GET', $url . '/webhook/find/' . rawurlencode($n), ['apikey: ' . $key], null, 6);
+                $lista[] = [
+                    'name' => $n,
+                    'estado' => (string)($i['connectionStatus'] ?? '?'),
+                    'numero' => isset($i['ownerJid']) ? explode('@', (string)$i['ownerJid'])[0] : null,
+                    'webhook' => !empty($w['json']['url']),
+                ];
+            }
+            usort($lista, fn($a, $b) => strcmp($a['name'], $b['name']));
+            $cfg = WaConfig::cargar($db);
+            jsonResponse(['success' => true, 'instancias' => $lista,
+                'activa' => (string)($cfg['evolution_instancia'] ?? ''), 'max' => 5]);
+        }
+
+        case 'instancia-crear': {
+            [$url, $key] = waPlataformaCreds();
+            $r = Http::json('GET', $url . '/instance/fetchInstances', ['apikey: ' . $key], null, 10);
+            $usados = [];
+            foreach ((array)($r['json'] ?? []) as $i) {
+                if (preg_match('/^misrifas-v([1-5])$/', (string)($i['name'] ?? ''), $m)) $usados[(int)$m[1]] = true;
+            }
+            $slot = 0;
+            for ($n = 1; $n <= 5; $n++) { if (empty($usados[$n])) { $slot = $n; break; } }
+            if (!$slot) jsonResponse(['success' => false, 'error' => 'Ya existen las 5 instancias (misrifas-v1..v5).'], 409);
+            $nombre = 'misrifas-v' . $slot;
+            $c = Http::json('POST', $url . '/instance/create', ['apikey: ' . $key],
+                ['instanceName' => $nombre, 'qrcode' => true, 'integration' => 'WHATSAPP-BAILEYS'], 30);
+            if (!($c['ok'] ?? false)) jsonResponse(['success' => false, 'error' => 'Evolution no pudo crear la instancia: ' . ($c['error'] ?? '')], 502);
+            waCopiarWebhook($url, $key, $nombre); // hereda el webhook de las hermanas
+            $log->log('config', 'Instancia WhatsApp creada: ' . $nombre);
+            jsonResponse(['success' => true, 'name' => $nombre, 'qr' => $c['json']['qrcode']['base64'] ?? null]);
+        }
+
+        case 'instancia-qr': {
+            [$url, $key] = waPlataformaCreds();
+            $nombre = waInstanciaValida($input);
+            $r = Http::json('GET', $url . '/instance/connect/' . rawurlencode($nombre), ['apikey: ' . $key], null, 30);
+            $qr = $r['json']['base64'] ?? ($r['json']['qrcode']['base64'] ?? null);
+            $code = $r['json']['code'] ?? null;
+            if (!$qr && $code) $qr = $code; // el front genera imagen solo si es data:
+            jsonResponse(['success' => (bool)($qr || ($r['ok'] ?? false)), 'qr' => $qr,
+                'error' => $qr ? '' : 'La instancia no entregó QR (¿ya está conectada?)']);
+        }
+
+        case 'instancia-usar': {
+            [$url, $key] = waPlataformaCreds();
+            $nombre = waInstanciaValida($input);
+            WaConfig::guardar($db, ['evolution_instancia' => $nombre]);
+            waCopiarWebhook($url, $key, $nombre);
+            $log->log('config', 'Instancia WhatsApp ACTIVA: ' . $nombre);
+            jsonResponse(['success' => true, 'activa' => $nombre]);
+        }
+
+        case 'instancia-eliminar': {
+            [$url, $key] = waPlataformaCreds();
+            $nombre = waInstanciaValida($input);
+            $cfg = WaConfig::cargar($db);
+            if (($cfg['evolution_instancia'] ?? '') === $nombre) {
+                jsonResponse(['success' => false, 'error' => 'Esa instancia es la ACTIVA: activa otra antes de eliminarla.'], 409);
+            }
+            Http::json('DELETE', $url . '/instance/logout/' . rawurlencode($nombre), ['apikey: ' . $key], null, 15);
+            Http::json('DELETE', $url . '/instance/delete/' . rawurlencode($nombre), ['apikey: ' . $key], null, 15);
+            $log->log('config', 'Instancia WhatsApp eliminada: ' . $nombre);
+            jsonResponse(['success' => true]);
         }
 
         case 'conexion-desconectar': {

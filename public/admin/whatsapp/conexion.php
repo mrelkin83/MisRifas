@@ -53,7 +53,15 @@ waHeader('Conexión', 'conexion', 'Vincular el número de WhatsApp del negocio')
   </div>
 
   <div class="neon-card p-4 space-y-3">
-    <h3 class="neon-text">3 · Vincular el teléfono</h3>
+    <h3 class="neon-text">3 · Instancias y vinculación (hasta 5 números)</h3>
+    <p class="text-xs text-[var(--text-muted)]">
+      Hasta 5 números vinculados a la vez. <b>Una</b> es la ACTIVA (envía todo:
+      resultados, OTP y bot); las demás quedan de respaldo — si WhatsApp tumba
+      la sesión activa, activas otra con un clic. Los mensajes entrantes se
+      leen desde todas (el webhook se hereda automáticamente).
+    </p>
+    <div id="inst_lista" class="text-sm">Cargando instancias…</div>
+    <button type="button" id="inst_nueva" onclick="instCrear()" class="neon-btn text-xs">＋ Nueva instancia</button>
     <div id="estado_conexion" class="text-sm">Consultando…</div>
     <div id="qr_zona" class="text-center"></div>
     <div class="flex gap-2 flex-wrap">
@@ -127,6 +135,7 @@ async function cargar(){
     ? faltan.map(f => `<div class="text-amber-400">⚠️ ${f}</div>`).join('')
     : '<div class="text-emerald-400">✅ Todo lo necesario está configurado.</div>';
 
+  cargarInstancias();
   limite_mensajes.value = CFG.limite_mensajes ?? 15;
   limite_ventana_minutos.value = CFG.limite_ventana_minutos || 5;
   resumenLimite();
@@ -230,6 +239,65 @@ async function verEstado(){
     + (d.numero ? ` <span class="text-[var(--text-muted)]">— ${WA.esc(d.numero)}</span>` : '')
     + (d.mensaje && d.estado === 'error' ? `<div class="text-xs text-[var(--text-muted)]">${WA.esc(d.mensaje)}</div>` : '');
   if (d.estado === 'conectado') qr_zona.innerHTML = '';
+}
+
+async function cargarInstancias(){
+  const d = await WA.get('instancias');
+  const box = document.getElementById('inst_lista');
+  if (!d.success) { box.innerHTML = '<span class="text-xs text-rose-400">' + WA.esc(d.error || 'No se pudo listar') + '</span>'; return; }
+  window.__instMax = d.max;
+  box.innerHTML = (d.instancias || []).map(i => {
+    const chip = i.estado === 'open' ? '✅ conectada' : (i.estado === 'connecting' ? '⏳ esperando QR' : '⚪ desconectada');
+    const esActiva = i.name === d.activa;
+    return '<div class="flex items-center gap-2" style="flex-wrap:wrap;padding:6px 0;border-bottom:1px solid var(--border-color);">'
+      + '<b>' + WA.esc(i.name) + '</b>'
+      + '<span class="text-xs">' + chip + '</span>'
+      + (i.numero ? '<span class="text-xs text-[var(--text-muted)]">+' + WA.esc(i.numero) + '</span>' : '')
+      + (i.webhook ? '' : '<span class="text-xs text-amber-400">⚠ sin webhook</span>')
+      + (esActiva
+          ? '<span class="text-xs text-emerald-400 font-bold">★ ACTIVA</span>'
+          : '<button type="button" class="neon-btn text-xs" onclick="instUsar(\'' + i.name + '\')">Usar</button>'
+            + '<button type="button" class="neon-btn-danger text-xs" onclick="instEliminar(\'' + i.name + '\')">🗑</button>')
+      + '<button type="button" class="neon-btn text-xs" onclick="instQr(\'' + i.name + '\')">Mostrar QR</button>'
+      + '</div>';
+  }).join('') || '<span class="text-xs text-[var(--text-muted)]">Sin instancias: crea la primera.</span>';
+  document.getElementById('inst_nueva').style.display = (d.instancias || []).length >= d.max ? 'none' : '';
+}
+
+function instPintarQr(qr){
+  if (!qr) { WA.aviso('La instancia no entregó QR (¿ya está conectada?)', false); return; }
+  const src = String(qr).startsWith('data:') ? qr : ('data:image/png;base64,' + qr);
+  qr_zona.innerHTML = '<img src="' + src + '" alt="Código QR" class="mx-auto max-w-[260px]">'
+    + '<p class="text-xs text-[var(--text-muted)] mt-2">Escanéalo desde WhatsApp → Dispositivos vinculados.</p>';
+  setTimeout(cargarInstancias, 12000);
+}
+
+async function instCrear(){
+  const d = await WA.post('instancia-crear');
+  if (!d.success) { WA.aviso(d.error || 'No se pudo crear', false); return; }
+  WA.aviso('Instancia ' + d.name + ' creada', true);
+  if (d.qr) instPintarQr(d.qr);
+  cargarInstancias();
+}
+
+async function instQr(name){
+  qr_zona.innerHTML = '<span class="text-[var(--text-muted)] text-sm">Pidiendo el código…</span>';
+  const d = await WA.post('instancia-qr', { name });
+  if (!d.success) { qr_zona.innerHTML = ''; WA.aviso(d.error || 'Sin QR', false); return; }
+  instPintarQr(d.qr);
+}
+
+async function instUsar(name){
+  const d = await WA.post('instancia-usar', { name });
+  WA.aviso(d.success ? ('Instancia activa: ' + name) : (d.error || 'No se pudo activar'), !!d.success);
+  cargarInstancias(); verEstado();
+}
+
+async function instEliminar(name){
+  if (!confirm('¿Eliminar la instancia ' + name + '? El número quedará desvinculado de la plataforma.')) return;
+  const d = await WA.post('instancia-eliminar', { name });
+  WA.aviso(d.success ? 'Instancia eliminada' : (d.error || 'No se pudo eliminar'), !!d.success);
+  cargarInstancias();
 }
 
 async function desconectar(){
