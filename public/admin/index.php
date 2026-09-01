@@ -1042,8 +1042,17 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                 <div id="section-pagos" class="admin-section hidden">
                     <div class="section-card">
                         <div class="section-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
-                            <h2>Pagos por confirmar</h2>
+                            <h2>Pagos recibidos</h2>
                             <button type="button" id="approve-all-btn" class="btn btn--sm hidden" style="background:#10b981;color:#fff;" onclick="approveAllPayments()">✅ Confirmar todos</button>
+                        </div>
+                        <div class="flex items-center gap-2 mb-4" style="flex-wrap:wrap;">
+                            <input type="text" id="pagos-buscar" class="px-4 py-2 border rounded-lg" placeholder="Buscar comprador, boleto, celular o rifa…" style="max-width:290px;" oninput="pagosBuscarDebounce()">
+                            <div id="pagos-filtros" class="flex gap-1" style="flex-wrap:wrap;">
+                                <button type="button" class="btn btn--sm pagos-filtro" data-status="pending">⏳ Pendientes</button>
+                                <button type="button" class="btn btn--sm pagos-filtro" data-status="completed">✅ Aprobados</button>
+                                <button type="button" class="btn btn--sm pagos-filtro" data-status="failed">❌ Rechazados</button>
+                                <button type="button" class="btn btn--sm pagos-filtro" data-status="all">Todos</button>
+                            </div>
                         </div>
                         <div id="wa-pagos-banner" class="hidden" style="margin-bottom:14px;padding:10px 14px;border-radius:10px;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.4);color:#92400e;font-size:13px;font-weight:600;">
                             📵 WhatsApp desconectado — confirma tus pagos desde aquí.
@@ -1058,11 +1067,12 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                                         <th>Monto exacto</th>
                                         <th>Hace</th>
                                         <th>Comprobante</th>
+                                        <th>Estado</th>
                                         <th>Acciones</th>
                                     </tr>
                                 </thead>
                                 <tbody id="payments-table">
-                                    <tr><td colspan="7" class="text-center">Cargando…</td></tr>
+                                    <tr><td colspan="8" class="text-center">Cargando…</td></tr>
                                 </tbody>
                             </table>
                         </div>
@@ -3935,18 +3945,47 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
     // ================================================================
     // PAGOS MANUALES: Cargar tabla y aprobar/rechazar
     // ================================================================
+    // Trazabilidad completa: pendientes, aprobados y rechazados con buscador.
+    let pagosStatus = 'pending';
+    let pagosQ = '';
+    let pagosT = null;
+    window.pagosBuscarDebounce = function () {
+        clearTimeout(pagosT);
+        pagosT = setTimeout(() => {
+            pagosQ = (document.getElementById('pagos-buscar') || {}).value?.trim() || '';
+            loadPayments();
+        }, 300);
+    };
+    document.getElementById('pagos-filtros')?.addEventListener('click', (e) => {
+        const b = e.target.closest('.pagos-filtro');
+        if (!b) return;
+        pagosStatus = b.dataset.status;
+        loadPayments();
+    });
+    function pintarFiltrosPagos() {
+        document.querySelectorAll('.pagos-filtro').forEach(b => {
+            const on = b.dataset.status === pagosStatus;
+            b.style.background = on ? '#2563eb' : '';
+            b.style.color = on ? '#fff' : '';
+        });
+    }
+
     async function loadPayments() {
         const tbody = document.getElementById('payments-table');
+        pintarFiltrosPagos();
         try {
-            const response = await API.get('/admin/payments.php');
+            const response = await API.get('/admin/payments.php', { status: pagosStatus, q: pagosQ });
             if (response.success) {
                 const data = response.data || [];
                 if (data.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="7" class="text-center text-gray-500 py-6">No hay pagos pendientes de validar</td></tr>';
+                    const vacios = { pending: 'No hay pagos pendientes de validar', completed: 'Aún no hay pagos aprobados',
+                                     failed: 'No hay pagos rechazados', all: 'Aún no hay pagos registrados' };
+                    tbody.innerHTML = '<tr><td colspan="8" class="text-center text-gray-500 py-6">' + (vacios[pagosStatus] || vacios.all) + (pagosQ ? ' con esa búsqueda' : '') + '</td></tr>';
+                    document.getElementById('approve-all-btn')?.classList.add('hidden');
                     return;
                 }
                 window.__payments = data;
-                document.getElementById('approve-all-btn')?.classList.toggle('hidden', data.length < 2);
+                document.getElementById('approve-all-btn')?.classList.toggle('hidden', pagosStatus !== 'pending' || data.filter(p => p.payment_status === 'pending').length < 2);
                 tbody.innerHTML = data.map(p => {
                     // Miniatura del comprobante (§10.2) servida por controlador (§16).
                     const proofCell = p.proof_link
@@ -3961,6 +4000,17 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                     const mins = parseInt(p.age_minutes || 0, 10);
                     const age = mins < 60 ? (mins + ' min') : (mins < 1440 ? Math.floor(mins / 60) + ' h' : Math.floor(mins / 1440) + ' d');
                     const ageColor = mins > 600 ? '#dc2626' : (mins > 120 ? '#d97706' : '#64748b');
+                    const esPendiente = p.payment_status === 'pending';
+                    const estadoBadge = esPendiente
+                        ? '<span class="badge badge--pending">Pendiente</span>'
+                        : (p.payment_status === 'completed'
+                            ? '<span class="badge badge--completed">Aprobado</span>' + (p.verified_at ? '<br><span style="color:#94a3b8;font-size:11px;">' + userEsc(String(p.verified_at).substring(0, 16)) + '</span>' : '')
+                            : '<span class="badge badge--cancelled">Rechazado</span>');
+                    const accion = esPendiente
+                        ? `<button class="btn btn--sm" aria-label="Acciones" title="Acciones" onclick="openPaymentSheet(${parseInt(p.ticket_id, 10)})" style="font-size:20px;line-height:1;padding:2px 10px;">⋮</button>`
+                        : (p.payment_status === 'completed' && p.ticket_code
+                            ? `<a class="btn btn--sm" title="Ver boleta emitida" href="<?= BASE_PATH ?>/public/boleta.php?c=${encodeURIComponent(p.ticket_code)}" target="_blank">🎟️</a>`
+                            : '<span style="color:#cbd5e1;">—</span>');
                     return `<tr>
                         <td class="font-medium">${userEsc(p.raffle_name || '')}${flagChips ? '<br>' + flagChips : ''}</td>
                         <td><strong>#${userEsc(p.ticket_number)}</strong></td>
@@ -3968,7 +4018,8 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                         <td class="font-bold" style="font-variant-numeric:tabular-nums;">$${Number(monto || 0).toLocaleString('es-CO')}<br><span style="color:#94a3b8;font-size:11px;font-weight:400;">${userEsc(p.payment_method || '')}</span></td>
                         <td style="color:${ageColor};font-size:13px;font-weight:600;">${age}</td>
                         <td>${proofCell}</td>
-                        <td><button class="btn btn--sm" aria-label="Acciones" title="Acciones" onclick="openPaymentSheet(${parseInt(p.ticket_id, 10)})" style="font-size:20px;line-height:1;padding:2px 10px;">⋮</button></td>
+                        <td>${estadoBadge}</td>
+                        <td>${accion}</td>
                     </tr>`;
                 }).join('');
                 // §10.2: si WhatsApp está caído, avisar que el panel es la vía.

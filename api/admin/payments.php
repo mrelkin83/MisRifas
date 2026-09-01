@@ -22,20 +22,27 @@ try {
     $db = Database::getInstance()->getConnection();
 
     if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-        // Listar tickets con comprobante de pago pendiente de validación manual
-        // de las rifas del vendedor. Los datos del pago viven en `payments`
-        // (payment_method/proof), no en `tickets` (esa tabla solo tiene status).
-        $stmt = $db->prepare("
+        // Historial COMPLETO de pagos de las rifas del vendedor: pendientes,
+        // aprobados y rechazados. Antes solo se listaban los 'pending' — al
+        // aprobar, el registro "desaparecía" y no quedaba trazabilidad visible.
+        // ?status=pending|completed|failed|all (default: all) y ?q= busca por
+        // comprador, teléfono, boleto o rifa.
+        $status = (string)($_GET['status'] ?? 'all');
+        $q = trim((string)($_GET['q'] ?? ''));
+
+        $sql = "
             SELECT
                 t.id as ticket_id,
                 t.ticket_number,
                 t.status,
+                t.ticket_code,
                 p.id as payment_id,
                 p.payment_method,
                 p.transaction_status as payment_status,
                 p.payment_gateway_response,
                 p.amount,
                 p.created_at as reported_at,
+                p.verified_at,
                 TIMESTAMPDIFF(MINUTE, p.created_at, NOW()) as age_minutes,
                 t.reserved_at,
                 r.name as raffle_name,
@@ -47,12 +54,25 @@ try {
             JOIN tickets t ON t.id = p.ticket_id
             JOIN raffles r ON t.raffle_id = r.id
             LEFT JOIN users u ON t.user_id = u.id
-            WHERE COALESCE(r.vendor_id, r.created_by) = ?
-              AND p.transaction_status = 'pending'
-              AND t.status IN ('reserved', 'pending_review')
-            ORDER BY p.created_at DESC
-        ");
-        $stmt->execute([$adminUser['id']]);
+            WHERE COALESCE(r.vendor_id, r.created_by) = ?";
+        $params = [$adminUser['id']];
+
+        if (in_array($status, ['pending', 'completed', 'failed'], true)) {
+            $sql .= ' AND p.transaction_status = ?';
+            $params[] = $status;
+            if ($status === 'pending') {
+                $sql .= " AND t.status IN ('reserved', 'pending_review')";
+            }
+        }
+        if ($q !== '') {
+            $sql .= ' AND (u.name LIKE ? OR u.phone_whatsapp LIKE ? OR t.ticket_number LIKE ? OR r.name LIKE ?)';
+            $like = '%' . $q . '%';
+            array_push($params, $like, $like, $like, $like);
+        }
+        $sql .= ' ORDER BY p.created_at DESC LIMIT 300';
+
+        $stmt = $db->prepare($sql);
+        $stmt->execute($params);
         $tickets = $stmt->fetchAll();
 
         // Monto EXACTO de la orden (§6): precio × boletos de la misma

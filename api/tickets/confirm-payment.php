@@ -224,8 +224,8 @@ try {
     // SIEMPRE después del commit, best-effort (el panel es la contingencia).
     try {
         $stmt = $db->prepare("
-            SELECT COALESCE(r.vendor_id, r.created_by) AS vendor_id, r.name, r.ticket_price,
-                   v.phone AS vendor_phone, u.name AS buyer_name
+            SELECT COALESCE(r.vendor_id, r.created_by) AS vendor_id, r.id AS raffle_id, r.name, r.ticket_price,
+                   v.phone AS vendor_phone, v.email AS vendor_email, u.name AS buyer_name
             FROM tickets t
             JOIN raffles r ON r.id = t.raffle_id
             JOIN vendors v ON v.id = COALESCE(r.vendor_id, r.created_by)
@@ -269,6 +269,19 @@ try {
             $lineas .= "\nO confírmalo desde tu panel → Pagos por confirmar.";
             require_once __DIR__ . '/../whatsapp/notify.php';
             notificarWhatsAppVendor((int)$ctx['vendor_id'], (string)$ctx['vendor_phone'], $lineas);
+
+            // También por CORREO ("el correo va siempre"): mismo aviso, para
+            // el organizador sin WhatsApp vinculado o que no lo vio a tiempo.
+            if (!empty($ctx['vendor_email'])) {
+                $db->prepare("
+                    INSERT INTO message_queue (raffle_id, vendor_id, recipient_phone, recipient_email,
+                                               channel, message_type, subject, body_text, status, scheduled_at, created_at)
+                    VALUES (?,?,?,?, 'email', 'payment_reminder', ?, ?, 'pending', NOW(), NOW())
+                ")->execute([(int)$ctx['raffle_id'], (int)$ctx['vendor_id'],
+                    (string)$ctx['vendor_phone'], (string)$ctx['vendor_email'],
+                    '🧾 Nuevo pago por confirmar — ' . $ctx['name'],
+                    str_replace('*', '', $lineas)]);
+            }
         }
     } catch (\Throwable $e) {
         Logger::error('Aviso WA de comprobante falló: ' . $e->getMessage());
