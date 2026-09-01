@@ -286,17 +286,25 @@ class TicketRepository extends BaseRepository
                 $placeholders = [];
 
                 for ($i = $start; $i < $end; $i++) {
-                    // Número de boleto secuencial
-                    $ticketNumber = str_pad((string)($i + 1), $digits, '0', STR_PAD_LEFT);
-                    
-                    // Tomar los siguientes números random del pool
-                    $startIndex = $i * $opportunities;
-                    $opportunityNumbers = [];
-                    for ($j = 0; $j < $opportunities; $j++) {
-                        $opportunityNumbers[] = str_pad((string)$selectedNumbers[$startIndex + $j], $digits, '0', STR_PAD_LEFT);
+                    if ($opportunities === 1) {
+                        // 1 oportunidad: el número del boleto ES el que juega
+                        // (0-based cubre exacto 00…max-1). Antes el boleto "07"
+                        // jugaba un número random OCULTO distinto — el comprador
+                        // creía elegir su número y no era verdad.
+                        $ticketNumber = str_pad((string)$i, $digits, '0', STR_PAD_LEFT);
+                        $opportunitiesJSON = json_encode([$ticketNumber]);
+                    } else {
+                        // Varias oportunidades: id secuencial + N números random
+                        // ÚNICOS del pool barajado (no se repiten entre boletos).
+                        $ticketNumber = str_pad((string)($i + 1), $digits, '0', STR_PAD_LEFT);
+                        $startIndex = $i * $opportunities;
+                        $opportunityNumbers = [];
+                        for ($j = 0; $j < $opportunities; $j++) {
+                            $opportunityNumbers[] = str_pad((string)$selectedNumbers[$startIndex + $j], $digits, '0', STR_PAD_LEFT);
+                        }
+                        sort($opportunityNumbers);
+                        $opportunitiesJSON = json_encode($opportunityNumbers);
                     }
-                    sort($opportunityNumbers);
-                    $opportunitiesJSON = json_encode($opportunityNumbers);
 
                     $placeholders[] = "(?, ?, ?, ?)";
                     $values[] = $raffleId;

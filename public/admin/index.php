@@ -4638,6 +4638,9 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                 var items = [
                     { label: '👁️  Ver rifa', onClick: function(){ viewRaffle(id); } }
                 ];
+                if (r.status === 'draft') {
+                    items.push({ label: '✏️  Editar rifa (borrador)', onClick: function(){ openEditModal(id); } });
+                }
                 if (r.status === 'active') {
                     items.push({ label: '🙈  Ocultar (pasar a borrador)', onClick: function(){ raffleSheetStatus(id, 'draft'); } });
                 } else {

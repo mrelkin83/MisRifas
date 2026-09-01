@@ -346,6 +346,14 @@ header("Expires: 0");
                 display: flex !important;
             }
         }
+        /* Boletos con varias oportunidades: la celda muestra SUS números */
+        #tickets-grid.grid-multi { grid-template-columns: repeat(auto-fill, minmax(122px, 1fr)) !important; }
+        .ticket-btn--multi { aspect-ratio: auto; flex-direction: column; gap: 3px; padding: 9px 6px; contain-intrinsic-size: 122px 66px; }
+        .ticket-btn--multi .ticket-id { font-size: 10px; opacity: .85; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; }
+        .ticket-btn--multi .ticket-opps { font-size: 13.5px; font-weight: 800; line-height: 1.35; word-spacing: 1px; }
+        @media (max-width: 640px) {
+            #tickets-grid.grid-multi { grid-template-columns: repeat(auto-fill, minmax(105px, 1fr)) !important; }
+        }
     </style>
 </head>
 <body class="bg-[#0f172a] text-slate-200">
@@ -534,6 +542,8 @@ header("Expires: 0");
                                     </div>
                                 </div>
                             </div>
+
+                            <div id="raffle-mode-info" class="hidden mb-4 p-3 rounded-xl text-sm font-bold" style="background:#fef3c7;color:#92400e;border:1px solid #fcd34d;line-height:1.55;"></div>
 
                             <div class="relative mb-8">
                                 <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -835,6 +845,19 @@ header("Expires: 0");
         document.getElementById('progress-fill').style.width = soldPct + '%';
         document.getElementById('sold-count').textContent = (r.sold_tickets || 0) + ' / ' + (r.total_tickets || 0);
         document.title = (r.name || 'Rifa') + ' - ' + SITE_NAME;
+
+        // Modo de ganar y oportunidades: el comprador debe saber CÓMO se gana
+        // y con QUÉ números juega cada boleto antes de elegir.
+        const modos = { last_2: 'las 2 ÚLTIMAS cifras', first_2: 'las 2 PRIMERAS cifras',
+                        last_3: 'las 3 ÚLTIMAS cifras', first_3: 'las 3 PRIMERAS cifras',
+                        last_4: 'las 4 ÚLTIMAS cifras' };
+        const modeBox = document.getElementById('raffle-mode-info');
+        if (modeBox && modos[r.winning_mode]) {
+            const opp = parseInt(r.opportunities || 1);
+            modeBox.innerHTML = '🎯 Gana el boleto que tenga <b>' + modos[r.winning_mode] + '</b> del número ganador del sorteo.'
+                + (opp > 1 ? '<br>🍀 Cada boleto juega con <b>' + opp + ' números propios y fijos</b> (no se repiten en otro boleto): elige el que traiga tus números de la suerte.' : '');
+            modeBox.classList.remove('hidden');
+        }
     }
 
     async function loadTickets() {
@@ -856,6 +879,12 @@ header("Expires: 0");
             return;
         }
 
+        const esMulti = tickets.some(t => {
+            const o = typeof t.opportunities === 'string' ? JSON.parse(t.opportunities) : (t.opportunities || []);
+            return o.length > 1;
+        });
+        grid.classList.toggle('grid-multi', esMulti);
+
         tickets.forEach(ticket => {
             const div = document.createElement('div');
             let statusClass;
@@ -871,8 +900,16 @@ header("Expires: 0");
             // redundante (el estado seleccionado ya se ve con el anillo ámbar)
             // y robaba el ancho que hacía que se cortara la última cifra.
             const n = String(ticket.ticket_number);
-            const sizeClass = n.length <= 3 ? 'text-xl' : (n.length === 4 ? 'text-base' : 'text-xs');
-            div.innerHTML = '<span class="ticket-num font-bold font-mono leading-none ' + sizeClass + '">' + n + '</span>';
+            if (opps.length > 1) {
+                // El comprador elige por los NÚMEROS del boleto: se muestran
+                // todos (fijos, propios, sin repetirse en otro boleto).
+                div.classList.add('ticket-btn--multi');
+                div.innerHTML = '<span class="ticket-id">Boleto ' + n + '</span>'
+                    + '<span class="ticket-opps font-mono">' + opps.join(' · ') + '</span>';
+            } else {
+                const sizeClass = n.length <= 3 ? 'text-xl' : (n.length === 4 ? 'text-base' : 'text-xs');
+                div.innerHTML = '<span class="ticket-num font-bold font-mono leading-none ' + sizeClass + '">' + n + '</span>';
+            }
             div.dataset.id = ticket.id;
             div.dataset.number = ticket.ticket_number;
             div.dataset.opportunities = typeof ticket.opportunities === 'string' ? ticket.opportunities : JSON.stringify(ticket.opportunities || []);
@@ -961,9 +998,11 @@ function updateSelectionSummary() {
 
     const numbersDisplay = document.getElementById('selected-numbers-display');
     // Chips REMOVIBLES: tap en un número lo quita de la selección.
-    numbersDisplay.innerHTML = selectedTickets.map(t =>
-        `<button type="button" data-remove="${t.ticket_number}" title="Quitar ${t.ticket_number}" class="px-3 py-1 bg-amber-600/30 text-amber-300 rounded-lg font-mono text-sm border border-amber-500/30 active:scale-95">${t.ticket_number} ✕</button>`
-    ).join('');
+    numbersDisplay.innerHTML = selectedTickets.map(t => {
+        const o = typeof t.opportunities === 'string' ? JSON.parse(t.opportunities) : (t.opportunities || []);
+        const nums = o.length > 1 ? ' <span class="text-xs opacity-80">(' + o.join('·') + ')</span>' : '';
+        return `<button type="button" data-remove="${t.ticket_number}" title="Quitar ${t.ticket_number}" class="px-3 py-1 bg-amber-600/30 text-amber-300 rounded-lg font-mono text-sm border border-amber-500/30 active:scale-95">${t.ticket_number}${nums} ✕</button>`;
+    }).join('');
 
     payBtn.disabled = false;
 
