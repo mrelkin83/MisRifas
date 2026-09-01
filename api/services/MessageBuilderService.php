@@ -44,8 +44,8 @@ class MessageBuilderService
         'reservation' => [
             'nombre' => '⏳ Boleto reservado',
             'descripcion' => 'Confirmación de reserva con el valor y el WhatsApp del organizador.',
-            'vars' => ['nombre', 'raffle_name', 'ticket_number', 'price', 'whatsapp', 'platform'],
-            'default' => "Hola {nombre}, tu boleto *{ticket_number}* para la rifa *{raffle_name}* esta reservado. Valor: {price}. Envía el comprobante de pago al WhatsApp {whatsapp}. Reserva valida por 4 horas.",
+            'vars' => ['nombre', 'raffle_name', 'ticket_number', 'price', 'whatsapp', 'ttl', 'platform'],
+            'default' => "Hola {nombre}, tu(s) boleto(s) *{ticket_number}* para la rifa *{raffle_name}* quedaron reservados. Valor EXACTO a pagar: {price}. Envía el comprobante de pago al WhatsApp {whatsapp}. La reserva vence en {ttl} minutos.",
         ],
         'payment_confirmed' => [
             'nombre' => '✅ Pago confirmado',
@@ -228,6 +228,41 @@ class MessageBuilderService
             'subject' => 'Boleto reservado - ' . $raffle['name'],
             'body_text' => $text,
             'body_html' => null,
+            'variables' => $vars,
+        ];
+    }
+
+    /**
+     * Confirmación de RESERVA (una o varias boletas en una orden): texto para
+     * WhatsApp + correo con el cascarón estándar. Es el primer contacto del
+     * comprador con la plataforma tras comprar — antes no se enviaba NADA.
+     */
+    public static function buildReservationOrderMessage(array $raffle, array $numeros, array $buyer, float $amount, int $ttlMin): array
+    {
+        $vars = [
+            'nombre' => $buyer['name'] ?? 'Participante',
+            'raffle_name' => $raffle['name'],
+            'ticket_number' => implode(', ', $numeros),
+            'price' => '$' . number_format($amount, 0, ',', '.'),
+            'whatsapp' => (string)($raffle['whatsapp_contact'] ?? ''),
+            'ttl' => (string)$ttlMin,
+        ];
+        $text = self::replaceVars(self::plantilla('reservation'), $vars);
+        $html = self::buildEmailHtml(
+            'Reserva confirmada - ' . $raffle['name'],
+            self::raffleImageHtml($raffle)
+            . "<h2>¡Tu reserva quedó lista, {nombre}!</h2>"
+            . "<p>Boleto(s): <strong style='color:#fbbf24;font-size:1.2em;'>{ticket_number}</strong> de la rifa <strong>{raffle_name}</strong>.</p>"
+            . "<p>Valor EXACTO a pagar: <strong style='color:#22c55e;font-size:1.3em;'>{price}</strong></p>"
+            . "<p>Envía el pago y el comprobante al WhatsApp <strong>{whatsapp}</strong> antes de <strong>{ttl} minutos</strong>, o los números vuelven a la venta.</p>",
+            self::escapeVars($vars)
+        );
+        return [
+            'channel' => 'email',
+            'message_type' => 'reservation',
+            'subject' => 'Reserva confirmada - ' . $raffle['name'],
+            'body_text' => $text,
+            'body_html' => $html,
             'variables' => $vars,
         ];
     }

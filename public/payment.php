@@ -347,12 +347,10 @@ $page_title = "Pago - " . plataforma('nombre');
         document.getElementById('dest-value').textContent = m.destination;
         document.getElementById('exact-amount').textContent =
             '$' + Number(reservationData?.total_amount || 0).toLocaleString('es-CO');
-        // Con sufijo (1 número): el monto identifica la compra. Sin sufijo
-        // (varios números): identifica la referencia de la transferencia.
+        // Sin sufijo: el monto es SIEMPRE el valor real exacto; el pago se
+        // identifica por la referencia de la transferencia y el comprobante.
         document.getElementById('amount-hint').textContent =
-            Number(reservationData?.payment_suffix || 0) > 0
-                ? ' — los últimos dígitos identifican TU compra. Luego vuelve aquí y sube el comprobante.'
-                : ' y sube aquí el comprobante: la referencia de la transferencia identifica tu pago.';
+            ' y sube aquí el comprobante: la referencia de la transferencia identifica tu pago.';
         document.getElementById('payment-instructions').classList.remove('hidden');
         checkCanConfirm();
     }

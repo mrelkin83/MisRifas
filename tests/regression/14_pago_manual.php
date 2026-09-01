@@ -4,8 +4,9 @@
  *
  * - Llaves de cobro: guardar/leer saneadas (jamás secretos legados).
  * - Gate de publicación: sin llaves no se publica (422).
- * - Sufijo de centavos: 1 número en talonario ≤100 → sufijo = nº de boleta;
- *   varios números → sufijo [1,999]; el monto siempre lo incluye.
+ * - SIN sufijo de centavos (eliminado 2026-09-01): el monto es SIEMPRE el
+ *   valor real exacto; el pago se identifica por referencia + comprobante.
+ * - La reserva encola la confirmación al comprador (correo + WhatsApp).
  * - Venta en efectivo: exige nombre+celular, va a paid con bitácora.
  */
 
@@ -46,9 +47,11 @@ check(!array_key_exists('nequi_key', $cfg) && !array_key_exists('nequi_secret', 
 $res = httpPost('/api/admin/raffles/update_status.php', ['raffle_id' => $raffle, 'status' => 'active'], $token);
 assertHttp(200, $res, 'Con llaves configuradas la rifa se publica');
 
-// ── 4. Sufijo §6: un número en talonario de 100 → sufijo = nº de boleta ──
+// ── 4. Sufijo ELIMINADO (decisión del dueño 2026-09-01): el comprador paga
+// SIEMPRE el valor real exacto — un solo número tampoco lleva sufijo ──
 $buyerPhone = '3009' . random_int(100000, 999999);
 onTeardown(function () use ($db, $buyerPhone, $raffle) {
+    $db->prepare("DELETE FROM message_queue WHERE raffle_id = ?")->execute([$raffle]);
     $db->prepare("DELETE FROM users WHERE phone_whatsapp = ? AND name LIKE '__TEST__%'")->execute([$buyerPhone]);
     $db->prepare("DELETE FROM numero_reservas WHERE raffle_id = ?")->execute([$raffle]);
     $db->prepare("DELETE FROM ticket_events WHERE raffle_id = ?")->execute([$raffle]);
@@ -60,8 +63,19 @@ $res = httpPost('/api/payments/create-reservation.php', [
 $ok = assertHttp(200, $res, 'Reserva de un número funciona');
 $amount = (float)($res['json']['data']['amount'] ?? 0);
 $suffix = (int)($res['json']['data']['payment_suffix'] ?? -1);
-check($suffix === 37, 'Sufijo = número de la boleta (37)', "suffix=$suffix");
-check($amount === 1000.0 + 37, 'Monto exacto = precio + sufijo (1037)', "amount=$amount");
+check($suffix === 0, 'Un número: SIN sufijo (eliminado del todo)', "suffix=$suffix");
+check($amount === 1000.0, 'Monto = valor real exacto (1000, sin excedente)', "amount=$amount");
+
+// La reserva ENCOLA la confirmación al comprador (correo + WhatsApp) — antes
+// no se enviaba absolutamente nada al comprar.
+$mq = $db->prepare("SELECT channel, status, body_text FROM message_queue WHERE raffle_id = ? AND message_type = 'reservation' ORDER BY id");
+$mq->execute([$raffle]);
+$colas = $mq->fetchAll(PDO::FETCH_ASSOC);
+$canales = array_column($colas, 'channel');
+sort($canales);
+check($canales === ['email', 'whatsapp'], 'Reserva encola confirmación por correo Y WhatsApp', json_encode($canales));
+check($colas && strpos($colas[0]['body_text'], '37') !== false && strpos($colas[0]['body_text'], '1.000') !== false,
+    'El mensaje trae el número y el valor EXACTO', substr($colas[0]['body_text'] ?? '', 0, 80));
 $methods = $res['json']['data']['payment_methods'] ?? [];
 $names = array_column($methods, 'method');
 sort($names);

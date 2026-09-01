@@ -110,7 +110,7 @@ try {
     }
 
     // Validar raffle existe y está activa
-    $stmt = $db->prepare("SELECT id, name, ticket_price, total_tickets, status, draw_date, sales_blocked, COALESCE(vendor_id, created_by) AS owner_id FROM raffles WHERE id = ? AND status = 'active'");
+    $stmt = $db->prepare("SELECT id, name, ticket_price, total_tickets, status, draw_date, sales_blocked, whatsapp_contact, image_url, COALESCE(vendor_id, created_by) AS owner_id FROM raffles WHERE id = ? AND status = 'active'");
     $stmt->execute([$raffleId]);
     $raffle = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -159,29 +159,14 @@ try {
         $ttlMin = TicketStateMachine::reservationTtlMinutes($db);
         $expiresAt = date('Y-m-d H:i:s', strtotime("+{$ttlMin} minutes"));
 
-        // §6 (ajustado por decisión del dueño, 2026-08-31) — Codificación de
-        // centavos SOLO para compras de UN número: el sufijo = el número de la
-        // boleta (autoexplicativo: pagas 10.050 por el 50). Para VARIOS
-        // números resultaba confuso pagar "de más": el comprador paga el VALOR
-        // REAL exacto (precio × cantidad) y el vendedor identifica el pago por
-        // la referencia de la transferencia y el comprobante adjunto.
-        if (count($numeros) === 1 && (int)$raffle['total_tickets'] <= 100) {
-            $paymentSuffix = (int)$numeros[0];
-        } elseif (count($numeros) === 1) {
-            // Talonarios grandes: sufijo aleatorio único entre las vigentes.
-            $stmt = $db->prepare("
-                SELECT DISTINCT payment_suffix FROM numero_reservas
-                WHERE raffle_id = ? AND estado = 'RESERVADO' AND payment_suffix IS NOT NULL
-            ");
-            $stmt->execute([$raffleId]);
-            $usados = array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN));
-            do {
-                $paymentSuffix = random_int(1, 999);
-            } while (in_array($paymentSuffix, $usados, true));
-        } else {
-            $paymentSuffix = 0;
-        }
-        $amount = $raffle['ticket_price'] * count($numeros) + $paymentSuffix;
+        // §6 ELIMINADO por decisión del dueño (2026-09-01): el comprador paga
+        // SIEMPRE el valor real exacto (precio × cantidad), sin sufijo de
+        // ningún tipo. El pago se identifica por la referencia de la
+        // transferencia y el comprobante adjunto — pagar "de más" para
+        // identificar la compra confundía y ya se había pedido quitar.
+        // La columna payment_suffix se conserva (reservas históricas).
+        $paymentSuffix = 0;
+        $amount = $raffle['ticket_price'] * count($numeros);
 
         // §11: bloquear SIEMPRE en orden ascendente — dos peticiones que
         // bloqueen los mismos números en orden distinto se matan en deadlock.
@@ -295,6 +280,32 @@ try {
         // vendedor y sube comprobante). Las pasarelas se eliminaron — la
         // plataforma nunca toca el dinero del comprador.
         $responseData['payment_url'] = BASE_PATH . '/public/payment.php?reservation_id=' . $reservationId;
+
+        // Confirmación de la reserva al COMPRADOR (correo siempre; WhatsApp
+        // si el organizador tiene su número vinculado). Antes no se encolaba
+        // NADA: el comprador quedaba sin rastro de su compra. Best-effort:
+        // un fallo aquí jamás tumba la reserva ya confirmada.
+        try {
+            require_once __DIR__ . '/../../api/services/MessageBuilderService.php';
+            $msg = MessageBuilderService::buildReservationOrderMessage(
+                $raffle, $numeros,
+                ['name' => $userName],
+                (float)$amount, (int)$ttlMin
+            );
+            $insMq = $db->prepare("
+                INSERT INTO message_queue (raffle_id, vendor_id, recipient_user_id, recipient_phone, recipient_email,
+                                           channel, message_type, subject, body_text, body_html, status, scheduled_at, created_at)
+                VALUES (?,?,?,?,?,?,?,?,?,?, 'pending', NOW(), NOW())
+            ");
+            $insMq->execute([$raffleId, (int)$raffle['owner_id'], (int)$user['id'], $userPhone, $userEmail,
+                'email', 'reservation', $msg['subject'], $msg['body_text'], $msg['body_html']]);
+            if ($userPhone !== '') {
+                $insMq->execute([$raffleId, (int)$raffle['owner_id'], (int)$user['id'], $userPhone, $userEmail,
+                    'whatsapp', 'reservation', $msg['subject'], $msg['body_text'], null]);
+            }
+        } catch (Throwable $e) {
+            Logger::error('No se pudo encolar la confirmación de reserva', ['error' => $e->getMessage(), 'reservation' => $reservationId]);
+        }
 
         Response::success($responseData, 'Reserva creada exitosamente');
 
