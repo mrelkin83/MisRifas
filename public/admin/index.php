@@ -3255,30 +3255,42 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
     function updateWinningModeOptions() {
         const digits = parseInt(document.getElementById('digits').value);
         const modeSelect = document.getElementById('winning-mode');
-        const hint = document.getElementById('winning-mode-hint');
-        
+
         if (digits === 2) {
             // 2 cifras: solo últimas 2 y primeras 2
             modeSelect.innerHTML = 
                 '<option value="last_2">Últimas 2 cifras</option>' +
                 '<option value="first_2">Primeras 2 cifras</option>';
-            modeSelect.disabled = false;
-            if (hint) hint.textContent = 'Gana con las 2 cifras del número sorteado.';
         } else if (digits === 3) {
             // 3 cifras: últimas 3 y primeras 3
             modeSelect.innerHTML = 
                 '<option value="last_3">Últimas 3 cifras</option>' +
                 '<option value="first_3">Primeras 3 cifras</option>';
-            modeSelect.disabled = false;
-            if (hint) hint.textContent = 'Gana con las 3 cifras del número sorteado.';
         } else {
             // 4 cifras: solo últimas 4
             modeSelect.innerHTML = 
                 '<option value="last_4">Últimas 4 cifras</option>';
-            modeSelect.disabled = false;
-            if (hint) hint.textContent = 'Gana con las 4 cifras del número sorteado.';
         }
+        modeSelect.disabled = false;
+        updateWinningModeHint();
     }
+
+    // El aviso describe el MODO ELEGIDO, no solo la cantidad de cifras:
+    // "últimas 3" y "primeras 3" son reglas distintas y el organizador debe
+    // ver exactamente cuál está eligiendo.
+    function updateWinningModeHint() {
+        const hint = document.getElementById('winning-mode-hint');
+        if (!hint) return;
+        const textos = {
+            last_2:  'Gana con las 2 ÚLTIMAS cifras del número ganador del sorteo.',
+            first_2: 'Gana con las 2 PRIMERAS cifras del número ganador del sorteo.',
+            last_3:  'Gana con las 3 ÚLTIMAS cifras del número ganador del sorteo.',
+            first_3: 'Gana con las 3 PRIMERAS cifras del número ganador del sorteo.',
+            last_4:  'Gana con las 4 ÚLTIMAS cifras del número ganador del sorteo.'
+        };
+        hint.textContent = textos[document.getElementById('winning-mode').value] || '';
+    }
+    document.getElementById('winning-mode')?.addEventListener('change', updateWinningModeHint);
 
     async function loadSettings() {
         try {
