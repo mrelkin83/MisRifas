@@ -86,6 +86,16 @@ install_packages() {
     curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
   fi
   a2enmod rewrite ssl >/dev/null
+
+  # Límites de subida: el default de PHP (upload 2M / post 8M) rompe la carga
+  # masiva de fotos de rifas — hasta 10 fotos de 5MB por lote. Se deja en un
+  # conf.d propio para sobrevivir a los upgrades de php.ini.
+  cat > "/etc/php/${PHP_VERSION}/apache2/conf.d/99-misrifas-uploads.ini" <<'INI'
+; MisRifas: carga masiva de imágenes de rifas (10 fotos x 5MB + margen)
+upload_max_filesize = 8M
+post_max_size = 64M
+max_file_uploads = 20
+INI
   ok "Paquetes instalados"
 }
 

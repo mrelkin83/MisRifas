@@ -3547,9 +3547,20 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
             return;
         }
 
-        statusEl.textContent = `⏳ Subiendo ${files.length} imagen(es)…`;
+        // Filtro previo: el servidor acepta 5MB por foto — avisar AQUÍ evita
+        // descubrir el límite tras esperar la subida completa.
+        const MAX_MB = 5;
+        const lista = Array.from(files);
+        const grandes = lista.filter(f => f.size > MAX_MB * 1048576);
+        const validas = lista.filter(f => f.size <= MAX_MB * 1048576);
+        if (grandes.length) {
+            Utils.showNotification('Estas fotos superan ' + MAX_MB + 'MB y no se subirán: ' + grandes.map(f => f.name).join(', '), 'warning');
+        }
+        if (!validas.length) return;
+
+        statusEl.textContent = `⏳ Subiendo ${validas.length} imagen(es)…`;
         const fd = new FormData();
-        Array.from(files).forEach(f => fd.append('image[]', f));
+        validas.forEach(f => fd.append('image[]', f));
 
         try {
             const token = localStorage.getItem('misrifas_token');
@@ -3566,7 +3577,11 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                 raffleImages = raffleImages.concat(json.data.urls);
                 renderThumbnails();
                 statusEl.textContent = `✅ ${raffleImages.length}/10 fotos cargadas`;
-                Utils.showNotification('Foto(s) cargada(s) exitosamente', 'success');
+                if ((json.data.fallidas || []).length) {
+                    Utils.showNotification('Algunas no se subieron: ' + json.data.fallidas.join('; '), 'warning');
+                } else {
+                    Utils.showNotification('Foto(s) cargada(s) exitosamente', 'success');
+                }
             } else {
                 Utils.showNotification(json.message || 'Error al cargar las fotos', 'error');
             }
