@@ -77,13 +77,15 @@ waHeader('Conexión', 'conexion', 'Vincular el número de WhatsApp del negocio')
   </div>
 
   <div class="neon-card p-4 space-y-3">
-    <h3 class="neon-text">4 · Encender el motor</h3>
+    <h3 class="neon-text">4 · Respuestas automáticas (el bot)</h3>
     <p class="text-xs text-[var(--text-muted)]">
-      Mientras esté apagado, los mensajes se reciben y se descartan. Enciéndelo cuando
-      ya hayas configurado el proveedor de IA y probado la conexión.
+      Apagado: NADIE recibe respuestas automáticas de la IA — pero los códigos de
+      verificación (OTP), los comandos SI/NO de pagos y las notificaciones salientes
+      SIGUEN funcionando con normalidad. Enciéndelo solo cuando el proveedor de IA
+      esté configurado y probado.
     </p>
-    <label class="flex items-center gap-2 text-sm">
-      <input type="checkbox" id="activo"> El motor atiende los mensajes de WhatsApp
+    <label class="flex items-center gap-2 text-sm" style="cursor:pointer;">
+      <input type="checkbox" id="activo"> 🤖 El bot responde automáticamente los mensajes de WhatsApp
     </label>
     <div id="requisitos" class="text-xs space-y-1"></div>
     <button onclick="guardar()" class="neon-btn-success">Guardar</button>

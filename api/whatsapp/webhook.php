@@ -60,13 +60,18 @@ if (!preg_match('/^[a-f0-9]{64}$/', $token)) {
 $tokenHash = hash('sha256', $token);
 
 $pdo = Database::getInstance()->getConnection();
-$stmt = $pdo->prepare('SELECT vendor_id FROM wa_config WHERE webhook_token_hash = ? AND activo = 1 LIMIT 1');
+// El token AUTENTICA siempre; `activo` gobierna SOLO al bot conversacional.
+// Antes el lookup exigía activo=1 y apagar el motor mataba también el OTP
+// de registro y los comandos SI/NO del vendedor — apagar las respuestas
+// automáticas no debe dejar sorda a la plataforma.
+$stmt = $pdo->prepare('SELECT vendor_id, activo FROM wa_config WHERE webhook_token_hash = ? LIMIT 1');
 $stmt->execute([$tokenHash]);
 $fila = $stmt->fetch(PDO::FETCH_ASSOC);
 if (!$fila) {
     responder(404);
 }
 $vendorId = (int)$fila['vendor_id'];
+$motorActivo = (int)$fila['activo'] === 1;
 
 $stmtVendor = $pdo->prepare('SELECT business_name FROM vendors WHERE id = ? AND status = ?');
 $stmtVendor->execute([$vendorId, 'active']);
@@ -135,6 +140,13 @@ if ($guardado === 0) {
 require_once __DIR__ . '/PaymentInbound.php';
 if (PaymentInbound::procesar($mensaje, $canal, $vendorId)) {
     responder(200, ['ok' => true, 'pago' => true]);
+}
+
+// Motor APAGADO: el mensaje ya quedó guardado en la conversación, el OTP y
+// los comandos de pago ya corrieron — pero la IA NO responde nada.
+// (Interruptor: WhatsApp IA → Conexión → "El motor atiende los mensajes".)
+if (!$motorActivo) {
+    responder(200, ['ok' => true, 'nota' => 'motor apagado: sin respuesta automática']);
 }
 
 $convManager->tocar((int)$conv['id']);
