@@ -254,21 +254,38 @@ try {
             foreach ($flags as $f) {
                 $alertas .= ($flagLabels[$f] ?? $f) . "\n";
             }
-            $lineas = "🧾 *Nuevo pago por confirmar*\n"
+            $resumen = "🧾 *Nuevo pago por confirmar*\n"
                 . 'Rifa: ' . $ctx['name'] . "\n"
                 . 'Comprador: ' . ($ctx['buyer_name'] ?: 'Sin nombre') . "\n"
-                . 'Número(s): ' . implode(', ', $nums) . "\n"
+                . 'Boleto(s): ' . implode(', ', $nums) . "\n"
                 . 'Monto exacto: $' . number_format($ordenAmount, 0, ',', '.') . "\n"
                 . 'Hora: ' . date('d/m H:i') . "\n"
                 . ($proofLink ? ('Comprobante: ' . $proofLink . "\n") : "Sin comprobante adjunto\n")
-                . ($alertas !== '' ? "\n" . $alertas : '')
-                . "\nResponde por cada boleto:\n";
+                . ($alertas !== '' ? "\n" . $alertas : '');
+
+            // El correo lleva TODO (resumen + comandos de texto).
+            $comandos = "\nResponde por cada boleto:\n";
             foreach ($tickets as $t2) {
-                $lineas .= '✅ *SI ' . $t2['id'] . '*  |  ❌ *NO ' . $t2['id'] . '*  (boleto ' . $t2['ticket_number'] . ")\n";
+                $comandos .= '✅ SI ' . $t2['id'] . '  |  ❌ NO ' . $t2['id'] . '  (boleto ' . $t2['ticket_number'] . ")\n";
             }
-            $lineas .= "\nO confírmalo desde tu panel → Pagos por confirmar.";
+            $comandos .= "\nO confírmalo desde tu panel → Pagos recibidos.";
+            $lineas = $resumen . $comandos;
+
+            // WhatsApp: resumen + BOTONES por boleto (Aprobar/Rechazar). Si el
+            // teléfono no soporta botones, el canal cae solo a texto con los
+            // comandos — nunca te quedas sin forma de responder.
             require_once __DIR__ . '/../whatsapp/notify.php';
-            notificarWhatsAppVendor((int)$ctx['vendor_id'], (string)$ctx['vendor_phone'], $lineas);
+            notificarWhatsAppVendor((int)$ctx['vendor_id'], (string)$ctx['vendor_phone'],
+                $resumen . "\nConfirma con los botones que siguen, o desde tu panel → Pagos recibidos.");
+            foreach ($tickets as $t2) {
+                notificarBotonesVendor((int)$ctx['vendor_id'], (string)$ctx['vendor_phone'],
+                    '¿Aprobar el pago del boleto ' . $t2['ticket_number'] . '?',
+                    'Si no ves botones, responde: SI ' . $t2['id'] . '  o  NO ' . $t2['id'],
+                    [
+                        ['texto' => '✅ Aprobar', 'id' => 'SI ' . $t2['id']],
+                        ['texto' => '❌ Rechazar', 'id' => 'NO ' . $t2['id']],
+                    ]);
+            }
 
             // También por CORREO ("el correo va siempre"): al correo de cuenta
             // Y al correo adicional de avisos si lo configuró en Mi Perfil.

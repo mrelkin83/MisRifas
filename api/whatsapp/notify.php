@@ -117,4 +117,35 @@ if (!function_exists('notificarWhatsAppVendor')) {
     {
         return notificarWhatsAppVendorDetalle($vendorId, $telefono, $mensaje)['ok'];
     }
+
+    /**
+     * Mensaje con BOTONES por la instancia del vendedor (fallback a texto
+     * dentro del propio canal si WhatsApp no los soporta). Best-effort.
+     * @param array<int, array{texto:string, id:string}> $botones
+     */
+    function notificarBotonesVendor(int $vendorId, string $telefono, string $titulo, string $descripcion, array $botones): bool
+    {
+        \ElkinLinan\WhatsappAiEngine\Engine::reiniciar();
+        \ElkinLinan\WhatsappAiEngine\Engine::arrancar([
+            'db' => new MisRifasDb(),
+            'dominio' => new RaffleDomainAdapter($vendorId),
+            'archivo' => new MisRifasStorage($vendorId),
+            'secreto' => new MisRifasSecret(),
+            'negocio' => new MisRifasTenant($vendorId),
+            'formato' => new \ElkinLinan\WhatsappAiEngine\Defecto\PesosColombianos(),
+            'funcion' => new \ElkinLinan\WhatsappAiEngine\Defecto\TodoPermitido(),
+            'config' => new \ElkinLinan\WhatsappAiEngine\Defecto\ConfigDeEntorno(),
+        ]);
+        $canal = \ElkinLinan\WhatsappAiEngine\Channel\EvolutionClient::desdeConfig(\ElkinLinan\WhatsappAiEngine\Engine::db());
+        if (!$canal) {
+            return false;
+        }
+        try {
+            $r = $canal->enviarBotones(waNumeroDestino($telefono), $titulo, $descripcion, $botones);
+            return !empty($r['ok']);
+        } catch (\Throwable $e) {
+            error_log('[WhatsApp][notifyBtn] vendor=' . $vendorId . ' ' . $e->getMessage());
+            return false;
+        }
+    }
 }

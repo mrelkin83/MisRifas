@@ -234,6 +234,38 @@ class EvolutionClient implements ChannelInterface
         return ['ok' => $r['ok'], 'message_id' => $r['json']['key']['id'] ?? null, 'error' => $r['error']];
     }
 
+    /**
+     * Mensaje con BOTONES de respuesta rápida. WhatsApp no los renderiza en
+     * todos los clientes (Baileys no es la API oficial): si Evolution los
+     * rechaza, cae a texto plano con las instrucciones — el flujo nunca se
+     * pierde. El `id` de cada botón llega de vuelta como texto del mensaje
+     * (ver normalizarWebhook), así que conviene que el id SEA el comando.
+     * @param array<int, array{texto:string, id:string}> $botones (máx. 3)
+     */
+    public function enviarBotones(string $telefono, string $titulo, string $descripcion, array $botones): array
+    {
+        $numero = self::normalizarNumero($telefono);
+        if ($numero === '' || !$botones) {
+            return ['ok' => false, 'message_id' => null, 'error' => 'Destino o botones vacíos'];
+        }
+        $ruta = $this->url . '/message/sendButtons/' . rawurlencode($this->instancia);
+        $r = Http::json('POST', $ruta, $this->cabeceras(), [
+            'number' => $numero,
+            'title' => $titulo,
+            'description' => $descripcion,
+            'footer' => ' ',
+            'buttons' => array_map(
+                fn($b) => ['type' => 'reply', 'displayText' => (string)$b['texto'], 'id' => (string)$b['id']],
+                array_slice($botones, 0, 3)
+            ),
+        ], 30);
+        if ($r['ok']) {
+            return ['ok' => true, 'message_id' => $r['json']['key']['id'] ?? null, 'error' => ''];
+        }
+        // Fallback honesto: texto plano con título + instrucciones.
+        return $this->enviarTexto($telefono, $titulo . "\n" . $descripcion);
+    }
+
     public function enviarImagen(string $telefono, string $imagenBase64, string $caption = ''): array
     {
         $numero = self::normalizarNumero($telefono);
@@ -300,6 +332,20 @@ class EvolutionClient implements ChannelInterface
             $texto = (string)$msg['conversation'];
         } elseif (isset($msg['extendedTextMessage']['text'])) {
             $texto = (string)$msg['extendedTextMessage']['text'];
+        } elseif (isset($msg['buttonsResponseMessage'])) {
+            // Respuesta a botones: el id del botón ES el comando (ej "SI 5384"),
+            // así el resto del pipeline la trata como texto normal.
+            $texto = (string)($msg['buttonsResponseMessage']['selectedButtonId']
+                ?? $msg['buttonsResponseMessage']['selectedDisplayText'] ?? '');
+        } elseif (isset($msg['templateButtonReplyMessage'])) {
+            $texto = (string)($msg['templateButtonReplyMessage']['selectedId']
+                ?? $msg['templateButtonReplyMessage']['selectedDisplayText'] ?? '');
+        } elseif (isset($msg['listResponseMessage'])) {
+            $texto = (string)($msg['listResponseMessage']['singleSelectReply']['selectedRowId']
+                ?? $msg['listResponseMessage']['title'] ?? '');
+        } elseif (isset($msg['interactiveResponseMessage'])) {
+            $j = json_decode((string)($msg['interactiveResponseMessage']['nativeFlowResponseMessage']['paramsJson'] ?? ''), true);
+            $texto = (string)($j['id'] ?? '');
         } elseif (isset($msg['audioMessage'])) {
             $tipo = 'audio';
             $mediaMime = $msg['audioMessage']['mimetype'] ?? 'audio/ogg';
