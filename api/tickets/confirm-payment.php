@@ -271,20 +271,28 @@ try {
             $comandos .= "\nO confírmalo desde tu panel → Pagos recibidos.";
             $lineas = $resumen . $comandos;
 
-            // WhatsApp: resumen + BOTONES por boleto (Aprobar/Rechazar). Si el
-            // teléfono no soporta botones, el canal cae solo a texto con los
-            // comandos — nunca te quedas sin forma de responder.
+            // WhatsApp: por defecto TEXTO con los comandos SI/NO — verificado
+            // en vivo que los botones de Baileys son ACEPTADOS por el servidor
+            // pero DESCARTADOS en silencio para cuentas normales (solo la API
+            // oficial de WhatsApp Business entrega botones reales). El modo
+            // botones queda detrás de wa_botones=1 por si se migra a la
+            // oficial.
             require_once __DIR__ . '/../whatsapp/notify.php';
-            notificarWhatsAppVendor((int)$ctx['vendor_id'], (string)$ctx['vendor_phone'],
-                $resumen . "\nConfirma con los botones que siguen, o desde tu panel → Pagos recibidos.");
-            foreach ($tickets as $t2) {
-                notificarBotonesVendor((int)$ctx['vendor_id'], (string)$ctx['vendor_phone'],
-                    '¿Aprobar el pago del boleto ' . $t2['ticket_number'] . '?',
-                    'Si no ves botones, responde: SI ' . $t2['id'] . '  o  NO ' . $t2['id'],
-                    [
-                        ['texto' => '✅ Aprobar', 'id' => 'SI ' . $t2['id']],
-                        ['texto' => '❌ Rechazar', 'id' => 'NO ' . $t2['id']],
-                    ]);
+            $conBotones = $db->query("SELECT setting_value FROM system_settings WHERE setting_key = 'wa_botones'")->fetchColumn() === '1';
+            if ($conBotones) {
+                notificarWhatsAppVendor((int)$ctx['vendor_id'], (string)$ctx['vendor_phone'],
+                    $resumen . "\nConfirma con los botones que siguen, o desde tu panel → Pagos recibidos.");
+                foreach ($tickets as $t2) {
+                    notificarBotonesVendor((int)$ctx['vendor_id'], (string)$ctx['vendor_phone'],
+                        '¿Aprobar el pago del boleto ' . $t2['ticket_number'] . '?',
+                        'Si no ves botones, responde: SI ' . $t2['id'] . '  o  NO ' . $t2['id'],
+                        [
+                            ['texto' => '✅ Aprobar', 'id' => 'SI ' . $t2['id']],
+                            ['texto' => '❌ Rechazar', 'id' => 'NO ' . $t2['id']],
+                        ]);
+                }
+            } else {
+                notificarWhatsAppVendor((int)$ctx['vendor_id'], (string)$ctx['vendor_phone'], $lineas);
             }
 
             // También por CORREO ("el correo va siempre"): al correo de cuenta
