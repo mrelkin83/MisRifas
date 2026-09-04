@@ -223,14 +223,17 @@ function cancelarPorTope(PDO $db, array $raffle, array $vendor, array $paidTicke
         'body_html' => null,
     ], $scheduledAt);
 
-    // Aviso a cada comprador pagado.
+    // Aviso a cada comprador pagado. Al comprador se le habla de sus NÚMEROS,
+    // nunca del consecutivo del boleto (regla de producto: evita reclamos).
     foreach ($paidTickets as $t) {
+        $nums = implode(', ', json_decode((string)$t['opportunities'], true) ?: []);
         enqueueMessage((int)$raffle['id'], (int)$vendor['id'], (int)$t['user_id'], $t['buyer_phone'], $t['buyer_email'], [
             'message_type' => 'no_winner',
             'subject' => 'La rifa "' . $raffle['name'] . '" fue cancelada',
             'body_text' => 'Hola ' . ($t['buyer_name'] ?: '') . ", la rifa \"{$raffle['name']}\" se canceló tras 4 sorteos sin ganador (número que salió: {$digits}).\n"
                 . 'El organizador (' . $vendor['business_name'] . ', cel ' . $vendor['phone'] . ') debe devolverte $'
-                . number_format((float)$raffle['ticket_price'], 0, ',', '.') . ' de tu boleto #' . $t['ticket_number'] . ".\n"
+                . number_format((float)$raffle['ticket_price'], 0, ',', '.')
+                . ' de tu compra' . ($nums !== '' ? " (tus números: {$nums})" : '') . ".\n"
                 . 'La cancelación es pública en la página de la rifa. — ' . plataforma('nombre'),
             'body_html' => null,
         ], $scheduledAt);
@@ -270,7 +273,7 @@ function avisarCompradoresEvento(array $raffle, array $vendor, array $paidTicket
         $byUser[$uid]['name'] = $t['buyer_name'];
         $byUser[$uid]['phone'] = $t['buyer_phone'];
         $byUser[$uid]['email'] = $t['buyer_email'];
-        $byUser[$uid]['tickets'][] = $t['ticket_number'];
+        $byUser[$uid]['tickets'][] = ['ticket_number' => $t['ticket_number'], 'opportunities' => $t['opportunities']];
     }
     foreach ($byUser as $uid => $c) {
         $msg = MessageBuilderService::buildNoWinnerEventMessage(
@@ -395,7 +398,7 @@ function registerWinner(array $raffle, array $ticket, string $matchedDigits, arr
                 'tickets' => [],
             ];
         }
-        $byUser[$uid]['tickets'][] = $t['ticket_number'];
+        $byUser[$uid]['tickets'][] = ['ticket_number' => $t['ticket_number'], 'opportunities' => $t['opportunities']];
     }
     foreach ($byUser as $uid => $participant) {
         $msg = MessageBuilderService::buildParticipantResultMessage(
@@ -465,7 +468,7 @@ function scheduleResorteo(array $raffle, array $vendor, array $tickets, string $
                 'tickets' => [],
             ];
         }
-        $byUser[$uid]['tickets'][] = $ticket['ticket_number'];
+        $byUser[$uid]['tickets'][] = ['ticket_number' => $ticket['ticket_number'], 'opportunities' => $ticket['opportunities']];
     }
     foreach ($byUser as $uid => $participant) {
         $msg = MessageBuilderService::buildResorteoMessage(

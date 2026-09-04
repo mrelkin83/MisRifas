@@ -174,7 +174,7 @@ try {
     // §12.2: notificar a TODOS los compradores con boleto pagado (número,
     // nueva fecha, motivo) por email + WhatsApp, agrupado por comprador.
     $stmt = $db->prepare("
-        SELECT t.ticket_number, t.user_id, u.name, u.phone_whatsapp, u.email
+        SELECT t.ticket_number, t.opportunities, t.user_id, u.name, u.phone_whatsapp, u.email
         FROM tickets t LEFT JOIN users u ON u.id = t.user_id
         WHERE t.raffle_id = ? AND t.status = 'paid'
     ");
@@ -185,7 +185,12 @@ try {
         $porComprador[$uid]['name'] = $tk['name'];
         $porComprador[$uid]['phone'] = $tk['phone_whatsapp'];
         $porComprador[$uid]['email'] = $tk['email'];
-        $porComprador[$uid]['tickets'][] = $tk['ticket_number'];
+        // Con opportunities: el mensaje lista los NÚMEROS en juego de cada
+        // boleto (lo que el comprador reconoce), no solo el consecutivo.
+        $porComprador[$uid]['tickets'][] = [
+            'ticket_number' => $tk['ticket_number'],
+            'opportunities' => $tk['opportunities'],
+        ];
     }
     $lastStmt = $db->prepare('SELECT winning_number FROM raffle_draws WHERE raffle_id = ? ORDER BY attempt DESC LIMIT 1');
     $lastStmt->execute([$raffleId]);

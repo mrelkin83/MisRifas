@@ -15,25 +15,25 @@ class MessageBuilderService
             'nombre' => '🏆 Al ganador del sorteo',
             'descripcion' => 'WhatsApp y correo al ganador. El enlace de aceptación {confirm_url} es obligatorio: si lo quitas, el sistema lo agrega al final.',
             'vars' => ['nombre', 'raffle_name', 'ticket_number', 'lottery_name', 'winning_number', 'draw_date', 'confirm_url', 'platform'],
-            'default' => "Felicitaciones {nombre}! Tu boleto *{ticket_number}* GANO la rifa *{raffle_name}*: tu numero *{winning_number}* coincidio con el resultado de la {lottery_name} del {draw_date} (numero completo: *{full_number}*). Confirma que aceptas tu premio aqui: {confirm_url} . Pronto te contactaremos para la entrega del premio.",
+            'default' => "Felicitaciones {nombre}! Tu numero *{winning_number}* GANO la rifa *{raffle_name}*: coincidio con el resultado de la {lottery_name} del {draw_date} (numero completo: *{full_number}*). Confirma que aceptas tu premio aqui: {confirm_url} . Pronto te contactaremos para la entrega del premio.",
         ],
         'participant_result' => [
             'nombre' => '🎟️ A los participantes (hubo ganador)',
-            'descripcion' => 'A cada comprador que no ganó: resultado, ganador y sus boletos.',
+            'descripcion' => 'A cada comprador que no ganó: resultado, ganador y sus números. {tickets} lista cada boleto CON los números que jugaron (lo que el comprador reconoce como su apuesta).',
             'vars' => ['nombre', 'raffle_name', 'tickets', 'lottery_name', 'winning_number', 'draw_date', 'winner_name', 'winner_ticket', 'platform'],
-            'default' => "Hola {nombre}, gracias por participar en la rifa *{raffle_name}*. El numero ganador de la {lottery_name} del {draw_date} fue *{winning_number}*. Felicitaciones a *{winner_name}*, quien gano con el boleto *{winner_ticket}*. Tu participacion: boleto(s) {tickets}. Esta vez no fue, pero sigue participando en {platform}!",
+            'default' => "Hola {nombre}, gracias por participar en la rifa *{raffle_name}*. El numero ganador de la {lottery_name} del {draw_date} fue *{winning_number}*. Felicitaciones a *{winner_name}*, quien gano con ese numero. Tus numeros en esta rifa fueron:\n{tickets}\nEsta vez no fue, pero sigue participando en {platform}!",
         ],
         'resorteo' => [
             'nombre' => '🔁 Reprogramación (nadie ganó)',
-            'descripcion' => 'El número no estaba vendido/pagado: los boletos siguen y hay nueva fecha {next_date} con la {next_lottery} (si quitas la fecha, el sistema la agrega).',
+            'descripcion' => 'El número no estaba vendido/pagado: los números siguen y hay nueva fecha {next_date} con la {next_lottery} (si quitas la fecha, el sistema la agrega). {tickets} lista cada boleto CON sus números en juego.',
             'vars' => ['nombre', 'raffle_name', 'tickets', 'lottery_name', 'winning_number', 'draw_date', 'next_date', 'next_lottery', 'platform'],
-            'default' => "Hola {nombre}, la rifa *{raffle_name}* jugo el {draw_date} con la {lottery_name}: el numero fue *{winning_number}* y ningun boleto vendido resulto ganador. Tu(s) boleto(s) {tickets} SIGUEN participando: el sorteo se reprogramo para el *{next_date}* con la {next_lottery}. Mucha suerte!",
+            'default' => "Hola {nombre}, la rifa *{raffle_name}* jugo el {draw_date} con la {lottery_name}: el numero fue *{winning_number}* y no coincidio con ningun numero vendido, asi que nadie gano. Tus numeros SIGUEN participando:\n{tickets}\nEl sorteo se reprogramo para el *{next_date}* con la {next_lottery}. Mucha suerte!",
         ],
         'sin_ganador_evento' => [
             'nombre' => '📣 A los compradores (jugó y nadie ganó, aún sin nueva fecha)',
-            'descripcion' => 'Aviso inmediato del resultado: el número no cayó en boleto pagado; el organizador anunciará la nueva fecha. Los boletos siguen vigentes.',
+            'descripcion' => 'Aviso inmediato del resultado: el número no cayó en boleto pagado; el organizador anunciará la nueva fecha. {tickets} lista cada boleto CON sus números en juego.',
             'vars' => ['nombre', 'raffle_name', 'tickets', 'lottery_name', 'winning_number', 'draw_date', 'platform'],
-            'default' => "Hola {nombre}, la rifa *{raffle_name}* jugo el {draw_date} con la {lottery_name}: el numero fue *{winning_number}* y NO cayo en ningun boleto pagado, asi que no hubo ganador. Tu(s) boleto(s) {tickets} SIGUEN participando tal cual: el organizador anunciara muy pronto la nueva fecha del sorteo y te avisaremos por este medio. Gracias por tu confianza — {platform}.",
+            'default' => "Hola {nombre}, la rifa *{raffle_name}* jugo el {draw_date} con la {lottery_name}: el numero fue *{winning_number}* y NO cayo en ningun numero pagado, asi que no hubo ganador. Tus numeros SIGUEN participando tal cual:\n{tickets}\nEl organizador anunciara muy pronto la nueva fecha del sorteo y te avisaremos por este medio. Gracias por tu confianza — {platform}.",
         ],
         'vendor_winner' => [
             'nombre' => '📢 Al organizador (su rifa tuvo ganador)',
@@ -45,7 +45,7 @@ class MessageBuilderService
             'nombre' => '📄 Resultado individual (sin ganador para ese boleto)',
             'descripcion' => 'Resultado a un comprador puntual.',
             'vars' => ['nombre', 'raffle_name', 'ticket_number', 'lottery_name', 'winning_number', 'draw_date', 'platform'],
-            'default' => "Hola {nombre}, la rifa *{raffle_name}* ya tuvo sorteo. El numero ganador de la {lottery_name} fue *{winning_number}*. Tu boleto fue *{ticket_number}*. Sigue participando en {platform}!",
+            'default' => "Hola {nombre}, la rifa *{raffle_name}* ya tuvo sorteo. El numero ganador de la {lottery_name} fue *{winning_number}* y no coincidio con tus numeros. Sigue participando en {platform}!",
         ],
         'reservation' => [
             'nombre' => '⏳ Boleto reservado',
@@ -152,8 +152,7 @@ class MessageBuilderService
                 'Felicitaciones - Ganaste la rifa!',
                 self::raffleImageHtml($raffle)
                 . "<h2 style='color:#fbbf24;'>Felicitaciones {nombre}!</h2>"
-                . "<p>Tu boleto <strong>{ticket_number}</strong> GANO la rifa <strong>{raffle_name}</strong>.</p>"
-                . "<p>Tu numero <strong style='color:#22c55e;font-size:1.5em;'>{winning_number}</strong> coincidio con el resultado de la {lottery_name} del {draw_date} (numero completo: <strong>{full_number}</strong>).</p>"
+                . "<p>Tu numero <strong style='color:#22c55e;font-size:1.5em;'>{winning_number}</strong> GANO la rifa <strong>{raffle_name}</strong>: coincidio con el resultado de la {lottery_name} del {draw_date} (numero completo: <strong>{full_number}</strong>).</p>"
                 . $confirmBlockHtml
                 . "<p>Pronto te contactaremos para la entrega del premio.</p>",
                 $vars
@@ -186,8 +185,8 @@ class MessageBuilderService
         $html = self::buildEmailHtml(
             'Resultado de la rifa ' . $raffle['name'],
             "<h2>Resultado de la rifa {raffle_name}</h2>"
-            . "<p>El numero ganador de la {lottery_name} fue <strong>{winning_number}</strong>.</p>"
-            . "<p>Tu boleto fue <strong>{ticket_number}</strong>. Esta vez no fue, pero sigue participando!</p>",
+            . "<p>El numero ganador de la {lottery_name} fue <strong>{winning_number}</strong> y no coincidio con tus numeros.</p>"
+            . "<p>Esta vez no fue, pero sigue participando!</p>",
             $vars
         );
 
@@ -323,33 +322,31 @@ class MessageBuilderService
      */
     public static function buildParticipantResultMessage(array $raffle, array $ticketNumbers, array $buyer, array $lottery, string $winningDigits, string $winnerName, string $winnerTicket): array
     {
-        $tickets = implode(', ', array_map(
-            fn($n) => self::padBoleto($n),
-            $ticketNumbers
-        ));
         $vars = [
             'nombre' => $buyer['name'] ?? 'Participante',
             'raffle_name' => $raffle['name'],
-            'tickets' => $tickets,
+            'tickets' => self::listaBoletos($ticketNumbers),
             'lottery_name' => $lottery['name'] ?? '',
             'winning_number' => $winningDigits,
             'draw_date' => date('d/m/Y', strtotime($raffle['draw_date'])),
             'winner_name' => $winnerName,
             'winner_ticket' => self::padBoleto($winnerTicket),
         ];
+        $varsHtml = self::escapeVars($vars);
+        $varsHtml['tickets'] = nl2br($varsHtml['tickets']);
         $tpl = self::plantilla('participant_result');
         $text = self::replaceVars($tpl, $vars);
         $html = self::esPersonalizada('participant_result')
-            ? self::htmlDePlantilla('Resultado de la rifa ' . $raffle['name'], $tpl, $raffle, self::escapeVars($vars))
+            ? self::htmlDePlantilla('Resultado de la rifa ' . $raffle['name'], $tpl, $raffle, $varsHtml)
             : self::buildEmailHtml(
             'Resultado de la rifa ' . $raffle['name'],
             self::raffleImageHtml($raffle)
             . "<h2>Gracias por participar, {nombre}!</h2>"
             . "<p>La rifa <strong>{raffle_name}</strong> ya tuvo sorteo con la {lottery_name} del {draw_date}.</p>"
             . "<p>Numero ganador: <strong style='color:#22c55e;font-size:1.5em;'>{winning_number}</strong></p>"
-            . "<p>Felicitaciones a <strong>{winner_name}</strong>, quien gano con el boleto <strong>{winner_ticket}</strong>.</p>"
-            . "<p>Tu participacion: boleto(s) <strong>{tickets}</strong>. Esta vez no fue, pero sigue participando!</p>",
-            self::escapeVars($vars)
+            . "<p>Felicitaciones a <strong>{winner_name}</strong>, quien gano con ese numero.</p>"
+            . "<p>Tus numeros en esta rifa fueron:<br><strong>{tickets}</strong><br>Esta vez no fue, pero sigue participando!</p>",
+            $varsHtml
         );
         return [
             'channel' => 'email',
@@ -368,14 +365,10 @@ class MessageBuilderService
      */
     public static function buildResorteoMessage(array $raffle, array $ticketNumbers, array $buyer, array $lottery, string $winningDigits, string $nextDrawDate, ?string $nextLotteryName = null): array
     {
-        $tickets = implode(', ', array_map(
-            fn($n) => self::padBoleto($n),
-            $ticketNumbers
-        ));
         $vars = [
             'nombre' => $buyer['name'] ?? 'Participante',
             'raffle_name' => $raffle['name'],
-            'tickets' => $tickets,
+            'tickets' => self::listaBoletos($ticketNumbers),
             'lottery_name' => $lottery['name'] ?? '',
             'winning_number' => $winningDigits,
             'draw_date' => date('d/m/Y', strtotime($raffle['draw_date'])),
@@ -383,18 +376,20 @@ class MessageBuilderService
             // Reprogramar puede cambiar de lotería (concertado con el vendedor).
             'next_lottery' => $nextLotteryName ?: ($lottery['name'] ?? ''),
         ];
+        $varsHtml = self::escapeVars($vars);
+        $varsHtml['tickets'] = nl2br($varsHtml['tickets']);
         $tpl = self::plantilla('resorteo');
         $text = self::replaceVars($tpl, $vars);
         $html = self::esPersonalizada('resorteo')
-            ? self::htmlDePlantilla('Re-sorteo de la rifa ' . $raffle['name'], $tpl, $raffle, self::escapeVars($vars))
+            ? self::htmlDePlantilla('Re-sorteo de la rifa ' . $raffle['name'], $tpl, $raffle, $varsHtml)
             : self::buildEmailHtml(
             'Re-sorteo de la rifa ' . $raffle['name'],
             self::raffleImageHtml($raffle)
             . "<h2>La rifa {raffle_name} se reprogramo</h2>"
-            . "<p>El numero de la {lottery_name} del {draw_date} fue <strong>{winning_number}</strong> y ningun boleto vendido resulto ganador.</p>"
-            . "<p>Tu(s) boleto(s) <strong>{tickets}</strong> siguen participando.</p>"
+            . "<p>El numero de la {lottery_name} del {draw_date} fue <strong>{winning_number}</strong> y no coincidio con ningun numero vendido: nadie gano.</p>"
+            . "<p>Tus numeros siguen participando:<br><strong>{tickets}</strong></p>"
             . "<p>Nueva fecha de sorteo: <strong style='color:#fbbf24;font-size:1.2em;'>{next_date}</strong> con la <strong>{next_lottery}</strong>. Mucha suerte!</p>",
-            self::escapeVars($vars)
+            $varsHtml
         );
         return [
             'channel' => 'email',
@@ -413,30 +408,28 @@ class MessageBuilderService
      */
     public static function buildNoWinnerEventMessage(array $raffle, array $ticketNumbers, array $buyer, array $lottery, string $winningDigits): array
     {
-        $tickets = implode(', ', array_map(
-            fn($n) => self::padBoleto($n),
-            $ticketNumbers
-        ));
         $vars = [
             'nombre' => $buyer['name'] ?? 'Participante',
             'raffle_name' => $raffle['name'],
-            'tickets' => $tickets,
+            'tickets' => self::listaBoletos($ticketNumbers),
             'lottery_name' => $lottery['name'] ?? '',
             'winning_number' => $winningDigits,
             'draw_date' => date('d/m/Y', strtotime($raffle['draw_date'])),
         ];
+        $varsHtml = self::escapeVars($vars);
+        $varsHtml['tickets'] = nl2br($varsHtml['tickets']);
         $tpl = self::plantilla('sin_ganador_evento');
         $text = self::replaceVars($tpl, $vars);
         $html = self::esPersonalizada('sin_ganador_evento')
-            ? self::htmlDePlantilla('Resultado de la rifa ' . $raffle['name'], $tpl, $raffle, self::escapeVars($vars))
+            ? self::htmlDePlantilla('Resultado de la rifa ' . $raffle['name'], $tpl, $raffle, $varsHtml)
             : self::buildEmailHtml(
             'Resultado de la rifa ' . $raffle['name'],
             self::raffleImageHtml($raffle)
             . "<h2>La rifa {raffle_name} jugo y nadie gano</h2>"
-            . "<p>El numero de la {lottery_name} del {draw_date} fue <strong>{winning_number}</strong> y no cayo en ningun boleto pagado.</p>"
-            . "<p>Tu(s) boleto(s) <strong>{tickets}</strong> SIGUEN participando tal cual.</p>"
+            . "<p>El numero de la {lottery_name} del {draw_date} fue <strong>{winning_number}</strong> y no cayo en ningun numero pagado.</p>"
+            . "<p>Tus numeros SIGUEN participando tal cual:<br><strong>{tickets}</strong></p>"
             . "<p>El organizador anunciara muy pronto la nueva fecha del sorteo y te la avisaremos por este medio.</p>",
-            self::escapeVars($vars)
+            $varsHtml
         );
         return [
             'channel' => 'email',
@@ -475,6 +468,31 @@ class MessageBuilderService
             fn($v) => htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'),
             $vars
         );
+    }
+
+    /**
+     * NÚMEROS en juego del comprador, una línea por boleto. REGLA DE
+     * PRODUCTO: al comprador JAMÁS se le menciona el consecutivo del boleto
+     * — lo que participa en el sorteo son sus números (oportunidades), y
+     * mostrar "0149" hacía creer que ese era el número apostado y generaba
+     * reclamos. Aplica a toda rifa, tenga 1, 2, 4 o 5 oportunidades.
+     * Cada item: ['ticket_number' => ..., 'opportunities' => array|JSON] o
+     * un escalar (llamador viejo sin oportunidades — único caso en que se
+     * muestra el consecutivo, por no haber nada mejor).
+     */
+    private static function listaBoletos(array $items): string
+    {
+        $lineas = [];
+        foreach ($items as $it) {
+            $ops = is_array($it) ? ($it['opportunities'] ?? []) : [];
+            if (is_string($ops)) {
+                $ops = json_decode($ops, true) ?: [];
+            }
+            $lineas[] = $ops
+                ? '🎫 ' . implode(', ', array_map('strval', $ops))
+                : '🎫 Boleto ' . self::padBoleto(is_array($it) ? ($it['ticket_number'] ?? '') : $it);
+        }
+        return implode("\n", $lineas);
     }
 
     /** Formato del consecutivo del boleto: los numéricos se rellenan a 4
