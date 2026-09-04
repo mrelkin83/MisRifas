@@ -148,19 +148,25 @@ function processRaffleDraw(array $raffle): array
         return ['has_winner' => false, 'reason' => 'Cancelada por tope de reprogramaciones'];
     }
 
-    // Modo configurable (decisión aprobada): 'auto' reagenda el sistema;
-    // 'manual' deja la rifa en pending_reschedule y decide el VENDEDOR.
-    // Las guardas de §12.3 aplican a ambos.
+    // Modo configurable: la reprogramación es CONCERTADA con el vendedor por
+    // defecto ('manual': la rifa queda pending_reschedule y él elige fecha y
+    // lotería según cuánto le falte por vender). Solo si el admin fija
+    // explícitamente 'auto' reagenda el sistema. Las guardas de §12.3 aplican
+    // a ambos.
     $modeStmt = $db->prepare("SELECT setting_value FROM system_settings WHERE setting_key = 'reschedule_mode'");
     $modeStmt->execute();
-    $mode = (string)$modeStmt->fetchColumn() === 'manual' ? 'manual' : 'auto';
+    $mode = (string)$modeStmt->fetchColumn() === 'auto' ? 'auto' : 'manual';
 
     if ($mode === 'manual') {
         registrarIntento($db, $raffle, $attempt, $digitsToMatch, $outcome, $ticketStatus, null);
         $db->prepare("UPDATE raffles SET status = 'pending_reschedule' WHERE id = ?")
            ->execute([$raffle['id']]);
         avisarVendedorReprogramar($db, $raffle, $vendor, $digitsToMatch, $ticketStatus, $scheduledAt);
-        return ['has_winner' => false, 'reason' => 'pending_reschedule (modo manual)'];
+        // §12.2: los compradores pagados se enteran del EVENTO de inmediato
+        // (jugó, nadie ganó, sus boletos siguen); la nueva fecha llega en un
+        // segundo aviso cuando el vendedor la concerte.
+        avisarCompradoresEvento($raffle, $vendor, $paidTickets, $digitsToMatch, $scheduledAt);
+        return ['has_winner' => false, 'reason' => 'pending_reschedule (modo concertado)'];
     }
 
     $nextDate = getNextDrawDate((int)$raffle['lottery_id'], (string)$raffle['draw_date']);
@@ -246,6 +252,36 @@ function avisarVendedorReprogramar(PDO $db, array $raffle, array $vendor, string
             . 'Los boletos pagados se conservan tal cual. — ' . plataforma('nombre'),
         'body_html' => null,
     ], $scheduledAt);
+}
+
+/**
+ * Aviso inmediato del evento sin ganador a los compradores pagados (agrupado
+ * por comprador). El de la nueva fecha lo dispara api/vendor/reschedule.php.
+ */
+function avisarCompradoresEvento(array $raffle, array $vendor, array $paidTickets, string $digits, string $scheduledAt): void
+{
+    if (isset($raffle['auto_notify']) && (int)$raffle['auto_notify'] === 0) {
+        return; // El organizador eligió avisar él mismo a sus compradores.
+    }
+    $lottery = ['name' => $raffle['lottery_name']];
+    $byUser = [];
+    foreach ($paidTickets as $t) {
+        $uid = (int)$t['user_id'];
+        $byUser[$uid]['name'] = $t['buyer_name'];
+        $byUser[$uid]['phone'] = $t['buyer_phone'];
+        $byUser[$uid]['email'] = $t['buyer_email'];
+        $byUser[$uid]['tickets'][] = $t['ticket_number'];
+    }
+    foreach ($byUser as $uid => $c) {
+        $msg = MessageBuilderService::buildNoWinnerEventMessage(
+            $raffle,
+            $c['tickets'],
+            ['name' => $c['name']],
+            $lottery,
+            $digits
+        );
+        enqueueMessage((int)$raffle['id'], (int)$vendor['id'], $uid, $c['phone'], $c['email'], $msg, $scheduledAt);
+    }
 }
 
 function getWinningDigits(string $number, string $mode): string

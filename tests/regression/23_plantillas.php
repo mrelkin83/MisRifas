@@ -26,7 +26,7 @@ check($res['code'] === 403, 'Vendedor normal → 403', 'HTTP ' . $res['code']);
 $res = httpGet('/api/admin/templates.php', $tokenAdmin);
 $ok = assertHttp(200, $res, 'GET lista las plantillas');
 $tpls = $res['json']['data'] ?? [];
-check(count($tpls) === 7, 'Son 7 plantillas editables', 'n=' . count($tpls));
+check(count($tpls) === 8, 'Son 8 plantillas editables (incluye el aviso del evento sin ganador)', 'n=' . count($tpls));
 $winner = null;
 foreach ($tpls as $t) {
     if ($t['key'] === 'winner') {

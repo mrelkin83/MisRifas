@@ -25,9 +25,15 @@ class MessageBuilderService
         ],
         'resorteo' => [
             'nombre' => '🔁 Reprogramación (nadie ganó)',
-            'descripcion' => 'El número no estaba vendido/pagado: los boletos siguen y hay nueva fecha {next_date} (si la quitas, el sistema la agrega).',
-            'vars' => ['nombre', 'raffle_name', 'tickets', 'lottery_name', 'winning_number', 'draw_date', 'next_date', 'platform'],
-            'default' => "Hola {nombre}, la rifa *{raffle_name}* jugo el {draw_date} con la {lottery_name}: el numero fue *{winning_number}* y ningun boleto vendido resulto ganador. Tu(s) boleto(s) {tickets} SIGUEN participando: el sorteo se reprogramo para el *{next_date}*. Mucha suerte!",
+            'descripcion' => 'El número no estaba vendido/pagado: los boletos siguen y hay nueva fecha {next_date} con la {next_lottery} (si quitas la fecha, el sistema la agrega).',
+            'vars' => ['nombre', 'raffle_name', 'tickets', 'lottery_name', 'winning_number', 'draw_date', 'next_date', 'next_lottery', 'platform'],
+            'default' => "Hola {nombre}, la rifa *{raffle_name}* jugo el {draw_date} con la {lottery_name}: el numero fue *{winning_number}* y ningun boleto vendido resulto ganador. Tu(s) boleto(s) {tickets} SIGUEN participando: el sorteo se reprogramo para el *{next_date}* con la {next_lottery}. Mucha suerte!",
+        ],
+        'sin_ganador_evento' => [
+            'nombre' => '📣 A los compradores (jugó y nadie ganó, aún sin nueva fecha)',
+            'descripcion' => 'Aviso inmediato del resultado: el número no cayó en boleto pagado; el organizador anunciará la nueva fecha. Los boletos siguen vigentes.',
+            'vars' => ['nombre', 'raffle_name', 'tickets', 'lottery_name', 'winning_number', 'draw_date', 'platform'],
+            'default' => "Hola {nombre}, la rifa *{raffle_name}* jugo el {draw_date} con la {lottery_name}: el numero fue *{winning_number}* y NO cayo en ningun boleto pagado, asi que no hubo ganador. Tu(s) boleto(s) {tickets} SIGUEN participando tal cual: el organizador anunciara muy pronto la nueva fecha del sorteo y te avisaremos por este medio. Gracias por tu confianza — {platform}.",
         ],
         'vendor_winner' => [
             'nombre' => '📢 Al organizador (su rifa tuvo ganador)',
@@ -360,7 +366,7 @@ class MessageBuilderService
      * sorteo se reprograma. Incluye la nueva fecha (la versión anterior decía
      * "esta vez no fue" sin aclarar que la rifa continuaba).
      */
-    public static function buildResorteoMessage(array $raffle, array $ticketNumbers, array $buyer, array $lottery, string $winningDigits, string $nextDrawDate): array
+    public static function buildResorteoMessage(array $raffle, array $ticketNumbers, array $buyer, array $lottery, string $winningDigits, string $nextDrawDate, ?string $nextLotteryName = null): array
     {
         $tickets = implode(', ', array_map(
             fn($n) => self::padBoleto($n),
@@ -374,6 +380,8 @@ class MessageBuilderService
             'winning_number' => $winningDigits,
             'draw_date' => date('d/m/Y', strtotime($raffle['draw_date'])),
             'next_date' => date('d/m/Y', strtotime($nextDrawDate)),
+            // Reprogramar puede cambiar de lotería (concertado con el vendedor).
+            'next_lottery' => $nextLotteryName ?: ($lottery['name'] ?? ''),
         ];
         $tpl = self::plantilla('resorteo');
         $text = self::replaceVars($tpl, $vars);
@@ -385,13 +393,55 @@ class MessageBuilderService
             . "<h2>La rifa {raffle_name} se reprogramo</h2>"
             . "<p>El numero de la {lottery_name} del {draw_date} fue <strong>{winning_number}</strong> y ningun boleto vendido resulto ganador.</p>"
             . "<p>Tu(s) boleto(s) <strong>{tickets}</strong> siguen participando.</p>"
-            . "<p>Nueva fecha de sorteo: <strong style='color:#fbbf24;font-size:1.2em;'>{next_date}</strong>. Mucha suerte!</p>",
+            . "<p>Nueva fecha de sorteo: <strong style='color:#fbbf24;font-size:1.2em;'>{next_date}</strong> con la <strong>{next_lottery}</strong>. Mucha suerte!</p>",
             self::escapeVars($vars)
         );
         return [
             'channel' => 'email',
             'message_type' => 'no_winner',
             'subject' => 'Re-sorteo: la rifa ' . $raffle['name'] . ' se reprogramó',
+            'body_text' => $text,
+            'body_html' => $html,
+            'variables' => $vars,
+        ];
+    }
+
+    /**
+     * §12.2: aviso INMEDIATO a los compradores pagados cuando el sorteo jugó
+     * y nadie ganó, ANTES de que exista nueva fecha (la concerta el vendedor).
+     * Sin este mensaje el comprador vería pasar la fecha en silencio.
+     */
+    public static function buildNoWinnerEventMessage(array $raffle, array $ticketNumbers, array $buyer, array $lottery, string $winningDigits): array
+    {
+        $tickets = implode(', ', array_map(
+            fn($n) => self::padBoleto($n),
+            $ticketNumbers
+        ));
+        $vars = [
+            'nombre' => $buyer['name'] ?? 'Participante',
+            'raffle_name' => $raffle['name'],
+            'tickets' => $tickets,
+            'lottery_name' => $lottery['name'] ?? '',
+            'winning_number' => $winningDigits,
+            'draw_date' => date('d/m/Y', strtotime($raffle['draw_date'])),
+        ];
+        $tpl = self::plantilla('sin_ganador_evento');
+        $text = self::replaceVars($tpl, $vars);
+        $html = self::esPersonalizada('sin_ganador_evento')
+            ? self::htmlDePlantilla('Resultado de la rifa ' . $raffle['name'], $tpl, $raffle, self::escapeVars($vars))
+            : self::buildEmailHtml(
+            'Resultado de la rifa ' . $raffle['name'],
+            self::raffleImageHtml($raffle)
+            . "<h2>La rifa {raffle_name} jugo y nadie gano</h2>"
+            . "<p>El numero de la {lottery_name} del {draw_date} fue <strong>{winning_number}</strong> y no cayo en ningun boleto pagado.</p>"
+            . "<p>Tu(s) boleto(s) <strong>{tickets}</strong> SIGUEN participando tal cual.</p>"
+            . "<p>El organizador anunciara muy pronto la nueva fecha del sorteo y te la avisaremos por este medio.</p>",
+            self::escapeVars($vars)
+        );
+        return [
+            'channel' => 'email',
+            'message_type' => 'no_winner',
+            'subject' => 'La rifa ' . $raffle['name'] . ' jugó: nadie ganó y se reprogramará',
             'body_text' => $text,
             'body_html' => $html,
             'variables' => $vars,

@@ -543,9 +543,19 @@ CREATE TABLE raffle_draws (
 ) ENGINE=InnoDB;
 ```
 
-En el panel del vendedor, cuando la rifa está en `pending_reschedule`, aparece la opción
-de reprogramar: elegir nueva `draw_date` (siguiente sorteo de la misma lotería) y
-confirmar.
+**La reprogramación es CONCERTADA con el vendedor** (modo por defecto; solo si el admin
+fija `reschedule_mode = 'auto'` reagenda el sistema a la semana siguiente). En el panel
+del vendedor, cuando la rifa está en `pending_reschedule`, aparece la opción de
+reprogramar: elegir nueva `draw_date` entre los sorteos reales de **cualquier lotería
+activa** dentro de los próximos 28 días. Le faltan pocos boletos → puede tomar una
+lotería que juegue en 2-3 días; le falta mucho por vender → toma una fecha con tiempo
+prudente para lograrlo. `raffle_draws.lottery_id` guarda la lotería de CADA intento, así
+el historial público sigue siendo auditable aunque la rifa cambie de lotería.
+
+En el momento del desenlace sin ganador (antes de que exista nueva fecha), **los
+compradores con ticket `paid` son notificados del EVENTO**: jugó, salió tal número, no
+cayó en boleto pagado, sus boletos siguen vigentes y el organizador anunciará la nueva
+fecha.
 
 Al reprogramar:
 
@@ -553,8 +563,9 @@ Al reprogramar:
   con el mismo código, y su página pública muestra la nueva fecha.
 - Los tickets liberados vuelven a estar a la venta.
 - `cutoff_at` se recalcula contra la nueva fecha.
-- La rifa vuelve a `active`.
-- Se notifica a todos los compradores con ticket `paid`: número, nueva fecha, motivo.
+- La rifa vuelve a `active` (y a la nueva lotería, si el vendedor la cambió).
+- Se notifica (segundo aviso) a todos los compradores con ticket `paid`: número, nueva
+  fecha, nueva lotería, motivo.
 
 ### 12.3 Guardas contra manipulación
 
@@ -571,8 +582,9 @@ guardas no son opcionales:
 - **Todo intento queda en `raffle_draws` y se muestra públicamente** en la página de la
   rifa y en el hall de ganadores: fecha, número que salió, estado del ticket, resultado.
   La transparencia es lo que hace confiable el mecanismo.
-- La nueva `draw_date` debe ser posterior a la anterior y corresponder a un sorteo real
-  de la misma lotería. No permitas cambiar de lotería al reprogramar.
+- La nueva `draw_date` debe ser posterior a la anterior, futura, y corresponder a un
+  sorteo real de una lotería ACTIVA (la misma u otra: el cambio de lotería es legítimo
+  y queda registrado por intento en `raffle_draws.lottery_id`).
 
 ### 12.4 Cancelación por tope
 

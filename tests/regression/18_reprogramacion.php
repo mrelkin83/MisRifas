@@ -69,6 +69,8 @@ $st = $db->query("SELECT status FROM raffles WHERE id=$rMan")->fetchColumn();
 check($st === 'pending_reschedule', 'MANUAL: la rifa queda pending_reschedule', "status=$st");
 $avisoV = (int)$db->query("SELECT COUNT(*) FROM message_queue WHERE raffle_id=$rMan AND subject LIKE '%necesita reprogramación%'")->fetchColumn();
 check($avisoV >= 1, 'El vendedor recibe el aviso para reprogramar', "avisos=$avisoV");
+$avisoEvento = (int)$db->query("SELECT COUNT(*) FROM message_queue WHERE raffle_id=$rMan AND recipient_user_id={$buyer['id']} AND subject LIKE '%nadie ganó%'")->fetchColumn();
+check($avisoEvento >= 1, 'El comprador pagado se entera del EVENTO de inmediato (sin esperar nueva fecha)', "avisos=$avisoEvento");
 
 // GET: fechas válidas e historial.
 $res = httpGet('/api/vendor/reschedule.php?raffle_id=' . $rMan, $token);
@@ -94,6 +96,38 @@ check($notif >= 1, 'El comprador pagado queda notificado de la nueva fecha', "no
 // Ya activa: segundo intento de reprogramar → 409.
 $res = httpPost('/api/vendor/reschedule.php', ['raffle_id' => $rMan, 'new_draw_date' => $fechas[1]], $token);
 check($res['code'] === 409, 'No se reprograma una rifa que no está pending_reschedule (409)', 'HTTP ' . $res['code']);
+
+// ── 2b. Concertado es el DEFAULT + cambio de LOTERÍA al reprogramar ──
+// Valor desconocido en reschedule_mode → se comporta como manual (concertado).
+$db->exec("UPDATE system_settings SET setting_value='' WHERE setting_key='reschedule_mode'");
+$rCross = $mkEligible();
+$db->prepare("UPDATE tickets SET status='paid', user_id=?, paid_at=NOW() WHERE raffle_id=? AND ticket_number='05'")->execute([$buyer['id'], $rCross]);
+$cron = runCron('cron/process_draws.php');
+check($cron['rc'] === 0, 'process_draws corre (default)', 'rc=' . $cron['rc']);
+$st = $db->query("SELECT status FROM raffles WHERE id=$rCross")->fetchColumn();
+check($st === 'pending_reschedule', 'DEFAULT: sin modo explícito la reprogramación es concertada', "status=$st");
+
+$res = httpGet('/api/vendor/reschedule.php?raffle_id=' . $rCross, $token);
+assertHttp(200, $res, 'GET reschedule (cross) responde');
+$opciones = $res['json']['data']['opciones'] ?? [];
+check(count($opciones) > 4, 'Ofrece sorteos de TODAS las loterías activas (28 días)', 'opciones=' . count($opciones));
+$otra = null;
+foreach ($opciones as $o) {
+    if ((int)$o['lottery_id'] !== $LOT) { $otra = $o; break; }
+}
+check($otra !== null, 'Hay opciones de OTRA lotería', json_encode($otra));
+
+// Par inválido (fecha de una lotería con el id de otra) → 422.
+$res = httpPost('/api/vendor/reschedule.php', ['raffle_id' => $rCross, 'new_draw_date' => date('Y-m-d', strtotime($otra['date'] . ' +1 day')), 'lottery_id' => $otra['lottery_id']], $token);
+check($res['code'] === 422, 'Fecha que no corresponde a un sorteo real de esa lotería → 422', 'HTTP ' . $res['code']);
+
+$res = httpPost('/api/vendor/reschedule.php', ['raffle_id' => $rCross, 'new_draw_date' => $otra['date'], 'lottery_id' => $otra['lottery_id']], $token);
+assertHttp(200, $res, 'Reprogramar CAMBIANDO de lotería funciona');
+$r = $db->query("SELECT status, lottery_id, draw_date FROM raffles WHERE id=$rCross")->fetch(PDO::FETCH_ASSOC);
+check($r['status'] === 'active' && (int)$r['lottery_id'] === (int)$otra['lottery_id'], 'La rifa quedó active en la NUEVA lotería', json_encode($r));
+check(substr((string)$r['draw_date'], 0, 10) === $otra['date'], 'La fecha es el sorteo real de la nueva lotería', $r['draw_date']);
+$lotIntento = (int)$db->query("SELECT lottery_id FROM raffle_draws WHERE raffle_id=$rCross AND attempt=1")->fetchColumn();
+check($lotIntento === $LOT, 'El historial conserva la lotería con la que JUGÓ cada intento', "lottery_id=$lotIntento");
 
 // ── 3. GUARDA: rifa CON ganador jamás se reprograma ──
 $rWin = fxRaffle(['tickets' => 10, 'draw_date' => date('Y-m-d') . ' 00:00:01', 'created_by' => 5, 'lottery_id' => 1]);

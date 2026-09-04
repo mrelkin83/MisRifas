@@ -15,10 +15,14 @@ declare(strict_types=1);
  * - Una rifa con ganador registrado JAMÁS se reprograma: intento = excepción
  *   + incidente de seguridad en bitácora.
  * - Tope de 3 reprogramaciones (draw_rescheduled_count <= 3).
- * - La nueva fecha: posterior a la anterior, futura, y un día real de la
- *   MISMA lotería (no se permite cambiar de lotería).
+ * - La nueva fecha: futura, posterior al sorteo fallido, y un día real de
+ *   juego de la lotería elegida. La reprogramación es CONCERTADA: el vendedor
+ *   puede quedarse en su lotería o CAMBIAR a otra activa — más cercana si le
+ *   faltan pocos boletos, más lejana si necesita tiempo para vender.
+ *   Cada intento guarda en raffle_draws la lotería con la que jugó, así el
+ *   historial público sigue siendo auditable aunque la rifa cambie de lotería.
  * - Todos los tickets paid se conservan; compradores notificados con número,
- *   nueva fecha y motivo.
+ *   nueva fecha, nueva lotería y motivo.
  */
 header('Content-Type: application/json; charset=utf-8');
 
@@ -70,24 +74,45 @@ try {
         Response::error('La rifa agotó sus 3 reprogramaciones', null, 409);
     }
 
-    // Próximas 4 fechas válidas de la MISMA lotería, posteriores al sorteo anterior.
+    // Ventana concertada: desde mañana (y después del sorteo fallido) hasta
+    // +28 días, con CUALQUIER lotería activa — cercana para quien vende lo
+    // que falta en un día, lejana para quien necesita tiempo.
     $dayMap = ['sunday' => 0, 'monday' => 1, 'tuesday' => 2, 'wednesday' => 3, 'thursday' => 4, 'friday' => 5, 'saturday' => 6];
-    $targetDow = $dayMap[$raffle['day_of_week']] ?? 6;
-    $fechas = [];
-    $t = max(strtotime('tomorrow'), strtotime((string)$raffle['draw_date'] . ' +1 day'));
-    while (count($fechas) < 4) {
-        if ((int)date('w', $t) === $targetDow) {
-            $fechas[] = date('Y-m-d', $t);
+    $desde = max(strtotime('tomorrow'), strtotime((string)$raffle['draw_date'] . ' +1 day'));
+    $hasta = strtotime('+28 days', $desde);
+
+    $lots = $db->query("SELECT id, name, day_of_week, draw_time FROM lotteries WHERE active = 1")->fetchAll(PDO::FETCH_ASSOC);
+    $opciones = [];
+    foreach ($lots as $lot) {
+        $dow = $dayMap[$lot['day_of_week']] ?? 6;
+        for ($t = $desde; $t <= $hasta; $t = strtotime('+1 day', $t)) {
+            if ((int)date('w', $t) === $dow) {
+                $opciones[] = [
+                    'date' => date('Y-m-d', $t),
+                    'lottery_id' => (int)$lot['id'],
+                    'lottery_name' => $lot['name'],
+                    'draw_time' => substr((string)$lot['draw_time'], 0, 5),
+                    'es_actual' => (int)$lot['id'] === (int)$raffle['lottery_id'],
+                ];
+            }
         }
-        $t = strtotime('+1 day', $t);
     }
+    usort($opciones, fn($a, $b) => strcmp($a['date'] . $a['draw_time'], $b['date'] . $b['draw_time']));
+
+    // Compat: las próximas 4 fechas de la MISMA lotería (clientes/tests viejos
+    // que mandan solo new_draw_date sin lottery_id).
+    $fechas = array_slice(array_values(array_unique(array_column(
+        array_filter($opciones, fn($o) => $o['es_actual']),
+        'date'
+    ))), 0, 4);
 
     if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-        $hist = $db->prepare('SELECT attempt, draw_date, winning_number, ticket_status, outcome, rescheduled_to FROM raffle_draws WHERE raffle_id = ? ORDER BY attempt');
+        $hist = $db->prepare('SELECT rd.attempt, rd.draw_date, rd.winning_number, rd.ticket_status, rd.outcome, rd.rescheduled_to, l.name AS lottery_name FROM raffle_draws rd LEFT JOIN lotteries l ON l.id = rd.lottery_id WHERE rd.raffle_id = ? ORDER BY rd.attempt');
         $hist->execute([$raffleId]);
         Response::success([
-            'raffle' => ['id' => $raffleId, 'name' => $raffle['name'], 'lottery' => $raffle['lottery_name']],
+            'raffle' => ['id' => $raffleId, 'name' => $raffle['name'], 'lottery' => $raffle['lottery_name'], 'lottery_id' => (int)$raffle['lottery_id']],
             'fechas_validas' => $fechas,
+            'opciones' => $opciones,
             'reprogramaciones_usadas' => (int)$raffle['draw_rescheduled_count'],
             'reprogramaciones_restantes' => 3 - (int)$raffle['draw_rescheduled_count'],
             'historial' => $hist->fetchAll(PDO::FETCH_ASSOC),
@@ -99,18 +124,32 @@ try {
     }
     $input = json_decode(file_get_contents('php://input'), true) ?: [];
     $newDate = (string)($input['new_draw_date'] ?? '');
-    if (!in_array($newDate, $fechas, true)) {
-        Response::error('La fecha debe ser uno de los próximos sorteos de la ' . $raffle['lottery_name'] . ': ' . implode(', ', $fechas), 'INVALID_DATE', 422);
+    $newLotteryId = (int)($input['lottery_id'] ?? $raffle['lottery_id']);
+
+    $elegida = null;
+    foreach ($opciones as $o) {
+        if ($o['date'] === $newDate && $o['lottery_id'] === $newLotteryId) {
+            $elegida = $o;
+            break;
+        }
     }
-    $newDrawDate = $newDate . ' ' . substr((string)$raffle['draw_time'], 0, 8);
+    if ($elegida === null) {
+        Response::error('La fecha debe ser un sorteo real de una lotería activa dentro de los próximos 28 días (revisa fecha y lotería)', 'INVALID_DATE', 422);
+    }
+
+    $lotStmt = $db->prepare('SELECT draw_time, name FROM lotteries WHERE id = ?');
+    $lotStmt->execute([$newLotteryId]);
+    $lotRow = $lotStmt->fetch(PDO::FETCH_ASSOC);
+    $newDrawDate = $newDate . ' ' . substr((string)$lotRow['draw_time'], 0, 8);
+    $newLotteryName = (string)$lotRow['name'];
 
     $db->prepare("
         UPDATE raffles
-        SET draw_date = ?, cutoff_at = DATE_SUB(?, INTERVAL 2 DAY),
+        SET draw_date = ?, lottery_id = ?, cutoff_at = DATE_SUB(?, INTERVAL 2 DAY),
             draw_rescheduled_count = draw_rescheduled_count + 1,
             status = 'active'
         WHERE id = ? AND status = 'pending_reschedule'
-    ")->execute([$newDrawDate, $newDrawDate, $raffleId]);
+    ")->execute([$newDrawDate, $newLotteryId, $newDrawDate, $raffleId]);
 
     // Historial público: el intento que originó esta reprogramación.
     $db->prepare("
@@ -121,6 +160,7 @@ try {
 
     Logger::activity('raffle_rescheduled', $vendorId, [
         'raffle_id' => $raffleId, 'new_draw_date' => $newDrawDate,
+        'new_lottery_id' => $newLotteryId, 'new_lottery' => $newLotteryName,
         'attempt' => (int)$raffle['draw_rescheduled_count'] + 1,
     ]);
 
@@ -164,7 +204,8 @@ try {
             ['name' => $c['name']],
             ['name' => $raffle['lottery_name']],
             $ultimoNumero,
-            $newDrawDate
+            $newDrawDate,
+            $newLotteryName
         );
         if (!empty($c['email']) && filter_var($c['email'], FILTER_VALIDATE_EMAIL)) {
             $ins->execute([$raffleId, $vendorId, $uid, null, $c['email'], 'email', $msg['subject'], $msg['body_text']]);
@@ -176,8 +217,10 @@ try {
 
     Response::success([
         'new_draw_date' => $newDrawDate,
+        'new_lottery_id' => $newLotteryId,
+        'new_lottery' => $newLotteryName,
         'reprogramaciones_usadas' => (int)$raffle['draw_rescheduled_count'] + 1,
-    ], 'Sorteo reprogramado para el ' . date('d/m/Y', strtotime($newDrawDate)) . '. Los boletos pagados se conservan y los compradores fueron notificados.');
+    ], 'Sorteo reprogramado para el ' . date('d/m/Y', strtotime($newDrawDate)) . ' con la ' . $newLotteryName . '. Los boletos pagados se conservan y los compradores fueron notificados.');
 } catch (RescheduleNotAllowed $e) {
     Response::error($e->getMessage(), 'RESCHEDULE_NOT_ALLOWED', 409);
 } catch (Exception $e) {

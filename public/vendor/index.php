@@ -4682,8 +4682,9 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
         <h3 style="font-weight:800;font-size:16px;margin-bottom:4px;">📅 Reprogramar sorteo</h3>
         <p id="resched-info" style="font-size:12.5px;color:#6b7280;margin-bottom:12px;"></p>
         <div id="resched-hist" style="margin-bottom:12px;"></div>
-        <p style="font-weight:700;font-size:13.5px;margin-bottom:8px;">Nueva fecha (misma lotería):</p>
-        <div id="resched-fechas" style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px;"></div>
+        <p style="font-weight:700;font-size:13.5px;margin-bottom:2px;">Nueva fecha y lotería:</p>
+        <p style="font-size:12px;color:#6b7280;margin-bottom:8px;">Elige un sorteo cercano si te faltan pocos boletos, o uno más lejano si necesitas tiempo para vender. Puedes cambiar de lotería.</p>
+        <div id="resched-fechas" style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px;max-height:38vh;overflow-y:auto;"></div>
         <p id="resched-msg" style="display:none;font-size:12.5px;margin-top:4px;padding:8px 10px;border-radius:8px;"></p>
         <div style="display:flex;gap:8px;margin-top:8px;">
             <button type="button" onclick="closeRescheduleModal()" class="btn btn--sm" style="flex:1;background:#f1f5f9;">Cancelar</button>
@@ -4912,13 +4913,17 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
                         ' · te quedan <strong>' + d.reprogramaciones_restantes + '</strong> reprogramación(es). Los boletos pagados se conservan.';
                     el('resched-hist').innerHTML = (d.historial || []).map(function(h){
                         return '<div style="font-size:12px;color:#64748b;border-left:3px solid #e2e8f0;padding-left:8px;margin-bottom:4px;">Intento ' + h.attempt + ' · ' +
-                            new Date(h.draw_date).toLocaleDateString('es-CO') + ' · salió <strong>' + h.winning_number + '</strong> · ' +
+                            new Date(h.draw_date).toLocaleDateString('es-CO') + ' · ' + (h.lottery_name || '') + ' · salió <strong>' + h.winning_number + '</strong> · ' +
                             (h.outcome === 'not_sold' ? 'número sin vender' : 'boleto en ' + (h.ticket_status || '?')) + '</div>';
                     }).join('');
-                    el('resched-fechas').innerHTML = (d.fechas_validas || []).map(function(f, i){
-                        return '<label style="display:flex;align-items:center;gap:10px;border:1px solid #e2e8f0;border-radius:10px;padding:10px 12px;cursor:pointer;">' +
-                            '<input type="radio" name="resched-fecha" value="' + f + '"' + (i === 0 ? ' checked' : '') + '> ' +
-                            new Date(f + 'T12:00:00').toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'long' }) + '</label>';
+                    // Concertado: sorteos de TODAS las loterías activas (28 días),
+                    // en orden cronológico — el vendedor decide cercanía y lotería.
+                    el('resched-fechas').innerHTML = (d.opciones || []).map(function(o, i){
+                        return '<label style="display:flex;align-items:center;gap:10px;border:1px solid ' + (o.es_actual ? '#a5b4fc' : '#e2e8f0') + ';border-radius:10px;padding:10px 12px;cursor:pointer;">' +
+                            '<input type="radio" name="resched-fecha" value="' + o.lottery_id + '|' + o.date + '"' + (i === 0 ? ' checked' : '') + '>' +
+                            '<span style="flex:1;"><strong style="text-transform:capitalize;">' +
+                            new Date(o.date + 'T12:00:00').toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'long' }) + '</strong>' +
+                            '<br><span style="font-size:12px;color:#64748b;">' + o.lottery_name + ' · ' + o.draw_time + (o.es_actual ? ' · lotería actual' : '') + '</span></span></label>';
                     }).join('');
                 } catch (e) { reschedMsg(e.message || 'No disponible', false); }
             };
@@ -4929,10 +4934,11 @@ $is_auth_page = isset($_GET['auth']) && in_array($_GET['auth'], ['login', 'regis
             window.submitReschedule = async function(){
                 var sel = document.querySelector('input[name=resched-fecha]:checked');
                 if (!sel) { reschedMsg('Elige una fecha', false); return; }
+                var partes = sel.value.split('|');
                 var btn = el('resched-submit');
                 btn.disabled = true; btn.textContent = 'Reprogramando…';
                 try {
-                    var r = await API.post('/vendor/reschedule.php', { raffle_id: reschedRaffleId, new_draw_date: sel.value });
+                    var r = await API.post('/vendor/reschedule.php', { raffle_id: reschedRaffleId, lottery_id: parseInt(partes[0], 10), new_draw_date: partes[1] });
                     Utils.showNotification(r.message || 'Sorteo reprogramado ✅', 'success');
                     closeRescheduleModal();
                     if (window.loadDashboard) loadDashboard();
