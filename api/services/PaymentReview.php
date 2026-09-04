@@ -99,7 +99,7 @@ final class PaymentReview
         // aprobarse su pago. Best-effort: nunca revierte la aprobación.
         try {
             $stmt = $db->prepare("
-                SELECT t.ticket_number, t.ticket_code, t.buyer_name, t.user_id,
+                SELECT t.ticket_number, t.opportunities, t.ticket_code, t.buyer_name, t.user_id,
                        r.name, r.draw_date, r.image_url, u.email AS buyer_email, u.name AS user_name, u.phone_whatsapp
                 FROM tickets t
                 JOIN raffles r ON r.id = t.raffle_id
@@ -113,7 +113,7 @@ final class PaymentReview
                 $boletaUrl = !empty($d['ticket_code']) ? Boleta::urlPublica((string)$d['ticket_code']) : '';
                 $msg = MessageBuilderService::buildPaymentConfirmedMessage(
                     ['name' => $d['name'], 'draw_date' => $d['draw_date'], 'image_url' => $d['image_url']],
-                    ['ticket_number' => $d['ticket_number']],
+                    ['ticket_number' => $d['ticket_number'], 'opportunities' => $d['opportunities']],
                     ['name' => $d['buyer_name'] ?: $d['user_name']],
                     $boletaUrl
                 );

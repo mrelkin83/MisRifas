@@ -296,8 +296,14 @@ try {
             if ($telVendedor !== '') {
                 $raffle['whatsapp_contact'] = $telVendedor;
             }
+            // Al comprador se le confirman sus NÚMEROS en juego (opportunities),
+            // nunca el consecutivo del boleto (regla de producto: evita reclamos).
+            $ph = implode(',', array_fill(0, count($numeros), '?'));
+            $opsStmt = $db->prepare("SELECT ticket_number, opportunities FROM tickets WHERE raffle_id = ? AND ticket_number IN ({$ph})");
+            $opsStmt->execute(array_merge([$raffleId], $numeros));
+            $boletos = $opsStmt->fetchAll(PDO::FETCH_ASSOC) ?: $numeros;
             $msg = MessageBuilderService::buildReservationOrderMessage(
-                $raffle, $numeros,
+                $raffle, $boletos,
                 ['name' => $userName],
                 (float)$amount, (int)$ttlMin
             );

@@ -123,9 +123,10 @@ final class Boleta
             $path = BoletaImage::ensure(self::datosImagen($b));
             $nums = json_decode((string)($b['opportunities'] ?? ''), true);
             $nums = (is_array($nums) && $nums) ? $nums : [(string)$b['ticket_number']];
+            // Al comprador JAMÁS se le menciona el consecutivo del boleto
+            // (regla de producto): solo sus números en juego.
             $caption = '🎟️ Tu boleta de "' . $b['raffle_name'] . '"'
                 . "\n🍀 Juega con: " . implode(' · ', $nums)
-                . ((count($nums) > 1 || (string)($nums[0] ?? '') !== (string)$b['ticket_number']) ? "\n(boleto Nº " . $b['ticket_number'] . ')' : '')
                 . "\nCompruébala cuando quieras: " . self::urlPublica($b['ticket_code']);
             return notificarImagenVendor($vendorId, (string)$b['buyer_phone'], base64_encode((string)file_get_contents($path)), $caption);
         } catch (\Throwable $e) {

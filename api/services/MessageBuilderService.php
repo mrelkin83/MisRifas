@@ -48,16 +48,16 @@ class MessageBuilderService
             'default' => "Hola {nombre}, la rifa *{raffle_name}* ya tuvo sorteo. El numero ganador de la {lottery_name} fue *{winning_number}* y no coincidio con tus numeros. Sigue participando en {platform}!",
         ],
         'reservation' => [
-            'nombre' => '⏳ Boleto reservado',
-            'descripcion' => 'Confirmación de reserva con el valor y el WhatsApp del organizador.',
+            'nombre' => '⏳ Reserva confirmada',
+            'descripcion' => 'Confirmación de reserva con el valor y el WhatsApp del organizador. {ticket_number} lista los NÚMEROS en juego reservados (al comprador nunca se le muestra el consecutivo del boleto).',
             'vars' => ['nombre', 'raffle_name', 'ticket_number', 'price', 'whatsapp', 'ttl', 'platform'],
-            'default' => "Hola {nombre}, tu(s) boleto(s) *{ticket_number}* para la rifa *{raffle_name}* quedaron reservados. Valor EXACTO a pagar: {price}. Envía el comprobante de pago al WhatsApp {whatsapp}. La reserva vence en {ttl} minutos.",
+            'default' => "Hola {nombre}, tu reserva en la rifa *{raffle_name}* quedo lista. Tus numeros:\n{ticket_number}\nValor EXACTO a pagar: {price}. Envía el comprobante de pago al WhatsApp {whatsapp}. La reserva vence en {ttl} minutos.",
         ],
         'payment_confirmed' => [
             'nombre' => '✅ Pago confirmado',
-            'descripcion' => 'Al comprador cuando el organizador confirma su pago.',
+            'descripcion' => 'Al comprador cuando el organizador confirma su pago. {ticket_number} trae los NÚMEROS en juego del boleto pagado.',
             'vars' => ['nombre', 'raffle_name', 'ticket_number', 'draw_date', 'boleta_url', 'platform'],
-            'default' => "Hola {nombre}, tu pago para la rifa *{raffle_name}* fue confirmado. Boleto: *{ticket_number}*. Sorteo: {draw_date}. Tu boleta digital: {boleta_url} . Mucha suerte!",
+            'default' => "Hola {nombre}, tu pago para la rifa *{raffle_name}* fue confirmado. Tus numeros: *{ticket_number}*. Sorteo: {draw_date}. Tu boleta digital: {boleta_url} . Mucha suerte!",
         ],
     ];
 
@@ -222,12 +222,26 @@ class MessageBuilderService
         ];
     }
 
+    /** Números en juego de UN boleto, en línea ("336, 413, 576, 853").
+     *  Misma regla que listaBoletos(): al comprador no se le menciona el
+     *  consecutivo — solo cae a él si el boleto no trae oportunidades. */
+    private static function numerosDeTicket(array $ticket): string
+    {
+        $ops = $ticket['opportunities'] ?? [];
+        if (is_string($ops)) {
+            $ops = json_decode($ops, true) ?: [];
+        }
+        return $ops
+            ? implode(', ', array_map('strval', $ops))
+            : self::padBoleto($ticket['ticket_number'] ?? '');
+    }
+
     public static function buildReservationMessage(array $raffle, array $ticket, array $buyer): array
     {
         $vars = [
             'nombre' => $buyer['name'] ?? 'Participante',
             'raffle_name' => $raffle['name'],
-            'ticket_number' => self::padBoleto($ticket['ticket_number']),
+            'ticket_number' => self::numerosDeTicket($ticket),
             'price' => '$' . number_format($raffle['ticket_price'], 0, ',', '.'),
             'whatsapp' => $raffle['whatsapp_contact'],
         ];
@@ -254,20 +268,24 @@ class MessageBuilderService
         $vars = [
             'nombre' => $buyer['name'] ?? 'Participante',
             'raffle_name' => $raffle['name'],
-            'ticket_number' => implode(', ', $numeros),
+            // Items con opportunities → una línea de números por boleto;
+            // escalares (llamador viejo) → el consecutivo, único dato que hay.
+            'ticket_number' => self::listaBoletos($numeros),
             'price' => '$' . number_format($amount, 0, ',', '.'),
             'whatsapp' => (string)($raffle['whatsapp_contact'] ?? ''),
             'ttl' => (string)$ttlMin,
         ];
+        $varsHtml = self::escapeVars($vars);
+        $varsHtml['ticket_number'] = nl2br($varsHtml['ticket_number']);
         $text = self::replaceVars(self::plantilla('reservation'), $vars);
         $html = self::buildEmailHtml(
             'Reserva confirmada - ' . $raffle['name'],
             self::raffleImageHtml($raffle)
             . "<h2>¡Tu reserva quedó lista, {nombre}!</h2>"
-            . "<p>Boleto(s): <strong style='color:#fbbf24;font-size:1.2em;'>{ticket_number}</strong> de la rifa <strong>{raffle_name}</strong>.</p>"
+            . "<p>Tus números en la rifa <strong>{raffle_name}</strong>:<br><strong style='color:#fbbf24;font-size:1.2em;'>{ticket_number}</strong></p>"
             . "<p>Valor EXACTO a pagar: <strong style='color:#22c55e;font-size:1.3em;'>{price}</strong></p>"
             . "<p>Envía el pago y el comprobante al WhatsApp <strong>{whatsapp}</strong> antes de <strong>{ttl} minutos</strong>, o los números vuelven a la venta.</p>",
-            self::escapeVars($vars)
+            $varsHtml
         );
         return [
             'channel' => 'email',
@@ -284,7 +302,7 @@ class MessageBuilderService
         $vars = [
             'nombre' => $buyer['name'] ?? 'Participante',
             'raffle_name' => $raffle['name'],
-            'ticket_number' => self::padBoleto($ticket['ticket_number']),
+            'ticket_number' => self::numerosDeTicket($ticket),
             'draw_date' => date('d/m/Y', strtotime($raffle['draw_date'])),
             'boleta_url' => $boletaUrl,
         ];
@@ -295,7 +313,7 @@ class MessageBuilderService
             '¡Pago confirmado! - ' . $raffle['name'],
             self::raffleImageHtml($raffle)
             . "<h2 style='color:#22c55e;'>¡Pago confirmado, {nombre}!</h2>"
-            . "<p>Tu boleto <strong style='color:#fbbf24;font-size:1.3em;'>{ticket_number}</strong> de la rifa <strong>{raffle_name}</strong> quedó PAGADO.</p>"
+            . "<p>Tus números <strong style='color:#fbbf24;font-size:1.3em;'>{ticket_number}</strong> de la rifa <strong>{raffle_name}</strong> quedaron PAGADOS.</p>"
             . "<p>Sorteo: <strong>{draw_date}</strong>.</p>"
             . ($boletaUrl !== ''
                 ? "<p style='margin:24px 0;'><a href='{boleta_url}' style='background:#f59e0b;color:#1c1305;padding:12px 24px;border-radius:10px;text-decoration:none;font-weight:bold;display:inline-block;'>Ver mi boleta digital</a></p>"
