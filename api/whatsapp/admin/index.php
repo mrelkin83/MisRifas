@@ -285,6 +285,23 @@ try {
             jsonResponse(['success' => true, 'activa' => $nombre]);
         }
 
+        case 'instancia-desvincular': {
+            // Logout SIN delete: el teléfono queda desvinculado pero la
+            // instancia sigue creada, lista para re-escanear el QR.
+            [$url, $key] = waPlataformaCreds();
+            $nombre = waInstanciaValida($input);
+            $r = Http::json('DELETE', $url . '/instance/logout/' . rawurlencode($nombre), ['apikey: ' . $key], null, 15);
+            if (!($r['ok'] ?? false)) {
+                jsonResponse(['success' => false, 'error' => 'Evolution no pudo desvincular (¿ya estaba desconectada?)'], 502);
+            }
+            $cfg = WaConfig::cargar($db);
+            if (($cfg['evolution_instancia'] ?? '') === $nombre) {
+                WaConfig::guardar($db, ['estado_conexion' => 'desconectado']);
+            }
+            $log->log('config', 'Instancia WhatsApp desvinculada (sin eliminar): ' . $nombre);
+            jsonResponse(['success' => true]);
+        }
+
         case 'instancia-eliminar': {
             [$url, $key] = waPlataformaCreds();
             $nombre = waInstanciaValida($input);

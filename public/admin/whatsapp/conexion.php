@@ -268,6 +268,9 @@ async function cargarInstancias(){
           : '<button type="button" class="neon-btn text-xs" onclick="instUsar(\'' + i.name + '\')">Usar</button>'
             + '<button type="button" class="neon-btn-danger text-xs" onclick="instEliminar(\'' + i.name + '\')">🗑</button>')
       + '<button type="button" class="neon-btn text-xs" onclick="instQr(\'' + i.name + '\')">Mostrar QR</button>'
+      + (i.estado === 'open'
+          ? '<button type="button" class="neon-btn-danger text-xs" onclick="instDesvincular(\'' + i.name + '\')">Desvincular</button>'
+          : '')
       + '</div>';
   }).join('') || '<span class="text-xs text-[var(--text-muted)]">Sin instancias: crea la primera.</span>';
   document.getElementById('inst_nueva').style.display = (d.instancias || []).length >= d.max ? 'none' : '';
@@ -306,6 +309,13 @@ async function instQr(name){
 async function instUsar(name){
   const d = await WA.post('instancia-usar', { name });
   WA.aviso(d.success ? ('Instancia activa: ' + name) : (d.error || 'No se pudo activar'), !!d.success);
+  cargarInstancias(); verEstado();
+}
+
+async function instDesvincular(name){
+  if (!confirm('Se desvinculará el teléfono de ' + name + '. La instancia queda creada y puedes volver a vincularla con el QR. ¿Continuar?')) return;
+  const d = await WA.post('instancia-desvincular', { name });
+  WA.aviso(d.success ? ('Número desvinculado de ' + name) : (d.error || 'No se pudo desvincular'), !!d.success);
   cargarInstancias(); verEstado();
 }
 
